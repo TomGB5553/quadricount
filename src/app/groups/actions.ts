@@ -85,6 +85,27 @@ export async function createExpense(formData: FormData) {
   redirect(`/groups/${groupId}`);
 }
 
+export async function setMemberStatus(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const status = String(formData.get("status") ?? "");
+  if (!groupId || !memberId || !["active", "inactive"].includes(status)) {
+    throw new Error("Invalid request");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_status", {
+    p_member_id: memberId,
+    p_status: status,
+  });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/groups/${groupId}`);
+}
+
 export async function recordSettlement(formData: FormData) {
   await requireUser();
 

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
-import { addMember } from "../actions";
+import { addMember, setMemberStatus } from "../actions";
 
 export default async function GroupPage({
   params,
@@ -335,7 +335,7 @@ export default async function GroupPage({
                 m.status === "inactive" ? "text-gray-400" : ""
               }`}
             >
-              <span>{m.display_name}</span>
+              <span className="flex-1">{m.display_name}</span>
               {m.role === "owner" && (
                 <span className="text-xs text-gray-500">owner</span>
               )}
@@ -344,6 +344,20 @@ export default async function GroupPage({
               )}
               {m.status === "inactive" && (
                 <span className="text-xs">inactive</span>
+              )}
+              {isOwner && m.role !== "owner" && (
+                <form action={setMemberStatus}>
+                  <input type="hidden" name="groupId" value={group.id} />
+                  <input type="hidden" name="memberId" value={m.id} />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={m.status === "active" ? "inactive" : "active"}
+                  />
+                  <button className="text-xs text-gray-400 hover:text-black">
+                    {m.status === "active" ? "Remove" : "Re-activate"}
+                  </button>
+                </form>
               )}
             </li>
           ))}
