@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/money";
-import { createExpense } from "../../../actions";
+import { createExpense, updateExpense } from "../../../actions";
 
 type Member = { id: string; display_name: string };
 type Method = "equal" | "exact" | "percentage" | "shares";
@@ -15,6 +15,17 @@ type Part = {
   amount: string; // used when !remainder
   included: Record<string, boolean>; // equal
   values: Record<string, string>; // exact / percentage / shares
+};
+
+export type ExpenseInitial = {
+  description: string;
+  amount: string;
+  currency: string;
+  spentAt: string;
+  payMode: "single" | "split";
+  singlePayer: string;
+  payerAmounts: Record<string, string>;
+  parts: Omit<Part, "key">[];
 };
 
 // "12.34" / "12,34" -> 1234 minor units; invalid -> 0
@@ -34,22 +45,33 @@ export default function NewExpenseForm({
   groupId,
   currency,
   members,
+  expenseId,
+  initial,
 }: {
   groupId: string;
   currency: string;
   members: Member[];
+  expenseId?: string;
+  initial?: ExpenseInitial;
 }) {
+  const isEdit = !!expenseId;
   const today = new Date().toISOString().slice(0, 10);
 
-  const [amount, setAmount] = useState("");
-  const [currencyCode, setCurrencyCode] = useState(currency);
+  const [amount, setAmount] = useState(initial?.amount ?? "");
+  const [currencyCode, setCurrencyCode] = useState(initial?.currency ?? currency);
   const totalMinor = toMinor(amount);
   const fmt = (minor: number) => formatMoney(minor, currencyCode);
 
   // ---- payment ----
-  const [payMode, setPayMode] = useState<"single" | "split">("single");
-  const [singlePayer, setSinglePayer] = useState(members[0]?.id ?? "");
-  const [payerAmounts, setPayerAmounts] = useState<Record<string, string>>({});
+  const [payMode, setPayMode] = useState<"single" | "split">(
+    initial?.payMode ?? "single",
+  );
+  const [singlePayer, setSinglePayer] = useState(
+    initial?.singlePayer ?? members[0]?.id ?? "",
+  );
+  const [payerAmounts, setPayerAmounts] = useState<Record<string, string>>(
+    initial?.payerAmounts ?? {},
+  );
 
   const payers = useMemo(() => {
     if (payMode === "single") {
@@ -76,7 +98,11 @@ export default function NewExpenseForm({
       values: {},
     };
   }
-  const [parts, setParts] = useState<Part[]>([newPart(true)]);
+  const [parts, setParts] = useState<Part[]>(
+    initial?.parts?.length
+      ? initial.parts.map((p) => ({ ...p, key: crypto.randomUUID() }))
+      : [newPart(true)],
+  );
   const multiPart = parts.length > 1;
 
   function patchPart(key: string, patch: Partial<Part>) {
@@ -195,8 +221,14 @@ export default function NewExpenseForm({
     totalMinor > 0 && payersBalanced && partsValid && coverageValid;
 
   return (
-    <form action={createExpense} className="flex flex-col gap-4">
+    <form
+      action={isEdit ? updateExpense : createExpense}
+      className="flex flex-col gap-4"
+    >
       <input type="hidden" name="groupId" value={groupId} />
+      {expenseId && (
+        <input type="hidden" name="expenseId" value={expenseId} />
+      )}
       <input type="hidden" name="payers" value={JSON.stringify(payers)} />
       <input type="hidden" name="components" value={JSON.stringify(components)} />
 
@@ -206,6 +238,7 @@ export default function NewExpenseForm({
           name="description"
           required
           maxLength={200}
+          defaultValue={initial?.description ?? ""}
           placeholder="Dinner"
           className="rounded border border-gray-300 px-3 py-2"
         />
@@ -241,7 +274,7 @@ export default function NewExpenseForm({
         <input
           type="date"
           name="spentAt"
-          defaultValue={today}
+          defaultValue={initial?.spentAt ?? today}
           className="rounded border border-gray-300 px-3 py-2"
         />
       </label>
@@ -450,10 +483,14 @@ export default function NewExpenseForm({
           disabled={!canSubmit}
           className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
         >
-          Add expense
+          {isEdit ? "Save changes" : "Add expense"}
         </button>
         <Link
-          href={`/groups/${groupId}`}
+          href={
+            isEdit
+              ? `/groups/${groupId}/expenses/${expenseId}`
+              : `/groups/${groupId}`
+          }
           className="rounded border border-gray-300 px-3 py-2 text-sm"
         >
           Cancel

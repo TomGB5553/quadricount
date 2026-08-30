@@ -35,14 +35,15 @@ function toMinorUnits(raw: string): number {
   return Math.round(n * 100);
 }
 
-export async function createExpense(formData: FormData) {
-  await requireUser();
-
+// Shared parsing/validation for the create and edit expense forms.
+function readExpenseForm(formData: FormData) {
   const groupId = String(formData.get("groupId") ?? "");
+  const expenseId = String(formData.get("expenseId") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim();
   const amount = toMinorUnits(String(formData.get("amount") ?? ""));
   const spentAt = String(formData.get("spentAt") ?? "") || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
+
   let payers: { member_id: string; amount: number }[];
   let components: unknown;
   try {
@@ -53,12 +54,8 @@ export async function createExpense(formData: FormData) {
   }
   payers = payers.filter((p) => p && p.member_id && p.amount > 0);
 
-  if (!groupId || !description) {
-    throw new Error("Fill in a description");
-  }
-  if (payers.length === 0) {
-    throw new Error("Record who paid");
-  }
+  if (!groupId || !description) throw new Error("Fill in a description");
+  if (payers.length === 0) throw new Error("Record who paid");
   if (!Array.isArray(components) || components.length === 0) {
     throw new Error("Add a split");
   }
@@ -72,23 +69,80 @@ export async function createExpense(formData: FormData) {
     );
   }
 
+  return { groupId, expenseId, description, amount, spentAt, currency, payers, components };
+}
+
+export async function createExpense(formData: FormData) {
+  await requireUser();
+  const f = readExpenseForm(formData);
+
   const supabase = await createClient();
   const { data: expenseId, error } = await supabase.rpc(
     "create_expense_with_splits",
     {
-      p_group_id: groupId,
-      p_description: description,
-      p_total_amount: amount,
-      p_currency: currency || null,
-      p_spent_at: spentAt,
-      p_payers: payers,
-      p_components: components,
+      p_group_id: f.groupId,
+      p_description: f.description,
+      p_total_amount: f.amount,
+      p_currency: f.currency || null,
+      p_spent_at: f.spentAt,
+      p_payers: f.payers,
+      p_components: f.components,
     },
   );
 
   if (error) throw new Error(error.message);
 
-  await lockFxRate(supabase, "expenses", expenseId as string, groupId, currency, spentAt);
+  await lockFxRate(
+    supabase,
+    "expenses",
+    expenseId as string,
+    f.groupId,
+    f.currency,
+    f.spentAt,
+  );
+
+  redirect(`/groups/${f.groupId}`);
+}
+
+export async function updateExpense(formData: FormData) {
+  await requireUser();
+  const f = readExpenseForm(formData);
+  if (!f.expenseId) throw new Error("Missing expense");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_expense_with_splits", {
+    p_expense_id: f.expenseId,
+    p_description: f.description,
+    p_total_amount: f.amount,
+    p_currency: f.currency || null,
+    p_spent_at: f.spentAt,
+    p_payers: f.payers,
+    p_components: f.components,
+  });
+
+  if (error) throw new Error(error.message);
+
+  await lockFxRate(
+    supabase,
+    "expenses",
+    f.expenseId,
+    f.groupId,
+    f.currency,
+    f.spentAt,
+  );
+
+  redirect(`/groups/${f.groupId}/expenses/${f.expenseId}`);
+}
+
+export async function deleteExpense(formData: FormData) {
+  await requireUser();
+  const groupId = String(formData.get("groupId") ?? "");
+  const expenseId = String(formData.get("expenseId") ?? "");
+  if (!groupId || !expenseId) throw new Error("Invalid request");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
+  if (error) throw new Error(error.message);
 
   redirect(`/groups/${groupId}`);
 }
