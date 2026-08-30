@@ -85,6 +85,40 @@ export async function createExpense(formData: FormData) {
   redirect(`/groups/${groupId}`);
 }
 
+export async function recordSettlement(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const fromMember = String(formData.get("fromMember") ?? "");
+  const toMember = String(formData.get("toMember") ?? "");
+  const amount = toMinorUnits(String(formData.get("amount") ?? ""));
+  const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
+  const settledAt = String(formData.get("settledAt") ?? "") || null;
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  if (!groupId || !fromMember || !toMember) {
+    throw new Error("Pick who paid and who received");
+  }
+  if (fromMember === toMember) {
+    throw new Error("A payment needs two different people");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("record_settlement", {
+    p_group_id: groupId,
+    p_from_member: fromMember,
+    p_to_member: toMember,
+    p_amount: amount,
+    p_currency: currency || null,
+    p_settled_at: settledAt,
+    p_note: note,
+  });
+
+  if (error) throw new Error(error.message);
+
+  redirect(`/groups/${groupId}`);
+}
+
 export async function addMember(formData: FormData) {
   await requireUser();
 

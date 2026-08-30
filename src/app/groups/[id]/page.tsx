@@ -52,6 +52,13 @@ export default async function GroupPage({
     .order("spent_at", { ascending: false })
     .order("created_at", { ascending: false });
 
+  const { data: settlements } = await supabase
+    .from("settlements")
+    .select("id, from_member, to_member, amount, currency, settled_at, note")
+    .eq("group_id", id)
+    .order("settled_at", { ascending: false })
+    .order("created_at", { ascending: false });
+
   // Feature 4 — impact at a glance: my net on an expense = what I paid minus
   // my share. Positive => I'm owed; negative => I owe; null => not involved.
   function myImpact(e: NonNullable<typeof expenses>[number]): number | null {
@@ -80,7 +87,10 @@ export default async function GroupPage({
       : (expenses ?? []);
 
   // Feature 6 — group balances, per currency (always the whole group).
-  const balancesByCurrency = computeGroupBalances(expenses ?? []);
+  const balancesByCurrency = computeGroupBalances(
+    expenses ?? [],
+    settlements ?? [],
+  );
   const activeMembers = (members ?? []).filter((m) => m.status === "active");
   const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
 
@@ -166,10 +176,20 @@ export default async function GroupPage({
                     <ul className="flex flex-col gap-1 text-sm">
                       {transfers.map((t, idx) => (
                         <li key={idx}>
-                          {nameOf(t.from)} → {nameOf(t.to)}{" "}
-                          <span className="font-medium">
-                            {formatMoney(t.amount, currency)}
-                          </span>
+                          <Link
+                            href={`/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
+                              t.amount / 100
+                            ).toFixed(2)}`}
+                            className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1 hover:bg-gray-50"
+                          >
+                            {nameOf(t.from)} → {nameOf(t.to)}{" "}
+                            <span className="font-medium">
+                              {formatMoney(t.amount, currency)}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              · record
+                            </span>
+                          </Link>
                         </li>
                       ))}
                     </ul>
@@ -180,6 +200,40 @@ export default async function GroupPage({
           })}
         </section>
       )}
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Payments</h2>
+          <Link
+            href={`/groups/${group.id}/settle/new`}
+            className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+          >
+            Record a payment
+          </Link>
+        </div>
+        <ul className="flex flex-col gap-1">
+          {settlements && settlements.length > 0 ? (
+            settlements.map((s) => (
+              <li
+                key={s.id}
+                className="rounded border border-gray-200 px-3 py-2 text-sm"
+              >
+                {nameOf(s.from_member)} paid {nameOf(s.to_member)}{" "}
+                <span className="font-medium">
+                  {formatMoney(s.amount, s.currency)}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {" "}
+                  · {s.settled_at}
+                  {s.note ? ` · ${s.note}` : ""}
+                </span>
+              </li>
+            ))
+          ) : (
+            <li className="text-sm text-gray-500">No payments recorded yet.</li>
+          )}
+        </ul>
+      </section>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">

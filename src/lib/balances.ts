@@ -11,23 +11,41 @@ export type ExpenseForBalance = {
   expense_allocations: { member_id: string; amount: number }[];
 };
 
+export type SettlementForBalance = {
+  currency: string;
+  from_member: string;
+  to_member: string;
+  amount: number;
+};
+
 // currency -> (memberId -> net minor units)
 export function computeGroupBalances(
   expenses: ExpenseForBalance[],
+  settlements: SettlementForBalance[] = [],
 ): Map<string, Map<string, number>> {
   const byCurrency = new Map<string, Map<string, number>>();
+  const bucket = (currency: string) => {
+    let b = byCurrency.get(currency);
+    if (!b) {
+      b = new Map();
+      byCurrency.set(currency, b);
+    }
+    return b;
+  };
 
   for (const e of expenses) {
-    let balances = byCurrency.get(e.currency);
-    if (!balances) {
-      balances = new Map();
-      byCurrency.set(e.currency, balances);
-    }
+    const balances = bucket(e.currency);
     const add = (memberId: string, delta: number) =>
-      balances!.set(memberId, (balances!.get(memberId) ?? 0) + delta);
-
+      balances.set(memberId, (balances.get(memberId) ?? 0) + delta);
     for (const p of e.expense_payers) add(p.member_id, p.amount);
     for (const a of e.expense_allocations) add(a.member_id, -a.amount);
+  }
+
+  // A payment from A to B settles A's debt: A's net rises, B's net falls.
+  for (const s of settlements) {
+    const balances = bucket(s.currency);
+    balances.set(s.from_member, (balances.get(s.from_member) ?? 0) + s.amount);
+    balances.set(s.to_member, (balances.get(s.to_member) ?? 0) - s.amount);
   }
 
   return byCurrency;
