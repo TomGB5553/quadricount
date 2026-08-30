@@ -359,6 +359,14 @@ export default async function GroupPage({
               {m.status === "inactive" && (
                 <span className="text-xs">inactive</span>
               )}
+              {isOwner && !m.user_id && m.status === "active" && (
+                <Link
+                  href={`/groups/${group.id}/members/${m.id}/invite`}
+                  className="text-xs text-gray-500 underline hover:text-black"
+                >
+                  Invite
+                </Link>
+              )}
               {isOwner && m.role !== "owner" && (
                 <form action={setMemberStatus}>
                   <input type="hidden" name="groupId" value={group.id} />

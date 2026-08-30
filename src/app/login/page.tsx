@@ -29,8 +29,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Session cookie is now set. Go home and re-render server components.
-    router.push("/");
+    // Session cookie is now set. Continue to ?next= (invite flow) or home.
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next && next.startsWith("/") ? next : "/");
     router.refresh();
   }
 
