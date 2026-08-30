@@ -1,68 +1,66 @@
-// Balance calculation. All amounts are integer minor units (cents).
+// Balance calculation. Amounts are integer minor units (cents).
 //
-// A member's net balance in a currency = (everything they paid) minus
-// (their share of every expense). Positive => they are owed money;
-// negative => they owe money. Balances are kept per-currency; converting
-// between currencies for a combined view comes later (feature 9).
+// A member's net balance = (everything they paid) minus (their share of every
+// expense), plus/minus settlements. Foreign-currency expenses and payments are
+// converted to the group's default currency using the rate locked on each row
+// at entry time, so the result is a single combined figure per member.
 
 export type ExpenseForBalance = {
   currency: string;
+  fx_rate_to_group_currency: number;
   expense_payers: { member_id: string; amount: number }[];
   expense_allocations: { member_id: string; amount: number }[];
 };
 
 export type SettlementForBalance = {
   currency: string;
+  fx_rate_to_group_currency: number;
   from_member: string;
   to_member: string;
   amount: number;
 };
 
-// currency -> (memberId -> net minor units)
+// Returns net balances (in the group's default currency) and the set of
+// currencies that fed into them, so the UI can show a "converted" note.
 export function computeGroupBalances(
   expenses: ExpenseForBalance[],
   settlements: SettlementForBalance[] = [],
-): Map<string, Map<string, number>> {
-  const byCurrency = new Map<string, Map<string, number>>();
-  const bucket = (currency: string) => {
-    let b = byCurrency.get(currency);
-    if (!b) {
-      b = new Map();
-      byCurrency.set(currency, b);
-    }
-    return b;
-  };
+): { net: Map<string, number>; currencies: string[] } {
+  const net = new Map<string, number>();
+  const currencies = new Set<string>();
+  const add = (memberId: string, delta: number) =>
+    net.set(memberId, (net.get(memberId) ?? 0) + delta);
 
   for (const e of expenses) {
-    const balances = bucket(e.currency);
-    const add = (memberId: string, delta: number) =>
-      balances.set(memberId, (balances.get(memberId) ?? 0) + delta);
-    for (const p of e.expense_payers) add(p.member_id, p.amount);
-    for (const a of e.expense_allocations) add(a.member_id, -a.amount);
+    currencies.add(e.currency);
+    const r = e.fx_rate_to_group_currency || 1;
+    for (const p of e.expense_payers) add(p.member_id, p.amount * r);
+    for (const a of e.expense_allocations) add(a.member_id, -a.amount * r);
   }
 
   // A payment from A to B settles A's debt: A's net rises, B's net falls.
   for (const s of settlements) {
-    const balances = bucket(s.currency);
-    balances.set(s.from_member, (balances.get(s.from_member) ?? 0) + s.amount);
-    balances.set(s.to_member, (balances.get(s.to_member) ?? 0) - s.amount);
+    currencies.add(s.currency);
+    const r = s.fx_rate_to_group_currency || 1;
+    add(s.from_member, s.amount * r);
+    add(s.to_member, -s.amount * r);
   }
 
-  return byCurrency;
+  for (const [id, v] of net) net.set(id, Math.round(v));
+  return { net, currencies: [...currencies] };
 }
 
 export type Transfer = { from: string; to: string; amount: number };
 
 // Turn net balances into a short list of "from pays to" transfers.
-// Greedy largest-debtor / largest-creditor matching. Not always the
-// theoretical minimum number of transfers, but close and easy to follow.
+// Greedy largest-debtor / largest-creditor matching.
 export function settleUp(balances: Map<string, number>): Transfer[] {
   const debtors: { id: string; amount: number }[] = [];
   const creditors: { id: string; amount: number }[] = [];
 
-  for (const [id, net] of balances) {
-    if (net < 0) debtors.push({ id, amount: -net });
-    else if (net > 0) creditors.push({ id, amount: net });
+  for (const [id, netAmount] of balances) {
+    if (netAmount < 0) debtors.push({ id, amount: -netAmount });
+    else if (netAmount > 0) creditors.push({ id, amount: netAmount });
   }
 
   debtors.sort((a, b) => b.amount - a.amount);

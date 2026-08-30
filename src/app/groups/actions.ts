@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getFxRate } from "@/lib/fx";
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 // A Server Action: this function runs on the server when the form is submitted.
 export async function createGroup(formData: FormData) {
@@ -70,19 +73,52 @@ export async function createExpense(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_expense_with_splits", {
-    p_group_id: groupId,
-    p_description: description,
-    p_total_amount: amount,
-    p_currency: currency || null,
-    p_spent_at: spentAt,
-    p_payers: payers,
-    p_components: components,
-  });
+  const { data: expenseId, error } = await supabase.rpc(
+    "create_expense_with_splits",
+    {
+      p_group_id: groupId,
+      p_description: description,
+      p_total_amount: amount,
+      p_currency: currency || null,
+      p_spent_at: spentAt,
+      p_payers: payers,
+      p_components: components,
+    },
+  );
 
   if (error) throw new Error(error.message);
 
+  await lockFxRate(supabase, "expenses", expenseId as string, groupId, currency, spentAt);
+
   redirect(`/groups/${groupId}`);
+}
+
+// For a foreign-currency expense/settlement, look up the conversion rate to the
+// group's default currency (on the transaction date) and store it on the row.
+async function lockFxRate(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  table: "expenses" | "settlements",
+  rowId: string,
+  groupId: string,
+  currency: string,
+  date: string | null,
+) {
+  const { data: group } = await supabase
+    .from("groups")
+    .select("default_currency")
+    .eq("id", groupId)
+    .single();
+  const groupCurrency = group?.default_currency;
+  const rowCurrency = currency || groupCurrency;
+  if (!groupCurrency || !rowCurrency || rowCurrency === groupCurrency) return;
+
+  const rate = await getFxRate(rowCurrency, groupCurrency, date ?? todayStr());
+  if (rate !== 1) {
+    await supabase
+      .from(table)
+      .update({ fx_rate_to_group_currency: rate })
+      .eq("id", rowId);
+  }
 }
 
 export async function setMemberStatus(formData: FormData) {
@@ -125,7 +161,7 @@ export async function recordSettlement(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("record_settlement", {
+  const { data: settlementId, error } = await supabase.rpc("record_settlement", {
     p_group_id: groupId,
     p_from_member: fromMember,
     p_to_member: toMember,
@@ -136,6 +172,15 @@ export async function recordSettlement(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
+
+  await lockFxRate(
+    supabase,
+    "settlements",
+    settlementId as string,
+    groupId,
+    currency,
+    settledAt,
+  );
 
   redirect(`/groups/${groupId}`);
 }

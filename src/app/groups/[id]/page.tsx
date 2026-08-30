@@ -44,9 +44,7 @@ export default async function GroupPage({
   const { data: expenses } = await supabase
     .from("expenses")
     .select(
-      "id, description, total_amount, currency, spent_at, " +
-        "expense_payers(member_id, amount), " +
-        "expense_allocations(member_id, amount)",
+      "id, description, total_amount, currency, fx_rate_to_group_currency, spent_at, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
     )
     .eq("group_id", id)
     .order("spent_at", { ascending: false })
@@ -54,7 +52,9 @@ export default async function GroupPage({
 
   const { data: settlements } = await supabase
     .from("settlements")
-    .select("id, from_member, to_member, amount, currency, settled_at, note")
+    .select(
+      "id, from_member, to_member, amount, currency, fx_rate_to_group_currency, settled_at, note",
+    )
     .eq("group_id", id)
     .order("settled_at", { ascending: false })
     .order("created_at", { ascending: false });
@@ -86,13 +86,29 @@ export default async function GroupPage({
       ? expenses.filter((e) => involves(e, filterMember))
       : (expenses ?? []);
 
-  // Feature 6 — group balances, per currency (always the whole group).
-  const balancesByCurrency = computeGroupBalances(
+  // Feature 6 + 9 — group balances, converted to the group's default currency.
+  const gc = group.default_currency;
+  const { net: balances, currencies } = computeGroupBalances(
     expenses ?? [],
     settlements ?? [],
   );
+  const hasConversions = currencies.some((c) => c !== gc);
   const activeMembers = (members ?? []).filter((m) => m.status === "active");
   const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
+  const inactiveWithBalance = inactiveMembers.filter(
+    (m) => (balances.get(m.id) ?? 0) !== 0,
+  );
+  const inactiveSettled = inactiveMembers.filter(
+    (m) => (balances.get(m.id) ?? 0) === 0,
+  );
+  // Active first, then removed members who still owe/are owed, then removed
+  // members who are settled (dropped to the bottom).
+  const orderedForBalances = [
+    ...activeMembers,
+    ...inactiveWithBalance,
+    ...inactiveSettled,
+  ];
+  const transfers = settleUp(balances);
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 p-6">
@@ -106,98 +122,78 @@ export default async function GroupPage({
         )}
       </div>
 
-      {balancesByCurrency.size > 0 && (
+      {balances.size > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">Balances</h2>
-          {[...balancesByCurrency.entries()].map(([currency, bal]) => {
-            const inactiveWithBalance = inactiveMembers.filter(
-              (m) => (bal.get(m.id) ?? 0) !== 0,
-            );
-            const inactiveSettled = inactiveMembers.filter(
-              (m) => (bal.get(m.id) ?? 0) === 0,
-            );
-            // Active first, then removed members who still owe/are owed,
-            // then removed members who are settled (dropped to the bottom).
-            const ordered = [
-              ...activeMembers,
-              ...inactiveWithBalance,
-              ...inactiveSettled,
-            ];
-            const transfers = settleUp(bal);
 
-            return (
-              <div key={currency} className="flex flex-col gap-2">
-                {balancesByCurrency.size > 1 && (
-                  <h3 className="text-sm font-medium text-gray-500">
-                    {currency}
-                  </h3>
-                )}
-                <ul className="flex flex-col gap-1">
-                  {ordered.map((m) => {
-                    const net = bal.get(m.id) ?? 0;
-                    return (
-                      <li
-                        key={m.id}
-                        className={`flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm ${
-                          m.status === "inactive" ? "opacity-50" : ""
-                        }`}
-                      >
-                        <span>
-                          {m.display_name}
-                          {m.status === "inactive" && (
-                            <span className="ml-2 text-xs">inactive</span>
-                          )}
-                        </span>
-                        <span
-                          className={
-                            net > 0
-                              ? "text-green-700"
-                              : net < 0
-                                ? "text-red-700"
-                                : "text-gray-400"
-                          }
-                        >
-                          {net > 0
-                            ? `gets back ${formatMoney(net, currency)}`
-                            : net < 0
-                              ? `owes ${formatMoney(-net, currency)}`
-                              : "settled"}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+          <ul className="flex flex-col gap-1">
+            {orderedForBalances.map((m) => {
+              const net = balances.get(m.id) ?? 0;
+              return (
+                <li
+                  key={m.id}
+                  className={`flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm ${
+                    m.status === "inactive" ? "opacity-50" : ""
+                  }`}
+                >
+                  <span>
+                    {m.display_name}
+                    {m.status === "inactive" && (
+                      <span className="ml-2 text-xs">inactive</span>
+                    )}
+                  </span>
+                  <span
+                    className={
+                      net > 0
+                        ? "text-green-700"
+                        : net < 0
+                          ? "text-red-700"
+                          : "text-gray-400"
+                    }
+                  >
+                    {net > 0
+                      ? `gets back ${formatMoney(net, gc)}`
+                      : net < 0
+                        ? `owes ${formatMoney(-net, gc)}`
+                        : "settled"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
 
-                {transfers.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-medium text-gray-500">
-                      Who pays whom
-                    </h3>
-                    <ul className="flex flex-col gap-1 text-sm">
-                      {transfers.map((t, idx) => (
-                        <li key={idx}>
-                          <Link
-                            href={`/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
-                              t.amount / 100
-                            ).toFixed(2)}`}
-                            className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1 hover:bg-gray-50"
-                          >
-                            {nameOf(t.from)} → {nameOf(t.to)}{" "}
-                            <span className="font-medium">
-                              {formatMoney(t.amount, currency)}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              · record
-                            </span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {transfers.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <h3 className="text-sm font-medium text-gray-500">
+                Who pays whom
+              </h3>
+              <ul className="flex flex-col gap-1 text-sm">
+                {transfers.map((t, idx) => (
+                  <li key={idx}>
+                    <Link
+                      href={`/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
+                        t.amount / 100
+                      ).toFixed(2)}`}
+                      className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1 hover:bg-gray-50"
+                    >
+                      {nameOf(t.from)} → {nameOf(t.to)}{" "}
+                      <span className="font-medium">
+                        {formatMoney(t.amount, gc)}
+                      </span>
+                      <span className="text-xs text-gray-400">· record</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {hasConversions && (
+            <p className="text-xs text-gray-400">
+              Amounts in other currencies converted to {gc} at each
+              transaction&apos;s rate on its date.
+            </p>
+          )}
         </section>
       )}
 
@@ -289,8 +285,15 @@ export default async function GroupPage({
                   <div className="text-sm">
                     <div className="font-medium">{e.description}</div>
                     <div className="text-xs text-gray-500">
-                      {formatMoney(e.total_amount, e.currency)} · paid by{" "}
-                      {paidBy} · {e.spent_at}
+                      {formatMoney(e.total_amount, e.currency)}
+                      {e.currency !== gc &&
+                        ` (≈ ${formatMoney(
+                          Math.round(
+                            e.total_amount * (e.fx_rate_to_group_currency || 1),
+                          ),
+                          gc,
+                        )})`}{" "}
+                      · paid by {paidBy} · {e.spent_at}
                     </div>
                   </div>
                   <span
