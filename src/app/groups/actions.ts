@@ -40,11 +40,30 @@ export async function createExpense(formData: FormData) {
   const amount = toMinorUnits(String(formData.get("amount") ?? ""));
   const spentAt = String(formData.get("spentAt") ?? "") || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
-  const payerId = String(formData.get("payerId") ?? "");
   const participantIds = formData.getAll("participants").map(String);
 
-  if (!groupId || !description || !payerId || participantIds.length === 0) {
-    throw new Error("Fill in description, payer and at least one participant");
+  let payers: { member_id: string; amount: number }[];
+  try {
+    payers = JSON.parse(String(formData.get("payers") ?? "[]"));
+  } catch {
+    throw new Error("Could not read the payer amounts");
+  }
+  payers = payers.filter((p) => p && p.member_id && p.amount > 0);
+
+  if (!groupId || !description || participantIds.length === 0) {
+    throw new Error("Fill in description and at least one participant");
+  }
+  if (payers.length === 0) {
+    throw new Error("Record who paid");
+  }
+
+  const payerSum = payers.reduce((s, p) => s + p.amount, 0);
+  if (payerSum !== amount) {
+    throw new Error(
+      `Payer amounts add up to ${(payerSum / 100).toFixed(2)}, but the total is ${(
+        amount / 100
+      ).toFixed(2)}`,
+    );
   }
 
   const supabase = await createClient();
@@ -54,7 +73,7 @@ export async function createExpense(formData: FormData) {
     p_total_amount: amount,
     p_currency: currency || null,
     p_spent_at: spentAt,
-    p_payers: [{ member_id: payerId, amount }],
+    p_payers: payers,
     p_participant_ids: participantIds,
   });
 
