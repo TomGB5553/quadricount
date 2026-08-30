@@ -40,21 +40,24 @@ export async function createExpense(formData: FormData) {
   const amount = toMinorUnits(String(formData.get("amount") ?? ""));
   const spentAt = String(formData.get("spentAt") ?? "") || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
-  const participantIds = formData.getAll("participants").map(String);
-
   let payers: { member_id: string; amount: number }[];
+  let components: unknown;
   try {
     payers = JSON.parse(String(formData.get("payers") ?? "[]"));
+    components = JSON.parse(String(formData.get("components") ?? "[]"));
   } catch {
-    throw new Error("Could not read the payer amounts");
+    throw new Error("Could not read the split details");
   }
   payers = payers.filter((p) => p && p.member_id && p.amount > 0);
 
-  if (!groupId || !description || participantIds.length === 0) {
-    throw new Error("Fill in description and at least one participant");
+  if (!groupId || !description) {
+    throw new Error("Fill in a description");
   }
   if (payers.length === 0) {
     throw new Error("Record who paid");
+  }
+  if (!Array.isArray(components) || components.length === 0) {
+    throw new Error("Add a split");
   }
 
   const payerSum = payers.reduce((s, p) => s + p.amount, 0);
@@ -67,14 +70,14 @@ export async function createExpense(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_expense", {
+  const { error } = await supabase.rpc("create_expense_with_splits", {
     p_group_id: groupId,
     p_description: description,
     p_total_amount: amount,
     p_currency: currency || null,
     p_spent_at: spentAt,
     p_payers: payers,
-    p_participant_ids: participantIds,
+    p_components: components,
   });
 
   if (error) throw new Error(error.message);
