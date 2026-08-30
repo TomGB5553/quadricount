@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
+import { computeGroupBalances, settleUp } from "@/lib/balances";
 import { addMember } from "../actions";
 
 export default async function GroupPage({
@@ -62,6 +63,11 @@ export default async function GroupPage({
     return paid - share;
   }
 
+  // Feature 6 — group balances, per currency.
+  const balancesByCurrency = computeGroupBalances(expenses ?? []);
+  const activeMembers = (members ?? []).filter((m) => m.status === "active");
+  const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
+
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 p-6">
       <div>
@@ -73,6 +79,91 @@ export default async function GroupPage({
           <p className="text-gray-500">{group.description}</p>
         )}
       </div>
+
+      {balancesByCurrency.size > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="font-semibold">Balances</h2>
+          {[...balancesByCurrency.entries()].map(([currency, bal]) => {
+            const inactiveWithBalance = inactiveMembers.filter(
+              (m) => (bal.get(m.id) ?? 0) !== 0,
+            );
+            const inactiveSettled = inactiveMembers.filter(
+              (m) => (bal.get(m.id) ?? 0) === 0,
+            );
+            // Active first, then removed members who still owe/are owed,
+            // then removed members who are settled (dropped to the bottom).
+            const ordered = [
+              ...activeMembers,
+              ...inactiveWithBalance,
+              ...inactiveSettled,
+            ];
+            const transfers = settleUp(bal);
+
+            return (
+              <div key={currency} className="flex flex-col gap-2">
+                {balancesByCurrency.size > 1 && (
+                  <h3 className="text-sm font-medium text-gray-500">
+                    {currency}
+                  </h3>
+                )}
+                <ul className="flex flex-col gap-1">
+                  {ordered.map((m) => {
+                    const net = bal.get(m.id) ?? 0;
+                    return (
+                      <li
+                        key={m.id}
+                        className={`flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm ${
+                          m.status === "inactive" ? "opacity-50" : ""
+                        }`}
+                      >
+                        <span>
+                          {m.display_name}
+                          {m.status === "inactive" && (
+                            <span className="ml-2 text-xs">inactive</span>
+                          )}
+                        </span>
+                        <span
+                          className={
+                            net > 0
+                              ? "text-green-700"
+                              : net < 0
+                                ? "text-red-700"
+                                : "text-gray-400"
+                          }
+                        >
+                          {net > 0
+                            ? `gets back ${formatMoney(net, currency)}`
+                            : net < 0
+                              ? `owes ${formatMoney(-net, currency)}`
+                              : "settled"}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+
+                {transfers.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-medium text-gray-500">
+                      Who pays whom
+                    </h3>
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {transfers.map((t, idx) => (
+                        <li key={idx}>
+                          {nameOf(t.from)} → {nameOf(t.to)}{" "}
+                          <span className="font-medium">
+                            {formatMoney(t.amount, currency)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
