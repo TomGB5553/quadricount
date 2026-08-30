@@ -8,10 +8,13 @@ import { addMember } from "../actions";
 
 export default async function GroupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ member?: string }>;
 }) {
   const { id } = await params;
+  const { member: filterMember } = await searchParams;
   const user = await requireUser();
   const supabase = await createClient();
 
@@ -63,7 +66,20 @@ export default async function GroupPage({
     return paid - share;
   }
 
-  // Feature 6 — group balances, per currency.
+  // Feature 7 — filter the expense list to one person (payer or participant).
+  const involves = (
+    e: NonNullable<typeof expenses>[number],
+    memberId: string,
+  ) =>
+    e.expense_payers.some((p) => p.member_id === memberId) ||
+    e.expense_allocations.some((a) => a.member_id === memberId);
+
+  const visibleExpenses =
+    filterMember && expenses
+      ? expenses.filter((e) => involves(e, filterMember))
+      : (expenses ?? []);
+
+  // Feature 6 — group balances, per currency (always the whole group).
   const balancesByCurrency = computeGroupBalances(expenses ?? []);
   const activeMembers = (members ?? []).filter((m) => m.status === "active");
   const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
@@ -175,9 +191,38 @@ export default async function GroupPage({
             Add expense
           </Link>
         </div>
+
+        {(members?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-1">
+            <Link
+              href={`/groups/${group.id}`}
+              className={`rounded-full border px-2 py-0.5 text-xs ${
+                filterMember
+                  ? "border-gray-300 text-gray-500"
+                  : "border-black bg-black text-white"
+              }`}
+            >
+              Everyone
+            </Link>
+            {members?.map((m) => (
+              <Link
+                key={m.id}
+                href={`/groups/${group.id}?member=${m.id}`}
+                className={`rounded-full border px-2 py-0.5 text-xs ${
+                  filterMember === m.id
+                    ? "border-black bg-black text-white"
+                    : "border-gray-300 text-gray-600"
+                }`}
+              >
+                {m.display_name}
+              </Link>
+            ))}
+          </div>
+        )}
+
         <ul className="flex flex-col gap-1">
-          {expenses && expenses.length > 0 ? (
-            expenses.map((e) => {
+          {visibleExpenses.length > 0 ? (
+            visibleExpenses.map((e) => {
               const impact = myImpact(e);
               const paidBy = e.expense_payers
                 .map((p) => nameOf(p.member_id))
@@ -217,7 +262,11 @@ export default async function GroupPage({
               );
             })
           ) : (
-            <li className="text-sm text-gray-500">No expenses yet.</li>
+            <li className="text-sm text-gray-500">
+              {filterMember
+                ? `No expenses involving ${nameOf(filterMember)}.`
+                : "No expenses yet."}
+            </li>
           )}
         </ul>
       </section>
