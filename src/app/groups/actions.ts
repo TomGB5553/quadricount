@@ -121,6 +121,46 @@ async function lockFxRate(
   }
 }
 
+export async function transferBalance(formData: FormData) {
+  await requireUser();
+
+  const sourceGroup = String(formData.get("sourceGroup") ?? "");
+  const targetGroup = String(formData.get("targetGroup") ?? "");
+  const srcFrom = String(formData.get("srcFrom") ?? "");
+  const srcTo = String(formData.get("srcTo") ?? "");
+  const tgtFrom = String(formData.get("tgtFrom") ?? "");
+  const tgtTo = String(formData.get("tgtTo") ?? "");
+  const amount = toMinorUnits(String(formData.get("amount") ?? ""));
+  const note = String(formData.get("note") ?? "").trim() || null;
+
+  if (!sourceGroup || !targetGroup) throw new Error("Pick a target group");
+  if (targetGroup === sourceGroup) {
+    throw new Error("Pick a different group to move the balance into");
+  }
+  if (!srcFrom || !srcTo || !tgtFrom || !tgtTo) {
+    throw new Error("Choose who owes whom in both groups");
+  }
+  if (srcFrom === srcTo || tgtFrom === tgtTo) {
+    throw new Error("A transfer needs two different people");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("transfer_balance", {
+    p_source_group: sourceGroup,
+    p_target_group: targetGroup,
+    p_src_from: srcFrom,
+    p_src_to: srcTo,
+    p_tgt_from: tgtFrom,
+    p_tgt_to: tgtTo,
+    p_amount: amount,
+    p_note: note,
+  });
+
+  if (error) throw new Error(error.message);
+
+  redirect(`/groups/${sourceGroup}`);
+}
+
 export async function setMemberStatus(formData: FormData) {
   await requireUser();
 

@@ -188,6 +188,15 @@ export default async function GroupPage({
             </div>
           )}
 
+          {transfers.length > 0 && (
+            <Link
+              href={`/groups/${group.id}/transfer/new`}
+              className="text-xs text-gray-500 underline"
+            >
+              Move a balance to another group
+            </Link>
+          )}
+
           {hasConversions && (
             <p className="text-xs text-gray-400">
               Amounts in other currencies converted to {gc} at each
