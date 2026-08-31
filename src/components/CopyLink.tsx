@@ -30,10 +30,6 @@ export default function CopyLink({ url }: { url: string }) {
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <p className="text-xs text-gray-500">
-        Send this link to the person. When they open it and sign in, they take
-        over this spot in the group.
-      </p>
     </div>
   );
 }

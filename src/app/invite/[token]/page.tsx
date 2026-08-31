@@ -4,7 +4,8 @@ import AcceptButton from "./AcceptButton";
 
 type Preview = {
   group_name: string;
-  member_name: string;
+  group_invite: boolean;
+  member_name: string | null;
   accepted: boolean;
   claimed: boolean;
 };
@@ -41,7 +42,8 @@ export default async function InvitePage({
     );
   }
 
-  if (preview.accepted || preview.claimed) {
+  // Only placeholder invites get "used up".
+  if (!preview.group_invite && (preview.accepted || preview.claimed)) {
     return (
       <Shell>
         <h1 className="text-xl font-bold">This invite has been used</h1>
@@ -56,22 +58,28 @@ export default async function InvitePage({
     );
   }
 
+  const blurb = preview.group_invite ? (
+    <>Join {preview.group_name} to split expenses together.</>
+  ) : (
+    <>
+      You&apos;ll take over the spot of{" "}
+      <strong>{preview.member_name}</strong> — their share of past expenses
+      becomes yours.
+    </>
+  );
+
   if (!user) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">
-          Join {preview.group_name}
-        </h1>
+        <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
         <p className="text-sm text-gray-500">
-          You&apos;ve been invited to take the spot of{" "}
-          <strong>{preview.member_name}</strong>. Sign in or create an account to
-          accept.
+          {blurb} Sign in or create an account to accept.
         </p>
         <Link
-          href={`/login?next=${encodeURIComponent(`/invite/${token}`)}`}
+          href={`/login?mode=signup&next=${encodeURIComponent(`/invite/${token}`)}`}
           className="rounded bg-black px-4 py-2 text-sm text-white"
         >
-          Sign in to continue
+          Continue
         </Link>
       </Shell>
     );
@@ -80,10 +88,7 @@ export default async function InvitePage({
   return (
     <Shell>
       <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
-      <p className="text-sm text-gray-500">
-        You&apos;ll take over the spot of <strong>{preview.member_name}</strong> —
-        their share of past expenses becomes yours.
-      </p>
+      <p className="text-sm text-gray-500">{blurb}</p>
       <AcceptButton token={token} />
     </Shell>
   );

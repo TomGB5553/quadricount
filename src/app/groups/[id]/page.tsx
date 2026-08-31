@@ -340,7 +340,17 @@ export default async function GroupPage({
       </section>
 
       <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">Members</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold">Members</h2>
+          {isOwner && (
+            <Link
+              href={`/groups/${group.id}/invite`}
+              className="rounded border border-gray-300 px-3 py-1.5 text-sm"
+            >
+              Invite someone
+            </Link>
+          )}
+        </div>
         <ul className="flex flex-col gap-1">
           {members?.map((m) => (
             <li

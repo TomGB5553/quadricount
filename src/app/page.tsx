@@ -22,11 +22,6 @@ export default async function Home() {
           >
             Go to your groups
           </Link>
-          <form action="/auth/signout" method="post">
-            <button className="rounded border border-gray-300 px-3 py-2 text-sm">
-              Sign out
-            </button>
-          </form>
         </>
       ) : (
         <>

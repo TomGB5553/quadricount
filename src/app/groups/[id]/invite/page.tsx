@@ -1,26 +1,28 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import CopyLink from "@/components/CopyLink";
 
-export default async function InviteMemberPage({
+export default async function GroupInvitePage({
   params,
 }: {
-  params: Promise<{ id: string; memberId: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { id, memberId } = await params;
+  const { id } = await params;
   await requireUser();
   const supabase = await createClient();
 
-  const { data: member } = await supabase
-    .from("group_members")
-    .select("id, display_name, group_id, user_id")
-    .eq("id", memberId)
+  const { data: group } = await supabase
+    .from("groups")
+    .select("id, name")
+    .eq("id", id)
     .maybeSingle();
+  if (!group) notFound();
 
-  const { data: token, error } = await supabase.rpc("create_invitation", {
-    p_member_id: memberId,
+  const { data: token, error } = await supabase.rpc("create_group_invite", {
+    p_group_id: id,
   });
 
   const h = await headers();
@@ -32,9 +34,9 @@ export default async function InviteMemberPage({
         href={`/groups/${id}`}
         className="text-sm text-gray-500 hover:underline"
       >
-        ← Back to the group
+        ← {group.name}
       </Link>
-      <h1 className="text-2xl font-bold">Invite {member?.display_name}</h1>
+      <h1 className="text-2xl font-bold">Invite people to {group.name}</h1>
 
       {error ? (
         <p className="text-sm text-red-600">{error.message}</p>
@@ -42,9 +44,8 @@ export default async function InviteMemberPage({
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
           <p className="text-xs text-gray-500">
-            Send this link to {member?.display_name}. When they open it and sign
-            in, they take over this spot — the group&apos;s past expenses for{" "}
-            {member?.display_name} become theirs.
+            Anyone who opens this link and signs in joins the group as a new
+            member. The same link works for everyone you send it to.
           </p>
         </>
       )}
