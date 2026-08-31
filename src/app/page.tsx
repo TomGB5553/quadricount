@@ -29,12 +29,23 @@ export default async function Home() {
           </form>
         </>
       ) : (
-        <Link
-          href="/login"
-          className="rounded bg-black px-4 py-2 text-sm text-white"
-        >
-          Sign in
-        </Link>
+        <>
+          <p className="text-gray-600">Split expenses with friends and groups.</p>
+          <div className="flex gap-3">
+            <Link
+              href="/login?mode=signup"
+              className="rounded bg-black px-4 py-2 text-sm text-white"
+            >
+              Create an account
+            </Link>
+            <Link
+              href="/login"
+              className="rounded border border-gray-300 px-4 py-2 text-sm"
+            >
+              Sign in
+            </Link>
+          </div>
+        </>
       )}
     </main>
   );
