@@ -29,13 +29,19 @@ export async function getFxRate(
       `https://api.frankfurter.dev/v1/${date}?base=${from}&symbols=${to}`,
       { cache: "no-store" },
     );
-    if (!res.ok) return 1;
+    if (!res.ok) {
+      console.warn(`fx: no rate for ${from}->${to} on ${date} (HTTP ${res.status}); using 1`);
+      return 1;
+    }
     const json = (await res.json()) as {
       date?: string;
       rates?: Record<string, number>;
     };
     const rate = json.rates?.[to];
-    if (typeof rate !== "number" || !(rate > 0)) return 1;
+    if (typeof rate !== "number" || !(rate > 0)) {
+      console.warn(`fx: unexpected response for ${from}->${to}; using 1`);
+      return 1;
+    }
 
     await supabase.from("exchange_rates").upsert({
       base_currency: from,
