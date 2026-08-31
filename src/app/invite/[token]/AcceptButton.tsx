@@ -13,11 +13,11 @@ export default function AcceptButton({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <button
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+        className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
         {pending ? "Joining…" : "Accept & join"}
       </button>
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-neg">{state.error}</p>}
     </form>
   );
 }

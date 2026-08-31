@@ -30,18 +30,18 @@ export default async function InviteMemberPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <Link
         href={`/groups/${id}`}
-        className="text-sm text-gray-500 hover:underline"
+        className="text-sm text-muted hover:underline"
       >
         ← Back to the group
       </Link>
       <h1 className="text-2xl font-bold">Invite {member?.display_name}</h1>
 
       {error ? (
-        <p className="text-sm text-red-600">{error.message}</p>
+        <p className="text-sm text-neg">{error.message}</p>
       ) : (
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             Send this link to {member?.display_name}. When they open it and sign
             in, they take over this spot — the group&apos;s past expenses for{" "}
             {member?.display_name} become theirs.

@@ -25,7 +25,7 @@ export default function JoinForm({
 
       {claimable.length > 0 && (
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm text-gray-500">
+          <legend className="mb-1 text-sm text-muted">
             Are you one of these people already in the group?
           </legend>
           {claimable.map((m) => (
@@ -61,17 +61,17 @@ export default function JoinForm({
             required
             defaultValue={defaultName}
             maxLength={100}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
       )}
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state.error && <p className="text-sm text-neg">{state.error}</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+        className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
         {pending ? "Joining…" : "Join group"}
       </button>

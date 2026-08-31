@@ -32,18 +32,18 @@ export default async function GroupInvitePage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <Link
         href={`/groups/${id}`}
-        className="text-sm text-gray-500 hover:underline"
+        className="text-sm text-muted hover:underline"
       >
         ← {group.name}
       </Link>
       <h1 className="text-2xl font-bold">Invite people to {group.name}</h1>
 
       {error ? (
-        <p className="text-sm text-red-600">{error.message}</p>
+        <p className="text-sm text-neg">{error.message}</p>
       ) : (
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted">
             Anyone who opens this link and signs in can join. If they&apos;re
             already listed as a member, they can claim that spot; otherwise they
             join as someone new. The same link works for everyone.

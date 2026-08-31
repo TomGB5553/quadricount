@@ -63,7 +63,7 @@ export default function TransferForm({
 
   if (otherGroups.length === 0) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted">
         You need at least one other group to move a balance into.{" "}
         <Link href="/groups" className="underline">
           Create one
@@ -79,7 +79,7 @@ export default function TransferForm({
       <input type="hidden" name="tgtFrom" value={tgtFrom} />
       <input type="hidden" name="tgtTo" value={tgtTo} />
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted">
         This clears the debt in <strong>{sourceGroup.name}</strong> and re-opens
         it in the group you choose.
       </p>
@@ -94,7 +94,7 @@ export default function TransferForm({
               setSrcFrom(e.target.value);
               setTgtFromOverride(null);
             }}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           >
             {sourceMembers.map((m) => (
               <option key={m.id} value={m.id}>
@@ -113,7 +113,7 @@ export default function TransferForm({
               setSrcTo(e.target.value);
               setTgtToOverride(null);
             }}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           >
             {sourceMembers.map((m) => (
               <option key={m.id} value={m.id}>
@@ -132,7 +132,7 @@ export default function TransferForm({
           inputMode="decimal"
           defaultValue={prefill.amount ?? ""}
           placeholder="0.00"
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -146,7 +146,7 @@ export default function TransferForm({
             setTgtFromOverride(null);
             setTgtToOverride(null);
           }}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         >
           {otherGroups.map((g) => (
             <option key={g.id} value={g.id}>
@@ -157,8 +157,8 @@ export default function TransferForm({
       </label>
 
       {target && (
-        <div className="flex flex-col gap-2 rounded border border-gray-200 p-3 text-sm">
-          <p className="text-xs text-gray-500">
+        <div className="flex flex-col gap-2 rounded-xl border border-line p-3 text-sm">
+          <p className="text-xs text-muted">
             Match the two people in {target.name}
           </p>
           <label className="flex items-center justify-between gap-2">
@@ -166,7 +166,7 @@ export default function TransferForm({
             <select
               value={tgtFrom}
               onChange={(e) => setTgtFromOverride(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1"
+              className="rounded-xl border border-line px-2 py-1"
             >
               {target.members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -180,7 +180,7 @@ export default function TransferForm({
             <select
               value={tgtTo}
               onChange={(e) => setTgtToOverride(e.target.value)}
-              className="rounded border border-gray-300 px-2 py-1"
+              className="rounded-xl border border-line px-2 py-1"
             >
               {target.members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -198,7 +198,7 @@ export default function TransferForm({
           name="note"
           maxLength={200}
           placeholder="Leftover from the Lisbon trip"
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -208,7 +208,7 @@ export default function TransferForm({
         </SubmitButton>
         <Link
           href={`/groups/${sourceGroup.id}`}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-xl border border-line px-3 py-2 text-sm"
         >
           Cancel
         </Link>

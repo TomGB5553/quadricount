@@ -54,7 +54,7 @@ export default function LoginPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
         <h1 className="text-2xl font-bold">Check your email</h1>
-        <p className="max-w-sm text-sm text-gray-500">
+        <p className="max-w-sm text-sm text-muted">
           We sent a confirmation link to <strong>{email}</strong>. Click it, then
           come back and sign in.
         </p>
@@ -78,7 +78,7 @@ export default function LoginPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="rounded border border-gray-300 px-3 py-2"
+              className="rounded-xl border border-line px-3 py-2"
               placeholder="Sam"
             />
           </label>
@@ -91,7 +91,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
             placeholder="you@example.com"
           />
         </label>
@@ -104,17 +104,17 @@ export default function LoginPage() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
             placeholder="at least 6 characters"
           />
         </label>
 
-        {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+        {errorMsg && <p className="text-sm text-neg">{errorMsg}</p>}
 
         <button
           type="submit"
           disabled={busy}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
+          className="rounded-xl bg-primary px-3 py-2 text-primary-ink disabled:opacity-50"
         >
           {busy ? "…" : isSignup ? "Create account" : "Sign in"}
         </button>
@@ -126,7 +126,7 @@ export default function LoginPage() {
           setMode(isSignup ? "signin" : "signup");
           setErrorMsg("");
         }}
-        className="text-sm text-gray-500 underline"
+        className="text-sm text-muted underline"
       >
         {isSignup
           ? "Already have an account? Sign in"

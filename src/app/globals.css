@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #fbf8f4;
+  --surface: #ffffff;
+  --surface-2: #f6f1ea;
+  --ink: #2c2622;
+  --muted: #8b817a;
+  --line: #ece3d9;
+  --primary: #e0674a;
+  --primary-hover: #cf5940;
+  --primary-ink: #ffffff;
+  --pos: #2e9a6b;
+  --pos-bg: #e7f4ee;
+  --neg: #d64f48;
+  --neg-bg: #fceceb;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #1a1612;
+    --surface: #241f1a;
+    --surface-2: #2d2721;
+    --ink: #ece5de;
+    --muted: #a89e94;
+    --line: #362f28;
+    --primary: #ec7458;
+    --primary-hover: #f0866d;
+    --primary-ink: #1a1612;
+    --pos: #4bba8b;
+    --pos-bg: #1d3329;
+    --neg: #e6746d;
+    --neg-bg: #3a2522;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-ink: var(--primary-ink);
+  --color-pos: var(--pos);
+  --color-pos-bg: var(--pos-bg);
+  --color-neg: var(--neg);
+  --color-neg-bg: var(--neg-bg);
+  --font-sans: var(--font-app);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-app), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* native form controls follow the theme */
+select,
+input,
+textarea,
+button {
+  font: inherit;
 }

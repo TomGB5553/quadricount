@@ -25,21 +25,21 @@ export default async function GroupsPage() {
             <li key={g.id}>
               <Link
                 href={`/groups/${g.id}`}
-                className="block rounded border border-gray-200 px-4 py-3 hover:bg-gray-50"
+                className="block rounded-xl border border-line px-4 py-3 hover:bg-surface-2"
               >
                 <span className="font-medium">{g.name}</span>
-                <span className="ml-2 text-sm text-gray-500">
+                <span className="ml-2 text-sm text-muted">
                   {g.default_currency}
                 </span>
               </Link>
             </li>
           ))
         ) : (
-          <li className="text-sm text-gray-500">No groups yet.</li>
+          <li className="text-sm text-muted">No groups yet.</li>
         )}
       </ul>
 
-      <form action={createGroup} className="flex flex-col gap-3 border-t pt-6">
+      <form action={createGroup} className="flex flex-col gap-3 border-t border-line pt-6">
         <h2 className="font-semibold">New group</h2>
         <label className="flex flex-col gap-1 text-sm">
           Name
@@ -48,7 +48,7 @@ export default async function GroupsPage() {
             required
             maxLength={100}
             placeholder="Trip to Lisbon"
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
         <label className="flex flex-col gap-1 text-sm">
@@ -56,7 +56,7 @@ export default async function GroupsPage() {
           <select
             name="currency"
             defaultValue="EUR"
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>

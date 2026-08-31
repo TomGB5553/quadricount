@@ -45,7 +45,7 @@ export default async function EditGroupPage({
       <div>
         <Link
           href={`/groups/${id}`}
-          className="text-sm text-gray-500 hover:underline"
+          className="text-sm text-muted hover:underline"
         >
           ← {group.name}
         </Link>
@@ -62,7 +62,7 @@ export default async function EditGroupPage({
             required
             maxLength={100}
             defaultValue={group.name}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
 
@@ -72,7 +72,7 @@ export default async function EditGroupPage({
             name="description"
             maxLength={200}
             defaultValue={group.description ?? ""}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
 
@@ -88,9 +88,9 @@ export default async function EditGroupPage({
               <input
                 disabled
                 value={group.default_currency}
-                className="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-gray-500"
+                className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-muted"
               />
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted">
                 Locked — the group already has expenses or payments.
               </span>
             </>
@@ -98,7 +98,7 @@ export default async function EditGroupPage({
             <select
               name="currency"
               defaultValue={group.default_currency}
-              className="rounded border border-gray-300 px-3 py-2"
+              className="rounded-xl border border-line px-3 py-2"
             >
               {CURRENCIES.map((c) => (
                 <option key={c} value={c}>
@@ -113,7 +113,7 @@ export default async function EditGroupPage({
           <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
           <Link
             href={`/groups/${id}`}
-            className="rounded border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-xl border border-line px-3 py-2 text-sm"
           >
             Cancel
           </Link>

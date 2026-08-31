@@ -10,20 +10,20 @@ export default async function Header() {
   if (!user) return null;
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+    <header className="flex items-center justify-between border-b border-line px-4 py-3">
       <nav className="flex items-center gap-4 text-sm">
         <Link href="/groups" className="font-semibold">
           Expense Splitter
         </Link>
-        <Link href="/groups" className="text-gray-500 hover:text-black">
+        <Link href="/groups" className="text-muted hover:text-ink">
           Groups
         </Link>
-        <Link href="/balances" className="text-gray-500 hover:text-black">
+        <Link href="/balances" className="text-muted hover:text-ink">
           Overall
         </Link>
       </nav>
       <form action="/auth/signout" method="post">
-        <button className="text-sm text-gray-500 hover:text-black">
+        <button className="text-sm text-muted hover:text-ink">
           Sign out
         </button>
       </form>

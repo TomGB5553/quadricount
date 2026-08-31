@@ -244,7 +244,7 @@ export default function NewExpenseForm({
           maxLength={200}
           defaultValue={initial?.description ?? ""}
           placeholder="Dinner"
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -258,7 +258,7 @@ export default function NewExpenseForm({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
         <label className="flex w-28 flex-col gap-1 text-sm">
@@ -267,7 +267,7 @@ export default function NewExpenseForm({
             name="currency"
             value={currencyCode}
             onChange={(e) => setCurrencyCode(e.target.value)}
-            className="rounded border border-gray-300 px-2 py-2"
+            className="rounded-xl border border-line px-2 py-2"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -284,7 +284,7 @@ export default function NewExpenseForm({
           type="date"
           name="spentAt"
           defaultValue={initial?.spentAt ?? today}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -297,7 +297,7 @@ export default function NewExpenseForm({
             onClick={() =>
               setPayMode((m) => (m === "single" ? "split" : "single"))
             }
-            className="text-xs text-gray-500 underline"
+            className="text-xs text-muted underline"
           >
             {payMode === "single" ? "Multiple people paid" : "One person paid"}
           </button>
@@ -307,7 +307,7 @@ export default function NewExpenseForm({
           <select
             value={singlePayer}
             onChange={(e) => setSinglePayer(e.target.value)}
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           >
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -327,12 +327,12 @@ export default function NewExpenseForm({
                   onChange={(e) =>
                     setPayerAmounts((p) => ({ ...p, [m.id]: e.target.value }))
                   }
-                  className="w-24 rounded border border-gray-300 px-2 py-1 text-right"
+                  className="w-24 rounded-xl border border-line px-2 py-1 text-right"
                 />
               </div>
             ))}
             <p
-              className={`text-xs ${payersBalanced ? "text-gray-500" : "text-red-600"}`}
+              className={`text-xs ${payersBalanced ? "text-muted" : "text-neg"}`}
             >
               Paid {(paidMinor / 100).toFixed(2)} of{" "}
               {(totalMinor / 100).toFixed(2)}
@@ -351,17 +351,17 @@ export default function NewExpenseForm({
           return (
             <div
               key={p.key}
-              className="flex flex-col gap-2 rounded border border-gray-200 p-3"
+              className="flex flex-col gap-2 rounded-xl border border-line p-3"
             >
               {multiPart && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-500">
+                  <span className="text-xs font-medium text-muted">
                     Part {idx + 1}
                   </span>
                   <button
                     type="button"
                     onClick={() => removePart(p.key)}
-                    className="text-xs text-gray-400 hover:text-red-600"
+                    className="text-xs text-muted hover:text-neg"
                   >
                     Remove
                   </button>
@@ -374,10 +374,10 @@ export default function NewExpenseForm({
                     key={m}
                     type="button"
                     onClick={() => patchPart(p.key, { method: m })}
-                    className={`rounded border px-2 py-1 text-xs capitalize ${
+                    className={`rounded-xl border px-2 py-1 text-xs capitalize ${
                       p.method === m
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300"
+                        ? "border-primary bg-primary text-primary-ink"
+                        : "border-line"
                     }`}
                   >
                     {methodLabel(m)}
@@ -406,12 +406,12 @@ export default function NewExpenseForm({
                         onChange={(e) =>
                           patchPart(p.key, { amount: e.target.value })
                         }
-                        className="w-20 rounded border border-gray-300 px-2 py-1 text-right"
+                        className="w-20 rounded-xl border border-line px-2 py-1 text-right"
                       />
                     </label>
                   )}
                   {p.remainder && (
-                    <span className="text-gray-500">
+                    <span className="text-muted">
                       covers {fmt(Math.max(coverage, 0))}
                     </span>
                   )}
@@ -449,7 +449,7 @@ export default function NewExpenseForm({
                               values: { ...p.values, [m.id]: e.target.value },
                             })
                           }
-                          className="w-24 rounded border border-gray-300 px-2 py-1 text-right"
+                          className="w-24 rounded-xl border border-line px-2 py-1 text-right"
                         />
                       </>
                     )}
@@ -457,7 +457,7 @@ export default function NewExpenseForm({
                 ))}
               </div>
 
-              <p className={`text-xs ${valid ? "text-gray-500" : "text-red-600"}`}>
+              <p className={`text-xs ${valid ? "text-muted" : "text-neg"}`}>
                 {hint}
               </p>
             </div>
@@ -468,13 +468,13 @@ export default function NewExpenseForm({
           <button
             type="button"
             onClick={addPart}
-            className="rounded border border-gray-300 px-2 py-1"
+            className="rounded-xl border border-line px-2 py-1"
           >
             + Add a part
           </button>
           {multiPart && (
             <span
-              className={coverageValid ? "text-gray-500" : "text-red-600"}
+              className={coverageValid ? "text-muted" : "text-neg"}
             >
               {remainderCount === 0
                 ? `Parts cover ${fmt(fixedMinor)} of ${fmt(totalMinor)}`
@@ -499,7 +499,7 @@ export default function NewExpenseForm({
               ? `/groups/${groupId}/expenses/${expenseId}`
               : `/groups/${groupId}`
           }
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-xl border border-line px-3 py-2 text-sm"
         >
           Cancel
         </Link>

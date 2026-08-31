@@ -121,14 +121,14 @@ export default async function BalancesPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 p-6">
       <div>
-        <Link href="/groups" className="text-sm text-gray-500 hover:underline">
+        <Link href="/groups" className="text-sm text-muted hover:underline">
           ← Your groups
         </Link>
         <h1 className="mt-1 text-2xl font-bold">Overall balance</h1>
       </div>
 
       {perGroup.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           You&apos;re not in any groups yet.
         </p>
       ) : (
@@ -136,10 +136,10 @@ export default async function BalancesPage() {
           <p
             className={`text-lg font-semibold ${
               overall > 0
-                ? "text-green-700"
+                ? "text-pos"
                 : overall < 0
-                  ? "text-red-700"
-                  : "text-gray-500"
+                  ? "text-neg"
+                  : "text-muted"
             }`}
           >
             {overall > 0
@@ -156,16 +156,16 @@ export default async function BalancesPage() {
                 <li key={row.id}>
                   <Link
                     href={`/groups/${row.id}`}
-                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50"
+                    className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm hover:bg-surface-2"
                   >
                     <span>{row.name}</span>
                     <span
                       className={
                         row.myNet > 0
-                          ? "text-green-700"
+                          ? "text-pos"
                           : row.myNet < 0
-                            ? "text-red-700"
-                            : "text-gray-400"
+                            ? "text-neg"
+                            : "text-muted"
                       }
                     >
                       {row.myNet > 0
@@ -190,12 +190,12 @@ export default async function BalancesPage() {
                 {people.map((p, i) => (
                   <li
                     key={i}
-                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2"
+                    className="flex items-center justify-between rounded-xl border border-line px-3 py-2"
                   >
                     <span>{p.name}</span>
                     <span
                       className={
-                        p.net > 0 ? "text-green-700" : "text-red-700"
+                        p.net > 0 ? "text-pos" : "text-neg"
                       }
                     >
                       {p.net > 0
@@ -205,7 +205,7 @@ export default async function BalancesPage() {
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted">
                 Combined across groups where the person has an account. A
                 suggestion for settling up, not a per-group breakdown.
               </p>
@@ -213,7 +213,7 @@ export default async function BalancesPage() {
           )}
 
           {converted && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted">
               Group balances converted to {pc} at today&apos;s rate.
             </p>
           )}

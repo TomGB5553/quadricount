@@ -47,7 +47,7 @@ export default async function EditExpensePage({
       <div>
         <Link
           href={`/groups/${id}/expenses/${expenseId}`}
-          className="text-sm text-gray-500 hover:underline"
+          className="text-sm text-muted hover:underline"
         >
           ← {expense.description}
         </Link>

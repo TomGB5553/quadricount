@@ -33,7 +33,7 @@ export default function SettleForm({
           name="fromMember"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         >
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -49,7 +49,7 @@ export default function SettleForm({
           name="toMember"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         >
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -60,7 +60,7 @@ export default function SettleForm({
       </label>
 
       {from === to && (
-        <p className="text-xs text-red-600">Pick two different people.</p>
+        <p className="text-xs text-neg">Pick two different people.</p>
       )}
 
       <div className="flex gap-3">
@@ -72,7 +72,7 @@ export default function SettleForm({
             inputMode="decimal"
             defaultValue={prefill.amount ?? ""}
             placeholder="0.00"
-            className="rounded border border-gray-300 px-3 py-2"
+            className="rounded-xl border border-line px-3 py-2"
           />
         </label>
         <label className="flex w-28 flex-col gap-1 text-sm">
@@ -80,7 +80,7 @@ export default function SettleForm({
           <select
             name="currency"
             defaultValue={currency}
-            className="rounded border border-gray-300 px-2 py-2"
+            className="rounded-xl border border-line px-2 py-2"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -97,7 +97,7 @@ export default function SettleForm({
           type="date"
           name="settledAt"
           defaultValue={today}
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -107,7 +107,7 @@ export default function SettleForm({
           name="note"
           maxLength={200}
           placeholder="Bank transfer"
-          className="rounded border border-gray-300 px-3 py-2"
+          className="rounded-xl border border-line px-3 py-2"
         />
       </label>
 
@@ -117,7 +117,7 @@ export default function SettleForm({
         </SubmitButton>
         <Link
           href={`/groups/${groupId}`}
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-xl border border-line px-3 py-2 text-sm"
         >
           Cancel
         </Link>

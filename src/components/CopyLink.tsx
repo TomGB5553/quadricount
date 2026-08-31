@@ -12,7 +12,7 @@ export default function CopyLink({ url }: { url: string }) {
           readOnly
           value={url}
           onFocus={(e) => e.target.select()}
-          className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+          className="flex-1 rounded-xl border border-line px-3 py-2 text-sm"
         />
         <button
           type="button"
@@ -25,7 +25,7 @@ export default function CopyLink({ url }: { url: string }) {
               // clipboard blocked — the field is selectable as a fallback
             }
           }}
-          className="rounded bg-black px-3 py-2 text-sm text-white"
+          className="rounded-xl bg-primary px-3 py-2 text-sm text-primary-ink"
         >
           {copied ? "Copied" : "Copy"}
         </button>

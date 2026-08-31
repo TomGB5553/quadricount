@@ -13,29 +13,29 @@ export default async function Home() {
 
       {user ? (
         <>
-          <p className="text-gray-600">
+          <p className="text-muted">
             Signed in as <strong>{user.email}</strong>
           </p>
           <Link
             href="/groups"
-            className="rounded bg-black px-4 py-2 text-sm text-white"
+            className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
           >
             Go to your groups
           </Link>
         </>
       ) : (
         <>
-          <p className="text-gray-600">Split expenses with friends and groups.</p>
+          <p className="text-muted">Split expenses with friends and groups.</p>
           <div className="flex gap-3">
             <Link
               href="/login?mode=signup"
-              className="rounded bg-black px-4 py-2 text-sm text-white"
+              className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
             >
               Create an account
             </Link>
             <Link
               href="/login"
-              className="rounded border border-gray-300 px-4 py-2 text-sm"
+              className="rounded-xl border border-line px-4 py-2 text-sm"
             >
               Sign in
             </Link>

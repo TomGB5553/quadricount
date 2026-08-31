@@ -37,7 +37,7 @@ export default async function InvitePage({
     return (
       <Shell>
         <h1 className="text-xl font-bold">Invalid invite link</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           This link is not valid. Ask whoever invited you for a new one.
         </p>
       </Shell>
@@ -49,7 +49,7 @@ export default async function InvitePage({
     return (
       <Shell>
         <h1 className="text-xl font-bold">This invite has been used</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           The spot for {preview.member_name} in {preview.group_name} is already
           taken.
         </p>
@@ -64,7 +64,7 @@ export default async function InvitePage({
     return (
       <Shell>
         <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           {preview.group_invite
             ? "Split expenses together."
             : `You've been invited to take the spot of ${preview.member_name}.`}{" "}
@@ -72,7 +72,7 @@ export default async function InvitePage({
         </p>
         <Link
           href={`/login?mode=signup&next=${encodeURIComponent(`/invite/${token}`)}`}
-          className="rounded bg-black px-4 py-2 text-sm text-white"
+          className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
         >
           Continue
         </Link>
@@ -85,7 +85,7 @@ export default async function InvitePage({
     return (
       <Shell>
         <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           You&apos;ll take over the spot of{" "}
           <strong>{preview.member_name}</strong> — their share of past expenses
           becomes yours.
