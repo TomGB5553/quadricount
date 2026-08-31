@@ -117,7 +117,17 @@ export default async function GroupPage({
         <Link href="/groups" className="text-sm text-gray-500 hover:underline">
           ← All groups
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{group.name}</h1>
+        <div className="mt-1 flex items-center gap-3">
+          <h1 className="text-2xl font-bold">{group.name}</h1>
+          {isOwner && (
+            <Link
+              href={`/groups/${group.id}/edit`}
+              className="text-sm text-gray-500 underline hover:text-black"
+            >
+              Edit
+            </Link>
+          )}
+        </div>
         {group.description && (
           <p className="text-gray-500">{group.description}</p>
         )}

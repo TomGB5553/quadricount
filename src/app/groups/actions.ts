@@ -175,6 +175,28 @@ async function lockFxRate(
   }
 }
 
+export async function updateGroup(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim() || null;
+  const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
+
+  if (!groupId || !name) throw new Error("The group needs a name");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_group", {
+    p_group_id: groupId,
+    p_name: name,
+    p_description: description,
+    p_default_currency: currency || null,
+  });
+  if (error) throw new Error(error.message);
+
+  redirect(`/groups/${groupId}`);
+}
+
 export async function transferBalance(formData: FormData) {
   await requireUser();
 
