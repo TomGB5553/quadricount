@@ -90,11 +90,16 @@ export default async function GroupPage({
     settlements ?? [],
   );
   const hasConversions = currencies.some((c) => c !== gc);
+  const byNetDesc = (a: { id: string }, b: { id: string }) =>
+    (balances.get(b.id) ?? 0) - (balances.get(a.id) ?? 0);
   const activeMembers = (members ?? []).filter((m) => m.status === "active");
   const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
+  // owed the most first, owing the most last; settled removed members at the end
   const orderedForBalances = [
-    ...activeMembers,
-    ...inactiveMembers.filter((m) => (balances.get(m.id) ?? 0) !== 0),
+    ...[...activeMembers].sort(byNetDesc),
+    ...inactiveMembers
+      .filter((m) => (balances.get(m.id) ?? 0) !== 0)
+      .sort(byNetDesc),
     ...inactiveMembers.filter((m) => (balances.get(m.id) ?? 0) === 0),
   ];
   const transfers = settleUp(balances);
@@ -316,7 +321,9 @@ export default async function GroupPage({
 
           {transfers.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <h3 className="text-sm font-semibold text-muted">Who pays whom</h3>
+              <h3 className="text-sm font-semibold text-muted">
+                To settle up
+              </h3>
               {transfers.map((t, idx) => (
                 <Link
                   key={idx}
@@ -326,11 +333,14 @@ export default async function GroupPage({
                   className={`${row} hover:bg-surface-2`}
                 >
                   <span>
-                    {nameOf(t.from)} → {nameOf(t.to)}
+                    <span className="font-semibold">{nameOf(t.from)}</span> owes{" "}
+                    <span className="font-semibold">
+                      {formatMoney(t.amount, gc)}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-semibold">{nameOf(t.to)}</span>
                   </span>
-                  <span className="font-semibold">
-                    {formatMoney(t.amount, gc)}
-                  </span>
+                  <span className="shrink-0 text-xs text-muted">record →</span>
                 </Link>
               ))}
               <Link
@@ -375,14 +385,12 @@ export default async function GroupPage({
       {/* ---------- MEMBERS ---------- */}
       {tab === "members" && (
         <section className="flex flex-col gap-3">
-          {isOwner && (
-            <Link
-              href={`/groups/${group.id}/invite`}
-              className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
-            >
-              + Invite someone
-            </Link>
-          )}
+          <Link
+            href={`/groups/${group.id}/invite`}
+            className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
+          >
+            + Invite someone
+          </Link>
           <div className="flex flex-col gap-1.5">
             {members?.map((m) => (
               <div
@@ -400,7 +408,7 @@ export default async function GroupPage({
                   {m.status === "inactive" && (
                     <span className="text-muted">inactive</span>
                   )}
-                  {isOwner && !m.user_id && m.status === "active" && (
+                  {!m.user_id && m.status === "active" && (
                     <Link
                       href={`/groups/${group.id}/members/${m.id}/invite`}
                       className="font-semibold text-primary hover:underline"
@@ -430,23 +438,25 @@ export default async function GroupPage({
             ))}
           </div>
 
-          {isOwner && (
-            <form
-              action={addMember}
-              className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
-            >
-              <h3 className="text-sm font-semibold">Add a placeholder member</h3>
-              <input type="hidden" name="groupId" value={group.id} />
-              <input
-                name="name"
-                required
-                maxLength={100}
-                placeholder="Name"
-                className="rounded-xl border border-line bg-surface px-3 py-2"
-              />
-              <SubmitButton pendingText="Adding…">Add member</SubmitButton>
-            </form>
-          )}
+          <form
+            action={addMember}
+            className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
+          >
+            <h3 className="text-sm font-semibold">Add a placeholder member</h3>
+            <p className="text-xs text-muted">
+              For someone not on the app yet — you can invite them to claim it
+              later.
+            </p>
+            <input type="hidden" name="groupId" value={group.id} />
+            <input
+              name="name"
+              required
+              maxLength={100}
+              placeholder="Name"
+              className="rounded-xl border border-line bg-surface px-3 py-2.5"
+            />
+            <SubmitButton pendingText="Adding…">Add member</SubmitButton>
+          </form>
         </section>
       )}
     </main>

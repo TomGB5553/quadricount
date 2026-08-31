@@ -113,6 +113,7 @@ export default async function BalancesPage() {
       counterparties.set(om.user_id, entry);
     }
   }
+  perGroup.sort((a, b) => Math.abs(b.myNet) - Math.abs(a.myNet));
 
   const people = [...counterparties.values()]
     .filter((p) => p.net !== 0)
