@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import SubmitButton from "@/components/SubmitButton";
 import { transferBalance } from "../../../actions";
 
 type Member = { id: string; display_name: string; user_id: string | null };
@@ -202,13 +203,9 @@ export default function TransferForm({
       </label>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={!valid}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
+        <SubmitButton disabled={!valid} pendingText="Moving…">
           Move balance
-        </button>
+        </SubmitButton>
         <Link
           href={`/groups/${sourceGroup.id}`}
           className="rounded border border-gray-300 px-3 py-2 text-sm"

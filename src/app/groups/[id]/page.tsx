@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
+import SubmitButton from "@/components/SubmitButton";
 import { addMember, setMemberStatus } from "../actions";
 
 export default async function GroupPage({
@@ -386,9 +387,12 @@ export default async function GroupPage({
                     name="status"
                     value={m.status === "active" ? "inactive" : "active"}
                   />
-                  <button className="text-xs text-gray-400 hover:text-black">
+                  <SubmitButton
+                    className="text-xs text-gray-400 hover:text-black disabled:opacity-50"
+                    pendingText="…"
+                  >
                     {m.status === "active" ? "Remove" : "Re-activate"}
-                  </button>
+                  </SubmitButton>
                 </form>
               )}
             </li>
@@ -410,9 +414,7 @@ export default async function GroupPage({
               className="rounded border border-gray-300 px-3 py-2"
             />
           </label>
-          <button className="rounded bg-black px-3 py-2 text-white">
-            Add member
-          </button>
+          <SubmitButton pendingText="Adding…">Add member</SubmitButton>
         </form>
       )}
     </main>

@@ -1,0 +1,37 @@
+// Currencies we can convert between (the set the Frankfurter / ECB feed covers).
+// Anything outside this list can't be auto-converted, so we don't offer it.
+export const CURRENCIES = [
+  "EUR",
+  "USD",
+  "GBP",
+  "CHF",
+  "JPY",
+  "AUD",
+  "CAD",
+  "CNY",
+  "CZK",
+  "DKK",
+  "HKD",
+  "HUF",
+  "ILS",
+  "INR",
+  "ISK",
+  "KRW",
+  "MXN",
+  "NOK",
+  "NZD",
+  "PLN",
+  "RON",
+  "SEK",
+  "SGD",
+  "THB",
+  "TRY",
+  "ZAR",
+  "BGN",
+  "BRL",
+  "IDR",
+  "MYR",
+  "PHP",
+] as const;
+
+export type Currency = (typeof CURRENCIES)[number];

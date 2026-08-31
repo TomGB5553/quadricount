@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CURRENCIES } from "@/lib/currencies";
+import SubmitButton from "@/components/SubmitButton";
 import { recordSettlement } from "../../../actions";
 
 type Member = { id: string; display_name: string };
@@ -73,14 +75,19 @@ export default function SettleForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
-        <label className="flex w-24 flex-col gap-1 text-sm">
+        <label className="flex w-28 flex-col gap-1 text-sm">
           Currency
-          <input
+          <select
             name="currency"
             defaultValue={currency}
-            maxLength={3}
-            className="rounded border border-gray-300 px-3 py-2 uppercase"
-          />
+            className="rounded border border-gray-300 px-2 py-2"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
@@ -105,13 +112,9 @@ export default function SettleForm({
       </label>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={from === to}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-        >
+        <SubmitButton disabled={from === to} pendingText="Recording…">
           Record payment
-        </button>
+        </SubmitButton>
         <Link
           href={`/groups/${groupId}`}
           className="rounded border border-gray-300 px-3 py-2 text-sm"

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { CURRENCIES } from "@/lib/currencies";
+import SubmitButton from "@/components/SubmitButton";
 import { createGroup } from "./actions";
 
 export default async function GroupsPage() {
@@ -51,16 +53,19 @@ export default async function GroupsPage() {
         </label>
         <label className="flex flex-col gap-1 text-sm">
           Default currency
-          <input
+          <select
             name="currency"
             defaultValue="EUR"
-            maxLength={3}
-            className="rounded border border-gray-300 px-3 py-2 uppercase"
-          />
+            className="rounded border border-gray-300 px-3 py-2"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </label>
-        <button className="rounded bg-black px-3 py-2 text-white">
-          Create group
-        </button>
+        <SubmitButton pendingText="Creating…">Create group</SubmitButton>
       </form>
     </main>
   );

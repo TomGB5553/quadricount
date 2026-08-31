@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/money";
+import { CURRENCIES } from "@/lib/currencies";
+import SubmitButton from "@/components/SubmitButton";
 import { createExpense, updateExpense } from "../../../actions";
 
 type Member = { id: string; display_name: string };
@@ -47,12 +49,14 @@ export default function NewExpenseForm({
   members,
   expenseId,
   initial,
+  defaultPayer,
 }: {
   groupId: string;
   currency: string;
   members: Member[];
   expenseId?: string;
   initial?: ExpenseInitial;
+  defaultPayer?: string;
 }) {
   const isEdit = !!expenseId;
   const today = new Date().toISOString().slice(0, 10);
@@ -67,7 +71,7 @@ export default function NewExpenseForm({
     initial?.payMode ?? "single",
   );
   const [singlePayer, setSinglePayer] = useState(
-    initial?.singlePayer ?? members[0]?.id ?? "",
+    initial?.singlePayer ?? defaultPayer ?? members[0]?.id ?? "",
   );
   const [payerAmounts, setPayerAmounts] = useState<Record<string, string>>(
     initial?.payerAmounts ?? {},
@@ -257,15 +261,20 @@ export default function NewExpenseForm({
             className="rounded border border-gray-300 px-3 py-2"
           />
         </label>
-        <label className="flex w-24 flex-col gap-1 text-sm">
+        <label className="flex w-28 flex-col gap-1 text-sm">
           Currency
-          <input
+          <select
             name="currency"
             value={currencyCode}
-            onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-            maxLength={3}
-            className="rounded border border-gray-300 px-3 py-2 uppercase"
-          />
+            onChange={(e) => setCurrencyCode(e.target.value)}
+            className="rounded border border-gray-300 px-2 py-2"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
 
@@ -478,13 +487,12 @@ export default function NewExpenseForm({
       </fieldset>
 
       <div className="flex gap-3">
-        <button
-          type="submit"
+        <SubmitButton
           disabled={!canSubmit}
-          className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
+          pendingText={isEdit ? "Saving…" : "Adding…"}
         >
           {isEdit ? "Save changes" : "Add expense"}
-        </button>
+        </SubmitButton>
         <Link
           href={
             isEdit

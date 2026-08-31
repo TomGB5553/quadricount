@@ -10,7 +10,7 @@ export default async function NewExpensePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
 
   const { data: group } = await supabase
@@ -23,10 +23,12 @@ export default async function NewExpensePage({
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("id, display_name")
+    .select("id, display_name, user_id")
     .eq("group_id", id)
     .eq("status", "active")
     .order("joined_at", { ascending: true });
+
+  const myMemberId = members?.find((m) => m.user_id === user.id)?.id;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-6">
@@ -44,6 +46,7 @@ export default async function NewExpensePage({
         groupId={group.id}
         currency={group.default_currency}
         members={members ?? []}
+        defaultPayer={myMemberId}
       />
     </main>
   );

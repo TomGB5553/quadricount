@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
+import SubmitButton from "@/components/SubmitButton";
 import { deleteExpense } from "../../../actions";
 
 const methodLabel: Record<string, string> = {
@@ -151,9 +152,12 @@ export default async function ExpenseDetailPage({
           <form action={deleteExpense}>
             <input type="hidden" name="groupId" value={id} />
             <input type="hidden" name="expenseId" value={expenseId} />
-            <button className="rounded border border-gray-300 px-3 py-2 text-sm text-red-600">
+            <SubmitButton
+              className="rounded border border-gray-300 px-3 py-2 text-sm text-red-600 disabled:opacity-50"
+              pendingText="Deleting…"
+            >
               Delete
-            </button>
+            </SubmitButton>
           </form>
         </div>
       )}
