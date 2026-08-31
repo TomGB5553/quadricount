@@ -13,8 +13,7 @@ type Method = "equal" | "exact" | "percentage" | "shares";
 type Part = {
   key: string;
   method: Method;
-  remainder: boolean; // covers "the rest" of the total
-  amount: string; // used when !remainder
+  amount: string; // how much of the total this part covers (multi-part only)
   included: Record<string, boolean>; // equal
   values: Record<string, string>; // exact / percentage / shares
 };
@@ -93,11 +92,10 @@ export default function NewExpenseForm({
   const payersBalanced = payMode === "single" || paidMinor === totalMinor;
 
   // ---- split parts ----
-  function newPart(remainder: boolean): Part {
+  function newPart(): Part {
     return {
       key: crypto.randomUUID(),
       method: "equal",
-      remainder,
       amount: "",
       included: Object.fromEntries(members.map((m) => [m.id, true])),
       values: {},
@@ -106,7 +104,7 @@ export default function NewExpenseForm({
   const [parts, setParts] = useState<Part[]>(
     initial?.parts?.length
       ? initial.parts.map((p) => ({ ...p, key: crypto.randomUUID() }))
-      : [newPart(true)],
+      : [newPart()],
   );
   const multiPart = parts.length > 1;
 
@@ -116,37 +114,20 @@ export default function NewExpenseForm({
     );
   }
   function addPart() {
-    setParts((prev) => [
-      ...prev,
-      newPart(!prev.some((p) => p.remainder)),
-    ]);
+    setParts((prev) => [...prev, newPart()]);
   }
   function removePart(key: string) {
-    setParts((prev) => {
-      const next = prev.filter((p) => p.key !== key);
-      // a lone part always covers the whole expense
-      if (next.length === 1) next[0] = { ...next[0], remainder: true };
-      else if (!next.some((p) => p.remainder))
-        next[0] = { ...next[0], remainder: true };
-      return next;
-    });
-  }
-  function setRemainder(key: string) {
-    setParts((prev) =>
-      prev.map((p) => ({ ...p, remainder: p.key === key })),
-    );
+    setParts((prev) => prev.filter((p) => p.key !== key));
   }
 
-  // fixed coverage = sum of the non-remainder parts' amounts
-  const fixedMinor = parts
-    .filter((p) => !p.remainder)
-    .reduce((s, p) => s + toMinor(p.amount), 0);
-  const remainderCount = parts.filter((p) => p.remainder).length;
-  const remainderMinor = totalMinor - fixedMinor;
+  // when there are 2+ parts, each part covers an explicit amount
+  const assignedMinor = multiPart
+    ? parts.reduce((s, p) => s + toMinor(p.amount), 0)
+    : totalMinor;
+  const unassignedMinor = totalMinor - assignedMinor;
 
   function coverageOf(p: Part): number {
-    if (parts.length === 1 || p.remainder) return remainderMinor;
-    return toMinor(p.amount);
+    return multiPart ? toMinor(p.amount) : totalMinor;
   }
 
   // validity + hint for one part, given its coverage
@@ -205,22 +186,13 @@ export default function NewExpenseForm({
 
   const components = parts.map((p) => ({
     method: p.method,
-    basis: parts.length === 1 || p.remainder ? "remainder" : "fixed_amount",
-    ...(parts.length === 1 || p.remainder
-      ? {}
-      : { amount: toMinor(p.amount) }),
+    basis: multiPart ? "fixed_amount" : "remainder",
+    ...(multiPart ? { amount: toMinor(p.amount) } : {}),
     entries: entriesOf(p),
   }));
 
   const partsValid = parts.every((p) => evalPart(p, coverageOf(p)).valid);
-  const fixedAmountsSet =
-    parts.length === 1 ||
-    parts.every((p) => p.remainder || toMinor(p.amount) > 0);
-  const coverageValid =
-    fixedAmountsSet &&
-    remainderCount <= 1 &&
-    fixedMinor <= totalMinor &&
-    (remainderCount === 1 ? remainderMinor > 0 : fixedMinor === totalMinor);
+  const coverageValid = !multiPart || assignedMinor === totalMinor;
 
   const canSubmit =
     totalMinor > 0 && payersBalanced && partsValid && coverageValid;
@@ -393,34 +365,32 @@ export default function NewExpenseForm({
               </div>
 
               {multiPart && (
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <label className="flex items-center gap-1">
-                    <input
-                      type="radio"
-                      name={`remainder-${p.key}`}
-                      checked={p.remainder}
-                      onChange={() => setRemainder(p.key)}
-                    />
-                    covers the rest
-                  </label>
-                  {!p.remainder && (
-                    <label className="flex items-center gap-1">
-                      covers
-                      <input
-                        inputMode="decimal"
-                        placeholder="0.00"
-                        value={p.amount}
-                        onChange={(e) =>
-                          patchPart(p.key, { amount: e.target.value })
-                        }
-                        className="w-20 rounded-xl border border-line px-2 py-1 text-right"
-                      />
-                    </label>
-                  )}
-                  {p.remainder && (
-                    <span className="text-muted">
-                      covers {fmt(Math.max(coverage, 0))}
-                    </span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted">This part covers</span>
+                  <input
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={p.amount}
+                    onChange={(e) =>
+                      patchPart(p.key, { amount: e.target.value })
+                    }
+                    className="w-24 rounded-lg border border-line bg-surface px-2 py-1.5 text-right"
+                  />
+                  {unassignedMinor > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        patchPart(p.key, {
+                          amount: (
+                            (toMinor(p.amount) + unassignedMinor) /
+                            100
+                          ).toFixed(2),
+                        })
+                      }
+                      className="text-primary hover:underline"
+                    >
+                      + {fmt(unassignedMinor)} left
+                    </button>
                   )}
                 </div>
               )}
@@ -471,21 +441,21 @@ export default function NewExpenseForm({
           );
         })}
 
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
           <button
             type="button"
             onClick={addPart}
             className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
           >
-            + Split it differently
+            {multiPart ? "+ Add another part" : "+ Split part of it differently"}
           </button>
           {multiPart && (
             <span className={coverageValid ? "text-muted" : "text-neg"}>
-              {remainderCount === 0
-                ? `Parts cover ${fmt(fixedMinor)} of ${fmt(totalMinor)}`
-                : fixedMinor > totalMinor
-                  ? `Parts over the total by ${fmt(fixedMinor - totalMinor)}`
-                  : `Last part covers the remaining ${fmt(Math.max(remainderMinor, 0))}`}
+              {assignedMinor === totalMinor
+                ? `All ${fmt(totalMinor)} assigned`
+                : assignedMinor > totalMinor
+                  ? `${fmt(assignedMinor - totalMinor)} over the total`
+                  : `${fmt(unassignedMinor)} of ${fmt(totalMinor)} still to assign`}
             </span>
           )}
         </div>
