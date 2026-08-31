@@ -27,13 +27,20 @@ function initials(name: string): string {
 export default function Avatar({
   name,
   size = 28,
+  ring = false,
+  title,
 }: {
   name: string;
   size?: number;
+  ring?: boolean;
+  title?: string;
 }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
+      title={title ?? name}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white ${
+        ring ? "ring-2 ring-primary ring-offset-1 ring-offset-surface" : ""
+      }`}
       style={{
         width: size,
         height: size,
@@ -42,6 +49,37 @@ export default function Avatar({
       }}
     >
       {initials(name)}
+    </span>
+  );
+}
+
+// Overlapping row of avatars with a "+N" overflow chip.
+export function AvatarStack({
+  people,
+  max = 5,
+  size = 20,
+}: {
+  people: { name: string; ring?: boolean }[];
+  max?: number;
+  size?: number;
+}) {
+  const shown = people.slice(0, max);
+  const extra = people.length - shown.length;
+  return (
+    <span className="flex items-center">
+      {shown.map((p, i) => (
+        <span key={i} className={i > 0 ? "-ml-1.5" : ""}>
+          <Avatar name={p.name} size={size} ring={p.ring} />
+        </span>
+      ))}
+      {extra > 0 && (
+        <span
+          className="-ml-1.5 inline-flex items-center justify-center rounded-full bg-surface-2 font-semibold text-muted ring-1 ring-line"
+          style={{ width: size, height: size, fontSize: size * 0.38 }}
+        >
+          +{extra}
+        </span>
+      )}
     </span>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney } from "@/lib/money";
+import { AvatarStack } from "@/components/Avatar";
 
 type Member = { id: string; display_name: string };
 type Expense = {
@@ -86,17 +87,28 @@ export default function ExpensesPanel({
         {visible.length > 0 ? (
           visible.map((e) => {
             const impact = impactOf(e);
-            const paidBy = e.expense_payers
-              .map((p) => nameOf(p.member_id))
-              .join(", ");
+            const payerIds = new Set(e.expense_payers.map((p) => p.member_id));
+            // everyone involved: payers first, then other participants
+            const involvedIds = [
+              ...e.expense_payers.map((p) => p.member_id),
+              ...e.expense_allocations
+                .map((a) => a.member_id)
+                .filter((mid) => !payerIds.has(mid)),
+            ];
+            const people = involvedIds.map((mid) => ({
+              name: nameOf(mid),
+              ring: payerIds.has(mid),
+            }));
             return (
               <li key={e.id}>
                 <Link
                   href={`/groups/${groupId}/expenses/${e.id}`}
-                  className="flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm hover:bg-surface-2"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 text-sm hover:bg-surface-2"
                 >
-                  <div>
-                    <div className="font-semibold">{e.description}</div>
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">
+                      {e.description}
+                    </div>
                     <div className="text-xs text-muted">
                       {formatMoney(e.total_amount, e.currency)}
                       {e.currency !== groupCurrency &&
@@ -106,26 +118,33 @@ export default function ExpensesPanel({
                           ),
                           groupCurrency,
                         )})`}{" "}
-                      · {paidBy} · {e.spent_at}
+                      · {e.spent_at}
+                    </div>
+                    <div className="mt-1.5">
+                      <AvatarStack people={people} />
                     </div>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold ${
-                      impact === null || impact === 0
-                        ? "bg-surface-2 text-muted"
-                        : impact > 0
-                          ? "bg-pos-bg text-pos"
-                          : "bg-neg-bg text-neg"
-                    }`}
-                  >
-                    {impact === null
-                      ? "not involved"
-                      : impact > 0
+                  {impact === null ? (
+                    <span className="shrink-0 text-xs text-muted">
+                      not involved
+                    </span>
+                  ) : (
+                    <span
+                      className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold ${
+                        impact === 0
+                          ? "bg-surface-2 text-muted"
+                          : impact > 0
+                            ? "bg-pos-bg text-pos"
+                            : "bg-neg-bg text-neg"
+                      }`}
+                    >
+                      {impact > 0
                         ? `+${formatMoney(impact, e.currency)}`
                         : impact < 0
                           ? `−${formatMoney(-impact, e.currency)}`
                           : "settled"}
-                  </span>
+                    </span>
+                  )}
                 </Link>
               </li>
             );
