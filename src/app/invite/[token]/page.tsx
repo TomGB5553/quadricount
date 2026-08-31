@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import AcceptButton from "./AcceptButton";
+import JoinForm from "./JoinForm";
 
 type Preview = {
   group_name: string;
@@ -8,6 +9,7 @@ type Preview = {
   member_name: string | null;
   accepted: boolean;
   claimed: boolean;
+  claimable_members: { id: string; display_name: string }[];
 };
 
 export default async function InvitePage({
@@ -58,22 +60,15 @@ export default async function InvitePage({
     );
   }
 
-  const blurb = preview.group_invite ? (
-    <>Join {preview.group_name} to split expenses together.</>
-  ) : (
-    <>
-      You&apos;ll take over the spot of{" "}
-      <strong>{preview.member_name}</strong> — their share of past expenses
-      becomes yours.
-    </>
-  );
-
   if (!user) {
     return (
       <Shell>
         <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
         <p className="text-sm text-gray-500">
-          {blurb} Sign in or create an account to accept.
+          {preview.group_invite
+            ? "Split expenses together."
+            : `You've been invited to take the spot of ${preview.member_name}.`}{" "}
+          Sign in or create an account to continue.
         </p>
         <Link
           href={`/login?mode=signup&next=${encodeURIComponent(`/invite/${token}`)}`}
@@ -85,11 +80,36 @@ export default async function InvitePage({
     );
   }
 
+  // Placeholder-specific invite: single confirm.
+  if (!preview.group_invite) {
+    return (
+      <Shell>
+        <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
+        <p className="text-sm text-gray-500">
+          You&apos;ll take over the spot of{" "}
+          <strong>{preview.member_name}</strong> — their share of past expenses
+          becomes yours.
+        </p>
+        <AcceptButton token={token} />
+      </Shell>
+    );
+  }
+
+  // Group invite: choose to claim a slot or join as a new member.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
     <Shell>
       <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
-      <p className="text-sm text-gray-500">{blurb}</p>
-      <AcceptButton token={token} />
+      <JoinForm
+        token={token}
+        claimable={preview.claimable_members}
+        defaultName={profile?.display_name ?? ""}
+      />
     </Shell>
   );
 }

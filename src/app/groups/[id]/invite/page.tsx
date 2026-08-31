@@ -44,8 +44,9 @@ export default async function GroupInvitePage({
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
           <p className="text-xs text-gray-500">
-            Anyone who opens this link and signs in joins the group as a new
-            member. The same link works for everyone you send it to.
+            Anyone who opens this link and signs in can join. If they&apos;re
+            already listed as a member, they can claim that spot; otherwise they
+            join as someone new. The same link works for everyone.
           </p>
         </>
       )}
