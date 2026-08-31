@@ -11,9 +11,17 @@ export default async function Header() {
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-      <Link href="/groups" className="font-semibold">
-        Expense Splitter
-      </Link>
+      <nav className="flex items-center gap-4 text-sm">
+        <Link href="/groups" className="font-semibold">
+          Expense Splitter
+        </Link>
+        <Link href="/groups" className="text-gray-500 hover:text-black">
+          Groups
+        </Link>
+        <Link href="/balances" className="text-gray-500 hover:text-black">
+          Overall
+        </Link>
+      </nav>
       <form action="/auth/signout" method="post">
         <button className="text-sm text-gray-500 hover:text-black">
           Sign out
