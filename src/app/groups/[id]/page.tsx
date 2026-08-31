@@ -5,84 +5,58 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
 import SubmitButton from "@/components/SubmitButton";
+import Avatar from "@/components/Avatar";
+import GroupTabs from "./GroupTabs";
+import ExpensesPanel from "./ExpensesPanel";
 import { addMember, setMemberStatus } from "../actions";
-
-type Tab = "expenses" | "balances" | "members";
 
 export default async function GroupPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ member?: string; tab?: string }>;
 }) {
   const { id } = await params;
-  const sp = await searchParams;
-  const filterMember = sp.member;
-  const tab: Tab =
-    sp.tab === "balances" || sp.tab === "members" ? sp.tab : "expenses";
   const user = await requireUser();
   const supabase = await createClient();
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name, description, default_currency")
-    .eq("id", id)
-    .maybeSingle();
-  if (!group) notFound();
+  const [{ data: group }, { data: members }, { data: expenses }, { data: settlements }] =
+    await Promise.all([
+      supabase
+        .from("groups")
+        .select("id, name, description, default_currency")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("group_members")
+        .select("id, display_name, role, status, user_id")
+        .eq("group_id", id)
+        .order("joined_at", { ascending: true }),
+      supabase
+        .from("expenses")
+        .select(
+          "id, description, total_amount, currency, fx_rate_to_group_currency, spent_at, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
+        )
+        .eq("group_id", id)
+        .order("spent_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("settlements")
+        .select(
+          "id, from_member, to_member, amount, currency, fx_rate_to_group_currency, settled_at, note",
+        )
+        .eq("group_id", id)
+        .order("settled_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+    ]);
 
-  const { data: members } = await supabase
-    .from("group_members")
-    .select("id, display_name, role, status, user_id")
-    .eq("group_id", id)
-    .order("joined_at", { ascending: true });
+  if (!group) notFound();
 
   const isOwner = members?.some(
     (m) => m.user_id === user.id && m.role === "owner" && m.status === "active",
   );
-  const myMemberId = members?.find((m) => m.user_id === user.id)?.id;
+  const myMemberId = members?.find((m) => m.user_id === user.id)?.id ?? null;
   const nameOf = (memberId: string) =>
     members?.find((m) => m.id === memberId)?.display_name ?? "Someone";
-
-  const { data: expenses } = await supabase
-    .from("expenses")
-    .select(
-      "id, description, total_amount, currency, fx_rate_to_group_currency, spent_at, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
-    )
-    .eq("group_id", id)
-    .order("spent_at", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  const { data: settlements } = await supabase
-    .from("settlements")
-    .select(
-      "id, from_member, to_member, amount, currency, fx_rate_to_group_currency, settled_at, note",
-    )
-    .eq("group_id", id)
-    .order("settled_at", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  // my net on an expense = what I paid minus my share
-  function myImpact(e: NonNullable<typeof expenses>[number]): number | null {
-    if (!myMemberId) return null;
-    const paid = e.expense_payers
-      .filter((p) => p.member_id === myMemberId)
-      .reduce((s, p) => s + p.amount, 0);
-    const share = e.expense_allocations
-      .filter((a) => a.member_id === myMemberId)
-      .reduce((s, a) => s + a.amount, 0);
-    if (paid === 0 && share === 0) return null;
-    return paid - share;
-  }
-
-  const involves = (e: NonNullable<typeof expenses>[number], memberId: string) =>
-    e.expense_payers.some((p) => p.member_id === memberId) ||
-    e.expense_allocations.some((a) => a.member_id === memberId);
-
-  const visibleExpenses =
-    filterMember && expenses
-      ? expenses.filter((e) => involves(e, filterMember))
-      : (expenses ?? []);
 
   const gc = group.default_currency;
   const { net: balances, currencies } = computeGroupBalances(
@@ -94,7 +68,6 @@ export default async function GroupPage({
     (balances.get(b.id) ?? 0) - (balances.get(a.id) ?? 0);
   const activeMembers = (members ?? []).filter((m) => m.status === "active");
   const inactiveMembers = (members ?? []).filter((m) => m.status === "inactive");
-  // owed the most first, owing the most last; settled removed members at the end
   const orderedForBalances = [
     ...[...activeMembers].sort(byNetDesc),
     ...inactiveMembers
@@ -103,23 +76,243 @@ export default async function GroupPage({
     ...inactiveMembers.filter((m) => (balances.get(m.id) ?? 0) === 0),
   ];
   const transfers = settleUp(balances);
+  const mine = transfers.filter(
+    (t) => t.from === myMemberId || t.to === myMemberId,
+  );
+  const others = transfers.filter(
+    (t) => t.from !== myMemberId && t.to !== myMemberId,
+  );
   const myNet = myMemberId ? (balances.get(myMemberId) ?? 0) : null;
 
   const card = "rounded-2xl border border-line bg-surface";
   const row =
     "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
 
-  const TabLink = ({ value, label }: { value: Tab; label: string }) => (
-    <Link
-      href={`/groups/${id}?tab=${value}`}
-      className={`rounded-lg px-3 py-1.5 text-sm transition-colors ${
-        tab === value
-          ? "bg-surface font-semibold text-ink shadow-sm"
-          : "text-muted hover:text-ink"
-      }`}
-    >
-      {label}
-    </Link>
+  const settleHref = (t: { from: string; to: string; amount: number }) =>
+    `/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
+      t.amount / 100
+    ).toFixed(2)}`;
+
+  /* ---------- BALANCES PANEL (server-rendered) ---------- */
+  const balancesPanel = (
+    <section className="flex flex-col gap-5">
+      {mine.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {mine.map((t, i) => {
+            const iOwe = t.from === myMemberId;
+            const other = nameOf(iOwe ? t.to : t.from);
+            return (
+              <Link
+                key={i}
+                href={settleHref(t)}
+                className={`${card} flex items-center gap-3 p-4 hover:bg-surface-2`}
+              >
+                <Avatar name={other} size={40} />
+                <div className="flex-1">
+                  <div className="text-sm text-muted">
+                    {iOwe ? "You owe" : `${other} owes you`}
+                  </div>
+                  <div
+                    className={`text-lg font-extrabold ${iOwe ? "text-neg" : "text-pos"}`}
+                  >
+                    {formatMoney(t.amount, gc)}
+                    {iOwe && (
+                      <span className="text-sm font-semibold text-ink">
+                        {" "}
+                        to {other}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-ink">
+                  Settle up
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <h3 className="text-sm font-semibold text-muted">Everyone&apos;s balance</h3>
+        {orderedForBalances.map((m) => {
+          const net = balances.get(m.id) ?? 0;
+          return (
+            <div
+              key={m.id}
+              className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
+            >
+              <span className="flex items-center gap-2.5">
+                <Avatar name={m.display_name} />
+                {m.display_name}
+                {m.status === "inactive" && (
+                  <span className="text-xs">inactive</span>
+                )}
+              </span>
+              <span
+                className={
+                  net > 0
+                    ? "font-semibold text-pos"
+                    : net < 0
+                      ? "font-semibold text-neg"
+                      : "text-muted"
+                }
+              >
+                {net > 0
+                  ? `gets back ${formatMoney(net, gc)}`
+                  : net < 0
+                    ? `owes ${formatMoney(-net, gc)}`
+                    : "settled"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {others.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <h3 className="text-sm font-semibold text-muted">Between others</h3>
+          {others.map((t, i) => (
+            <Link
+              key={i}
+              href={settleHref(t)}
+              className={`${row} hover:bg-surface-2`}
+            >
+              <span className="flex items-center gap-2">
+                <Avatar name={nameOf(t.from)} size={22} />
+                <span className="font-medium">{nameOf(t.from)}</span>
+                <span className="text-muted">owes</span>
+                <span className="font-semibold">
+                  {formatMoney(t.amount, gc)}
+                </span>
+                <span className="text-muted">to</span>
+                <Avatar name={nameOf(t.to)} size={22} />
+                <span className="font-medium">{nameOf(t.to)}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {transfers.length > 0 && (
+        <Link
+          href={`/groups/${group.id}/transfer/new`}
+          className="text-xs text-muted underline"
+        >
+          Move a balance to another group
+        </Link>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <h3 className="text-sm font-semibold text-muted">Payments</h3>
+        {settlements && settlements.length > 0 ? (
+          settlements.map((s) => (
+            <div key={s.id} className={row}>
+              <span className="flex items-center gap-2">
+                <Avatar name={nameOf(s.from_member)} size={22} />
+                {nameOf(s.from_member)}
+                <span className="text-muted">paid</span>
+                <Avatar name={nameOf(s.to_member)} size={22} />
+                {nameOf(s.to_member)}
+                {s.note && (
+                  <span className="text-xs text-muted"> · {s.note}</span>
+                )}
+              </span>
+              <span className="text-muted">
+                {formatMoney(s.amount, s.currency)}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted">No payments recorded yet.</p>
+        )}
+      </div>
+
+      {hasConversions && (
+        <p className="text-xs text-muted">
+          Amounts in other currencies converted to {gc} at each
+          transaction&apos;s rate on its date.
+        </p>
+      )}
+    </section>
+  );
+
+  /* ---------- MEMBERS PANEL (server-rendered) ---------- */
+  const membersPanel = (
+    <section className="flex flex-col gap-3">
+      <Link
+        href={`/groups/${group.id}/invite`}
+        className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
+      >
+        + Invite someone
+      </Link>
+      <div className="flex flex-col gap-1.5">
+        {members?.map((m) => (
+          <div
+            key={m.id}
+            className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
+          >
+            <span className="flex flex-1 items-center gap-2.5 font-medium">
+              <Avatar name={m.display_name} />
+              {m.display_name}
+            </span>
+            <div className="flex items-center gap-3 text-xs">
+              {m.role === "owner" && <span className="text-muted">owner</span>}
+              {!m.user_id && m.status === "active" && (
+                <span className="text-muted">not joined</span>
+              )}
+              {m.status === "inactive" && (
+                <span className="text-muted">inactive</span>
+              )}
+              {!m.user_id && m.status === "active" && (
+                <Link
+                  href={`/groups/${group.id}/members/${m.id}/invite`}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  Invite
+                </Link>
+              )}
+              {isOwner && m.role !== "owner" && (
+                <form action={setMemberStatus}>
+                  <input type="hidden" name="groupId" value={group.id} />
+                  <input type="hidden" name="memberId" value={m.id} />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={m.status === "active" ? "inactive" : "active"}
+                  />
+                  <SubmitButton
+                    className="text-muted hover:text-ink disabled:opacity-50"
+                    pendingText="…"
+                  >
+                    {m.status === "active" ? "Remove" : "Re-activate"}
+                  </SubmitButton>
+                </form>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form
+        action={addMember}
+        className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
+      >
+        <h3 className="text-sm font-semibold">Add a placeholder member</h3>
+        <p className="text-xs text-muted">
+          For someone not on the app yet — invite them to claim it later.
+        </p>
+        <input type="hidden" name="groupId" value={group.id} />
+        <input
+          name="name"
+          required
+          maxLength={100}
+          placeholder="Name"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
+        />
+        <SubmitButton pendingText="Adding…">Add member</SubmitButton>
+      </form>
+    </section>
   );
 
   return (
@@ -146,7 +339,6 @@ export default async function GroupPage({
         )}
       </div>
 
-      {/* your balance hero */}
       <div className={`${card} flex flex-col gap-1 p-4`}>
         <span className="text-xs font-medium uppercase tracking-wide text-muted">
           Your balance in this group
@@ -168,7 +360,6 @@ export default async function GroupPage({
         </span>
       </div>
 
-      {/* actions */}
       <div className="flex gap-2">
         <Link
           href={`/groups/${group.id}/expenses/new`}
@@ -184,281 +375,24 @@ export default async function GroupPage({
         </Link>
       </div>
 
-      {/* tabs */}
-      <div className="flex gap-1 rounded-xl bg-surface-2 p-1">
-        <TabLink value="expenses" label="Expenses" />
-        <TabLink value="balances" label="Balances" />
-        <TabLink value="members" label="Members" />
-      </div>
-
-      {/* ---------- EXPENSES ---------- */}
-      {tab === "expenses" && (
-        <section className="flex flex-col gap-3">
-          {(members?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              <Link
-                href={`/groups/${group.id}?tab=expenses`}
-                className={`rounded-full border px-2.5 py-1 text-xs ${
-                  filterMember
-                    ? "border-line text-muted"
-                    : "border-primary bg-primary text-primary-ink"
-                }`}
-              >
-                Everyone
-              </Link>
-              {members?.map((m) => (
-                <Link
-                  key={m.id}
-                  href={`/groups/${group.id}?tab=expenses&member=${m.id}`}
-                  className={`rounded-full border px-2.5 py-1 text-xs ${
-                    filterMember === m.id
-                      ? "border-primary bg-primary text-primary-ink"
-                      : "border-line text-muted"
-                  }`}
-                >
-                  {m.display_name}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <ul className="flex flex-col gap-1.5">
-            {visibleExpenses.length > 0 ? (
-              visibleExpenses.map((e) => {
-                const impact = myImpact(e);
-                const paidBy = e.expense_payers
-                  .map((p) => nameOf(p.member_id))
-                  .join(", ");
-                return (
-                  <li key={e.id}>
-                    <Link
-                      href={`/groups/${group.id}/expenses/${e.id}`}
-                      className={`${row} hover:bg-surface-2`}
-                    >
-                      <div>
-                        <div className="font-semibold">{e.description}</div>
-                        <div className="text-xs text-muted">
-                          {formatMoney(e.total_amount, e.currency)}
-                          {e.currency !== gc &&
-                            ` (≈ ${formatMoney(
-                              Math.round(
-                                e.total_amount *
-                                  (e.fx_rate_to_group_currency || 1),
-                              ),
-                              gc,
-                            )})`}{" "}
-                          · {paidBy} · {e.spent_at}
-                        </div>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold ${
-                          impact === null || impact === 0
-                            ? "bg-surface-2 text-muted"
-                            : impact > 0
-                              ? "bg-pos-bg text-pos"
-                              : "bg-neg-bg text-neg"
-                        }`}
-                      >
-                        {impact === null
-                          ? "not involved"
-                          : impact > 0
-                            ? `+${formatMoney(impact, e.currency)}`
-                            : impact < 0
-                              ? `−${formatMoney(-impact, e.currency)}`
-                              : "settled"}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })
-            ) : (
-              <li className="rounded-xl border border-dashed border-line px-3.5 py-6 text-center text-sm text-muted">
-                {filterMember
-                  ? `No expenses involving ${nameOf(filterMember)}.`
-                  : "No expenses yet — add the first one."}
-              </li>
-            )}
-          </ul>
-        </section>
-      )}
-
-      {/* ---------- BALANCES ---------- */}
-      {tab === "balances" && (
-        <section className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            {orderedForBalances.map((m) => {
-              const net = balances.get(m.id) ?? 0;
-              return (
-                <div
-                  key={m.id}
-                  className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
-                >
-                  <span>
-                    {m.display_name}
-                    {m.status === "inactive" && (
-                      <span className="ml-2 text-xs">inactive</span>
-                    )}
-                  </span>
-                  <span
-                    className={
-                      net > 0
-                        ? "font-semibold text-pos"
-                        : net < 0
-                          ? "font-semibold text-neg"
-                          : "text-muted"
-                    }
-                  >
-                    {net > 0
-                      ? `gets back ${formatMoney(net, gc)}`
-                      : net < 0
-                        ? `owes ${formatMoney(-net, gc)}`
-                        : "settled"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {transfers.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <h3 className="text-sm font-semibold text-muted">
-                To settle up
-              </h3>
-              {transfers.map((t, idx) => (
-                <Link
-                  key={idx}
-                  href={`/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
-                    t.amount / 100
-                  ).toFixed(2)}`}
-                  className={`${row} hover:bg-surface-2`}
-                >
-                  <span>
-                    <span className="font-semibold">{nameOf(t.from)}</span> owes{" "}
-                    <span className="font-semibold">
-                      {formatMoney(t.amount, gc)}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-semibold">{nameOf(t.to)}</span>
-                  </span>
-                  <span className="shrink-0 text-xs text-muted">record →</span>
-                </Link>
-              ))}
-              <Link
-                href={`/groups/${group.id}/transfer/new`}
-                className="mt-1 text-xs text-muted underline"
-              >
-                Move a balance to another group
-              </Link>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            <h3 className="text-sm font-semibold text-muted">Payments</h3>
-            {settlements && settlements.length > 0 ? (
-              settlements.map((s) => (
-                <div key={s.id} className={row}>
-                  <span>
-                    {nameOf(s.from_member)} → {nameOf(s.to_member)}
-                    {s.note && (
-                      <span className="text-xs text-muted"> · {s.note}</span>
-                    )}
-                  </span>
-                  <span className="text-muted">
-                    {formatMoney(s.amount, s.currency)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted">No payments recorded yet.</p>
-            )}
-          </div>
-
-          {hasConversions && (
-            <p className="text-xs text-muted">
-              Amounts in other currencies converted to {gc} at each
-              transaction&apos;s rate on its date.
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* ---------- MEMBERS ---------- */}
-      {tab === "members" && (
-        <section className="flex flex-col gap-3">
-          <Link
-            href={`/groups/${group.id}/invite`}
-            className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
-          >
-            + Invite someone
-          </Link>
-          <div className="flex flex-col gap-1.5">
-            {members?.map((m) => (
-              <div
-                key={m.id}
-                className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
-              >
-                <span className="flex-1 font-medium">{m.display_name}</span>
-                <div className="flex items-center gap-3 text-xs">
-                  {m.role === "owner" && (
-                    <span className="text-muted">owner</span>
-                  )}
-                  {!m.user_id && m.status === "active" && (
-                    <span className="text-muted">not joined</span>
-                  )}
-                  {m.status === "inactive" && (
-                    <span className="text-muted">inactive</span>
-                  )}
-                  {!m.user_id && m.status === "active" && (
-                    <Link
-                      href={`/groups/${group.id}/members/${m.id}/invite`}
-                      className="font-semibold text-primary hover:underline"
-                    >
-                      Invite
-                    </Link>
-                  )}
-                  {isOwner && m.role !== "owner" && (
-                    <form action={setMemberStatus}>
-                      <input type="hidden" name="groupId" value={group.id} />
-                      <input type="hidden" name="memberId" value={m.id} />
-                      <input
-                        type="hidden"
-                        name="status"
-                        value={m.status === "active" ? "inactive" : "active"}
-                      />
-                      <SubmitButton
-                        className="text-muted hover:text-ink disabled:opacity-50"
-                        pendingText="…"
-                      >
-                        {m.status === "active" ? "Remove" : "Re-activate"}
-                      </SubmitButton>
-                    </form>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <form
-            action={addMember}
-            className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
-          >
-            <h3 className="text-sm font-semibold">Add a placeholder member</h3>
-            <p className="text-xs text-muted">
-              For someone not on the app yet — you can invite them to claim it
-              later.
-            </p>
-            <input type="hidden" name="groupId" value={group.id} />
-            <input
-              name="name"
-              required
-              maxLength={100}
-              placeholder="Name"
-              className="rounded-xl border border-line bg-surface px-3 py-2.5"
-            />
-            <SubmitButton pendingText="Adding…">Add member</SubmitButton>
-          </form>
-        </section>
-      )}
+      <GroupTabs
+        labels={["Expenses", "Balances", "Members"]}
+        panels={[
+          <ExpensesPanel
+            key="e"
+            groupId={group.id}
+            groupCurrency={gc}
+            members={(members ?? []).map((m) => ({
+              id: m.id,
+              display_name: m.display_name,
+            }))}
+            expenses={expenses ?? []}
+            myMemberId={myMemberId}
+          />,
+          balancesPanel,
+          membersPanel,
+        ]}
+      />
     </main>
   );
 }
