@@ -61,7 +61,7 @@ export default function JoinForm({
             required
             defaultValue={defaultName}
             maxLength={100}
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
       )}

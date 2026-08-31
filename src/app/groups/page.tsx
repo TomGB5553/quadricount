@@ -1,72 +1,98 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
-import { CURRENCIES } from "@/lib/currencies";
-import SubmitButton from "@/components/SubmitButton";
-import { createGroup } from "./actions";
+import { computeGroupBalances } from "@/lib/balances";
+import { formatMoney } from "@/lib/money";
 
 export default async function GroupsPage() {
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
 
-  // RLS limits this to groups the user is a member of.
   const { data: groups } = await supabase
     .from("groups")
     .select("id, name, default_currency")
     .order("created_at", { ascending: false });
 
-  return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 p-6">
-      <h1 className="text-2xl font-bold">Your groups</h1>
+  const { data: members } = await supabase
+    .from("group_members")
+    .select("id, group_id, user_id");
 
-      <ul className="flex flex-col gap-2">
-        {groups && groups.length > 0 ? (
-          groups.map((g) => (
+  const { data: expenses } = await supabase
+    .from("expenses")
+    .select(
+      "group_id, currency, fx_rate_to_group_currency, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
+    );
+
+  const { data: settlements } = await supabase
+    .from("settlements")
+    .select(
+      "group_id, currency, fx_rate_to_group_currency, from_member, to_member, amount",
+    );
+
+  const rows = (groups ?? []).map((g) => {
+    const myMember = (members ?? []).find(
+      (m) => m.group_id === g.id && m.user_id === user.id,
+    );
+    const { net } = computeGroupBalances(
+      (expenses ?? []).filter((e) => e.group_id === g.id),
+      (settlements ?? []).filter((s) => s.group_id === g.id),
+    );
+    const myNet = myMember ? (net.get(myMember.id) ?? 0) : 0;
+    return { ...g, myNet };
+  });
+
+  return (
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold tracking-tight">Your groups</h1>
+        <Link
+          href="/groups/new"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
+        >
+          + New group
+        </Link>
+      </div>
+
+      {rows.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {rows.map((g) => (
             <li key={g.id}>
               <Link
                 href={`/groups/${g.id}`}
-                className="block rounded-xl border border-line px-4 py-3 hover:bg-surface-2"
+                className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 hover:bg-surface-2"
               >
-                <span className="font-medium">{g.name}</span>
-                <span className="ml-2 text-sm text-muted">
-                  {g.default_currency}
+                <span className="font-semibold">{g.name}</span>
+                <span
+                  className={`text-sm font-semibold ${
+                    g.myNet > 0
+                      ? "text-pos"
+                      : g.myNet < 0
+                        ? "text-neg"
+                        : "text-muted"
+                  }`}
+                >
+                  {g.myNet > 0
+                    ? `+${formatMoney(g.myNet, g.default_currency)}`
+                    : g.myNet < 0
+                      ? `−${formatMoney(-g.myNet, g.default_currency)}`
+                      : "settled"}
                 </span>
               </Link>
             </li>
-          ))
-        ) : (
-          <li className="text-sm text-muted">No groups yet.</li>
-        )}
-      </ul>
+          ))}
+        </ul>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
+          No groups yet. Create one to start splitting expenses.
+        </div>
+      )}
 
-      <form action={createGroup} className="flex flex-col gap-3 border-t border-line pt-6">
-        <h2 className="font-semibold">New group</h2>
-        <label className="flex flex-col gap-1 text-sm">
-          Name
-          <input
-            name="name"
-            required
-            maxLength={100}
-            placeholder="Trip to Lisbon"
-            className="rounded-xl border border-line px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Default currency
-          <select
-            name="currency"
-            defaultValue="EUR"
-            className="rounded-xl border border-line px-3 py-2"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </label>
-        <SubmitButton pendingText="Creating…">Create group</SubmitButton>
-      </form>
+      <Link
+        href="/balances"
+        className="text-sm text-muted underline hover:text-ink"
+      >
+        See your overall balance across all groups →
+      </Link>
     </main>
   );
 }

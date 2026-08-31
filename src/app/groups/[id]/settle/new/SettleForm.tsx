@@ -33,7 +33,7 @@ export default function SettleForm({
           name="fromMember"
           value={from}
           onChange={(e) => setFrom(e.target.value)}
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         >
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -49,7 +49,7 @@ export default function SettleForm({
           name="toMember"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         >
           {members.map((m) => (
             <option key={m.id} value={m.id}>
@@ -72,7 +72,7 @@ export default function SettleForm({
             inputMode="decimal"
             defaultValue={prefill.amount ?? ""}
             placeholder="0.00"
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
         <label className="flex w-28 flex-col gap-1 text-sm">
@@ -80,7 +80,7 @@ export default function SettleForm({
           <select
             name="currency"
             defaultValue={currency}
-            className="rounded-xl border border-line px-2 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -97,7 +97,7 @@ export default function SettleForm({
           type="date"
           name="settledAt"
           defaultValue={today}
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
@@ -107,7 +107,7 @@ export default function SettleForm({
           name="note"
           maxLength={200}
           placeholder="Bank transfer"
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 

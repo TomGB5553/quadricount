@@ -94,7 +94,7 @@ export default function TransferForm({
               setSrcFrom(e.target.value);
               setTgtFromOverride(null);
             }}
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           >
             {sourceMembers.map((m) => (
               <option key={m.id} value={m.id}>
@@ -113,7 +113,7 @@ export default function TransferForm({
               setSrcTo(e.target.value);
               setTgtToOverride(null);
             }}
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           >
             {sourceMembers.map((m) => (
               <option key={m.id} value={m.id}>
@@ -132,7 +132,7 @@ export default function TransferForm({
           inputMode="decimal"
           defaultValue={prefill.amount ?? ""}
           placeholder="0.00"
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
@@ -146,7 +146,7 @@ export default function TransferForm({
             setTgtFromOverride(null);
             setTgtToOverride(null);
           }}
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         >
           {otherGroups.map((g) => (
             <option key={g.id} value={g.id}>
@@ -198,7 +198,7 @@ export default function TransferForm({
           name="note"
           maxLength={200}
           placeholder="Leftover from the Lisbon trip"
-          className="rounded-xl border border-line px-3 py-2"
+          className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 

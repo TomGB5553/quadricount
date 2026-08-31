@@ -378,9 +378,9 @@ export default async function GroupPage({
           {isOwner && (
             <Link
               href={`/groups/${group.id}/invite`}
-              className="self-start rounded-xl border border-line bg-surface px-3 py-1.5 text-sm font-semibold hover:bg-surface-2"
+              className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
             >
-              Invite someone
+              + Invite someone
             </Link>
           )}
           <div className="flex flex-col gap-1.5">
@@ -389,41 +389,43 @@ export default async function GroupPage({
                 key={m.id}
                 className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
               >
-                <span className="flex-1">{m.display_name}</span>
-                {m.role === "owner" && (
-                  <span className="text-xs text-muted">owner</span>
-                )}
-                {!m.user_id && m.status === "active" && (
-                  <span className="text-xs text-muted">not joined</span>
-                )}
-                {m.status === "inactive" && (
-                  <span className="text-xs">inactive</span>
-                )}
-                {isOwner && !m.user_id && m.status === "active" && (
-                  <Link
-                    href={`/groups/${group.id}/members/${m.id}/invite`}
-                    className="text-xs text-muted underline hover:text-ink"
-                  >
-                    Invite
-                  </Link>
-                )}
-                {isOwner && m.role !== "owner" && (
-                  <form action={setMemberStatus}>
-                    <input type="hidden" name="groupId" value={group.id} />
-                    <input type="hidden" name="memberId" value={m.id} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={m.status === "active" ? "inactive" : "active"}
-                    />
-                    <SubmitButton
-                      className="text-xs text-muted hover:text-ink disabled:opacity-50"
-                      pendingText="…"
+                <span className="flex-1 font-medium">{m.display_name}</span>
+                <div className="flex items-center gap-3 text-xs">
+                  {m.role === "owner" && (
+                    <span className="text-muted">owner</span>
+                  )}
+                  {!m.user_id && m.status === "active" && (
+                    <span className="text-muted">not joined</span>
+                  )}
+                  {m.status === "inactive" && (
+                    <span className="text-muted">inactive</span>
+                  )}
+                  {isOwner && !m.user_id && m.status === "active" && (
+                    <Link
+                      href={`/groups/${group.id}/members/${m.id}/invite`}
+                      className="font-semibold text-primary hover:underline"
                     >
-                      {m.status === "active" ? "Remove" : "Re-activate"}
-                    </SubmitButton>
-                  </form>
-                )}
+                      Invite
+                    </Link>
+                  )}
+                  {isOwner && m.role !== "owner" && (
+                    <form action={setMemberStatus}>
+                      <input type="hidden" name="groupId" value={group.id} />
+                      <input type="hidden" name="memberId" value={m.id} />
+                      <input
+                        type="hidden"
+                        name="status"
+                        value={m.status === "active" ? "inactive" : "active"}
+                      />
+                      <SubmitButton
+                        className="text-muted hover:text-ink disabled:opacity-50"
+                        pendingText="…"
+                      >
+                        {m.status === "active" ? "Remove" : "Re-activate"}
+                      </SubmitButton>
+                    </form>
+                  )}
+                </div>
               </div>
             ))}
           </div>

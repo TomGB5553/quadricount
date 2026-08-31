@@ -62,7 +62,7 @@ export default async function EditGroupPage({
             required
             maxLength={100}
             defaultValue={group.name}
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
 
@@ -72,7 +72,7 @@ export default async function EditGroupPage({
             name="description"
             maxLength={200}
             defaultValue={group.description ?? ""}
-            className="rounded-xl border border-line px-3 py-2"
+            className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
 
@@ -98,7 +98,7 @@ export default async function EditGroupPage({
             <select
               name="currency"
               defaultValue={group.default_currency}
-              className="rounded-xl border border-line px-3 py-2"
+              className="rounded-xl border border-line bg-surface px-3 py-2.5"
             >
               {CURRENCIES.map((c) => (
                 <option key={c} value={c}>

@@ -84,7 +84,7 @@ export default async function ExpenseDetailPage({
           {expense.expense_payers.map((p) => (
             <li
               key={p.member_id}
-              className="flex justify-between rounded-xl border border-line px-3 py-2"
+              className="flex justify-between rounded-xl border border-line bg-surface px-3 py-2.5"
             >
               <span>{nameOf(p.member_id)}</span>
               <span>{formatMoney(p.amount, expense.currency)}</span>
@@ -132,7 +132,7 @@ export default async function ExpenseDetailPage({
           {expense.expense_allocations.map((a) => (
             <li
               key={a.member_id}
-              className="flex justify-between rounded-xl border border-line px-3 py-2"
+              className="flex justify-between rounded-xl border border-line bg-surface px-3 py-2.5"
             >
               <span>{nameOf(a.member_id)}</span>
               <span>{formatMoney(a.amount, expense.currency)}</span>

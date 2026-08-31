@@ -41,7 +41,8 @@ function toNum(raw: string): number {
 }
 
 const METHODS: Method[] = ["equal", "exact", "percentage", "shares"];
-const methodLabel = (m: Method) => (m === "exact" ? "exact amounts" : m);
+const methodLabel = (m: Method) =>
+  m === "exact" ? "Exact" : m === "percentage" ? "%" : m === "shares" ? "Shares" : "Equal";
 
 export default function NewExpenseForm({
   groupId,
@@ -224,6 +225,10 @@ export default function NewExpenseForm({
   const canSubmit =
     totalMinor > 0 && payersBalanced && partsValid && coverageValid;
 
+  const field =
+    "rounded-xl border border-line bg-surface px-3 py-2.5 w-full";
+  const card = "rounded-2xl border border-line bg-surface p-4 flex flex-col gap-3";
+
   return (
     <form
       action={isEdit ? updateExpense : createExpense}
@@ -236,68 +241,70 @@ export default function NewExpenseForm({
       <input type="hidden" name="payers" value={JSON.stringify(payers)} />
       <input type="hidden" name="components" value={JSON.stringify(components)} />
 
-      <label className="flex flex-col gap-1 text-sm">
-        Description
-        <input
-          name="description"
-          required
-          maxLength={200}
-          defaultValue={initial?.description ?? ""}
-          placeholder="Dinner"
-          className="rounded-xl border border-line px-3 py-2"
-        />
-      </label>
-
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Amount
+      <div className={card}>
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          What for?
           <input
-            name="amount"
+            name="description"
             required
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            className="rounded-xl border border-line px-3 py-2"
+            maxLength={200}
+            defaultValue={initial?.description ?? ""}
+            placeholder="Dinner"
+            className={field}
           />
         </label>
-        <label className="flex w-28 flex-col gap-1 text-sm">
-          Currency
-          <select
-            name="currency"
-            value={currencyCode}
-            onChange={(e) => setCurrencyCode(e.target.value)}
-            className="rounded-xl border border-line px-2 py-2"
-          >
-            {CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+
+        <div className="flex gap-3">
+          <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
+            Amount
+            <input
+              name="amount"
+              required
+              inputMode="decimal"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className={field}
+            />
+          </label>
+          <label className="flex w-28 flex-col gap-1 text-sm font-medium">
+            Currency
+            <select
+              name="currency"
+              value={currencyCode}
+              onChange={(e) => setCurrencyCode(e.target.value)}
+              className={field}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Date
+          <input
+            type="date"
+            name="spentAt"
+            defaultValue={initial?.spentAt ?? today}
+            className={field}
+          />
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        Date
-        <input
-          type="date"
-          name="spentAt"
-          defaultValue={initial?.spentAt ?? today}
-          className="rounded-xl border border-line px-3 py-2"
-        />
-      </label>
-
       {/* ---- paid by ---- */}
-      <fieldset className="flex flex-col gap-2 text-sm">
+      <fieldset className={card}>
         <div className="flex items-center justify-between">
-          <legend>Paid by</legend>
+          <legend className="text-sm font-semibold">Paid by</legend>
           <button
             type="button"
             onClick={() =>
               setPayMode((m) => (m === "single" ? "split" : "single"))
             }
-            className="text-xs text-muted underline"
+            className="text-xs font-medium text-primary hover:underline"
           >
             {payMode === "single" ? "Multiple people paid" : "One person paid"}
           </button>
@@ -307,7 +314,7 @@ export default function NewExpenseForm({
           <select
             value={singlePayer}
             onChange={(e) => setSinglePayer(e.target.value)}
-            className="rounded-xl border border-line px-3 py-2"
+            className={field}
           >
             {members.map((m) => (
               <option key={m.id} value={m.id}>
@@ -318,7 +325,7 @@ export default function NewExpenseForm({
         ) : (
           <div className="flex flex-col gap-2">
             {members.map((m) => (
-              <div key={m.id} className="flex items-center gap-2">
+              <div key={m.id} className="flex items-center gap-2 text-sm">
                 <span className="flex-1">{m.display_name}</span>
                 <input
                   inputMode="decimal"
@@ -327,7 +334,7 @@ export default function NewExpenseForm({
                   onChange={(e) =>
                     setPayerAmounts((p) => ({ ...p, [m.id]: e.target.value }))
                   }
-                  className="w-24 rounded-xl border border-line px-2 py-1 text-right"
+                  className="w-24 rounded-lg border border-line bg-surface px-2 py-1.5 text-right"
                 />
               </div>
             ))}
@@ -342,8 +349,8 @@ export default function NewExpenseForm({
       </fieldset>
 
       {/* ---- split ---- */}
-      <fieldset className="flex flex-col gap-3 text-sm">
-        <legend className="mb-1">Split</legend>
+      <fieldset className={`${card} text-sm`}>
+        <legend className="text-sm font-semibold">Split</legend>
 
         {parts.map((p, idx) => {
           const coverage = coverageOf(p);
@@ -351,11 +358,11 @@ export default function NewExpenseForm({
           return (
             <div
               key={p.key}
-              className="flex flex-col gap-2 rounded-xl border border-line p-3"
+              className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface-2 p-3"
             >
               {multiPart && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted">
+                  <span className="text-xs font-semibold text-muted">
                     Part {idx + 1}
                   </span>
                   <button
@@ -368,16 +375,16 @@ export default function NewExpenseForm({
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-1">
+              <div className="flex gap-1 rounded-lg bg-surface p-1">
                 {METHODS.map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => patchPart(p.key, { method: m })}
-                    className={`rounded-xl border px-2 py-1 text-xs capitalize ${
+                    className={`flex-1 rounded-md px-1 py-1.5 text-xs font-medium ${
                       p.method === m
-                        ? "border-primary bg-primary text-primary-ink"
-                        : "border-line"
+                        ? "bg-primary text-primary-ink"
+                        : "text-muted hover:text-ink"
                     }`}
                   >
                     {methodLabel(m)}
@@ -468,14 +475,12 @@ export default function NewExpenseForm({
           <button
             type="button"
             onClick={addPart}
-            className="rounded-xl border border-line px-2 py-1"
+            className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
           >
-            + Add a part
+            + Split it differently
           </button>
           {multiPart && (
-            <span
-              className={coverageValid ? "text-muted" : "text-neg"}
-            >
+            <span className={coverageValid ? "text-muted" : "text-neg"}>
               {remainderCount === 0
                 ? `Parts cover ${fmt(fixedMinor)} of ${fmt(totalMinor)}`
                 : fixedMinor > totalMinor
@@ -488,6 +493,7 @@ export default function NewExpenseForm({
 
       <div className="flex gap-3">
         <SubmitButton
+          className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
           disabled={!canSubmit}
           pendingText={isEdit ? "Saving…" : "Adding…"}
         >
@@ -499,7 +505,7 @@ export default function NewExpenseForm({
               ? `/groups/${groupId}/expenses/${expenseId}`
               : `/groups/${groupId}`
           }
-          className="rounded-xl border border-line px-3 py-2 text-sm"
+          className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium"
         >
           Cancel
         </Link>

@@ -118,95 +118,101 @@ export default async function BalancesPage() {
     .filter((p) => p.net !== 0)
     .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
 
+  const row =
+    "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
+
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-8 p-6">
-      <div>
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
+      <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted hover:underline">
           ← Your groups
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Overall balance</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          Overall balance
+        </h1>
       </div>
 
       {perGroup.length === 0 ? (
-        <p className="text-sm text-muted">
+        <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
           You&apos;re not in any groups yet.
-        </p>
+        </div>
       ) : (
         <>
-          <p
-            className={`text-lg font-semibold ${
-              overall > 0
-                ? "text-pos"
+          <div className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">
+              Across all your groups
+            </span>
+            <span
+              className={`text-2xl font-extrabold ${
+                overall > 0
+                  ? "text-pos"
+                  : overall < 0
+                    ? "text-neg"
+                    : "text-muted"
+              }`}
+            >
+              {overall > 0
+                ? `You're owed ${formatMoney(overall, pc)}`
                 : overall < 0
-                  ? "text-neg"
-                  : "text-muted"
-            }`}
-          >
-            {overall > 0
-              ? `Overall, you are owed ${formatMoney(overall, pc)}`
-              : overall < 0
-                ? `Overall, you owe ${formatMoney(-overall, pc)}`
-                : "Overall, you're settled up"}
-          </p>
+                  ? `You owe ${formatMoney(-overall, pc)}`
+                  : "You're settled up"}
+            </span>
+          </div>
 
-          <section className="flex flex-col gap-2">
-            <h2 className="font-semibold">By group</h2>
-            <ul className="flex flex-col gap-1">
-              {perGroup.map((row) => (
-                <li key={row.id}>
-                  <Link
-                    href={`/groups/${row.id}`}
-                    className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-sm hover:bg-surface-2"
-                  >
-                    <span>{row.name}</span>
-                    <span
-                      className={
-                        row.myNet > 0
-                          ? "text-pos"
-                          : row.myNet < 0
-                            ? "text-neg"
-                            : "text-muted"
-                      }
-                    >
-                      {row.myNet > 0
-                        ? `owed ${formatMoney(row.myNet, row.currency)}`
-                        : row.myNet < 0
-                          ? `owe ${formatMoney(-row.myNet, row.currency)}`
-                          : "settled"}
-                      {row.currency !== pc &&
-                        row.myNet !== 0 &&
-                        ` (≈ ${formatMoney(Math.abs(row.myNetPc), pc)})`}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <section className="flex flex-col gap-1.5">
+            <h2 className="text-sm font-semibold text-muted">By group</h2>
+            {perGroup.map((r) => (
+              <Link
+                key={r.id}
+                href={`/groups/${r.id}`}
+                className={`${row} hover:bg-surface-2`}
+              >
+                <span>{r.name}</span>
+                <span
+                  className={
+                    r.myNet > 0
+                      ? "font-semibold text-pos"
+                      : r.myNet < 0
+                        ? "font-semibold text-neg"
+                        : "text-muted"
+                  }
+                >
+                  {r.myNet > 0
+                    ? `+${formatMoney(r.myNet, r.currency)}`
+                    : r.myNet < 0
+                      ? `−${formatMoney(-r.myNet, r.currency)}`
+                      : "settled"}
+                  {r.currency !== pc &&
+                    r.myNet !== 0 &&
+                    ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
+                </span>
+              </Link>
+            ))}
           </section>
 
           {people.length > 0 && (
-            <section className="flex flex-col gap-2">
-              <h2 className="font-semibold">Across everyone</h2>
-              <ul className="flex flex-col gap-1 text-sm">
-                {people.map((p, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between rounded-xl border border-line px-3 py-2"
+            <section className="flex flex-col gap-1.5">
+              <h2 className="text-sm font-semibold text-muted">
+                Across everyone
+              </h2>
+              {people.map((p, i) => (
+                <div key={i} className={row}>
+                  <span>{p.name}</span>
+                  <span
+                    className={
+                      p.net > 0
+                        ? "font-semibold text-pos"
+                        : "font-semibold text-neg"
+                    }
                   >
-                    <span>{p.name}</span>
-                    <span
-                      className={
-                        p.net > 0 ? "text-pos" : "text-neg"
-                      }
-                    >
-                      {p.net > 0
-                        ? `owes you ${formatMoney(p.net, pc)}`
-                        : `you owe ${formatMoney(-p.net, pc)}`}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                    {p.net > 0
+                      ? `owes you ${formatMoney(p.net, pc)}`
+                      : `you owe ${formatMoney(-p.net, pc)}`}
+                  </span>
+                </div>
+              ))}
               <p className="text-xs text-muted">
-                Combined across groups where the person has an account. A
+                Combined across groups where the person has an account — a
                 suggestion for settling up, not a per-group breakdown.
               </p>
             </section>
@@ -214,7 +220,8 @@ export default async function BalancesPage() {
 
           {converted && (
             <p className="text-xs text-muted">
-              Group balances converted to {pc} at today&apos;s rate.
+              Balances in other currencies converted to {pc} at today&apos;s
+              rate.
             </p>
           )}
         </>
