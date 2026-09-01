@@ -145,6 +145,7 @@ async function callGroq(
     body: JSON.stringify({
       model,
       temperature: 0,
+      max_tokens: 4096,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -163,9 +164,14 @@ async function callGroq(
 
   const bodyText = await res.text();
   if (!res.ok) {
-    let msg = bodyText.slice(0, 200);
+    let msg = bodyText.slice(0, 300);
     try {
-      msg = JSON.parse(bodyText)?.error?.message ?? msg;
+      const err = JSON.parse(bodyText)?.error;
+      // Groq's JSON-mode validation failure includes what the model actually
+      // produced under `failed_generation` — that's the useful bit to see.
+      msg = err?.failed_generation
+        ? `${err.message} :: ${String(err.failed_generation).slice(0, 300)}`
+        : (err?.message ?? msg);
     } catch {}
     throw fail(`groq/${model}`, res.status, msg);
   }
