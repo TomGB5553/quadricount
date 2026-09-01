@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/date";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
 import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
@@ -84,24 +85,11 @@ export default async function ExpenseDetailPage({
         <h1 className="text-2xl font-extrabold tracking-tight">
           {expense.description}
         </h1>
-        <p className="text-lg font-bold">
-          {formatMoney(expense.total_amount, cur)}
-          {converted && (
-            <span className="text-sm font-normal text-muted"> ≈ {converted}</span>
-          )}
-        </p>
-        <p className="text-sm text-muted">{expense.spent_at}</p>
-      </div>
 
-      {/* your impact */}
-      <div className="rounded-2xl border border-line bg-surface p-4">
         {inIt ? (
           <>
-            <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              For you
-            </span>
             <p
-              className={`text-xl font-extrabold ${
+              className={`text-2xl font-extrabold ${
                 myNet > 0 ? "text-pos" : myNet < 0 ? "text-neg" : "text-muted"
               }`}
             >
@@ -111,14 +99,28 @@ export default async function ExpenseDetailPage({
                   ? `You owe ${formatMoney(-myNet, cur)}`
                   : "You're square on this one"}
             </p>
-            <p className="mt-1 text-xs text-muted">
-              You paid {formatMoney(myPaid, cur)} · your share is{" "}
-              {formatMoney(myShare, cur)}
+            <p className="text-sm text-muted">
+              Your share {formatMoney(myShare, cur)}
+              {myPaid > 0 && ` · you paid ${formatMoney(myPaid, cur)}`} · total{" "}
+              {formatMoney(expense.total_amount, cur)}
+              {converted && ` ≈ ${converted}`}
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted">You weren&apos;t part of this expense.</p>
+          <>
+            <p className="text-xl font-bold text-muted">
+              {formatMoney(expense.total_amount, cur)}
+              {converted && (
+                <span className="text-sm font-normal"> ≈ {converted}</span>
+              )}
+            </p>
+            <p className="text-sm text-muted">
+              You weren&apos;t part of this expense.
+            </p>
+          </>
         )}
+
+        <p className="text-sm text-muted">{formatDate(expense.spent_at)}</p>
       </div>
 
       <section className="flex flex-col gap-1.5">

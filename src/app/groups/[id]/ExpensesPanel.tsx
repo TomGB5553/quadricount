@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney } from "@/lib/money";
+import { formatDate } from "@/lib/date";
 import { PaidSplitAvatars } from "@/components/Avatar";
 
 type Member = { id: string; display_name: string };
@@ -117,7 +118,9 @@ export default function ExpensesPanel({
                     <div className="truncate font-semibold">
                       {e.description}
                     </div>
-                    <div className="text-xs text-muted">{e.spent_at}</div>
+                    <div className="text-xs text-muted">
+                      {formatDate(e.spent_at)}
+                    </div>
                     <div className="mt-1.5">
                       <PaidSplitAvatars
                         payers={payerNames}
