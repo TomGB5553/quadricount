@@ -88,7 +88,14 @@ export default function ReceiptScanButton({
         className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
       >
         {busy ? "Reading receipt…" : "📷 Scan a receipt"}
+        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+          Beta
+        </span>
       </button>
+      <p className="text-xs text-muted">
+        Beta — reads receipts with AI, which can get things wrong. Always
+        check the items and total before saving.
+      </p>
       {error && <p className="text-sm text-neg">{error}</p>}
     </div>
   );

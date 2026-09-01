@@ -7,46 +7,6 @@ export const maxDuration = 30;
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
-// GET /api/receipt/scan -> which providers are configured. A quick diagnostic.
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
-
-  const out: Record<string, unknown> = {
-    groq: !!process.env.GROQ_API_KEY,
-    gemini: !!process.env.GEMINI_API_KEY,
-  };
-
-  if (process.env.GEMINI_API_KEY) {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`,
-    );
-    const data = await res.json();
-    out.geminiModels = Array.isArray(data?.models)
-      ? data.models
-          .filter((m: { supportedGenerationMethods?: string[] }) =>
-            m.supportedGenerationMethods?.includes("generateContent"),
-          )
-          .map((m: { name?: string }) => m.name)
-      : data;
-  }
-
-  if (process.env.GROQ_API_KEY) {
-    const res = await fetch("https://api.groq.com/openai/v1/models", {
-      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-    });
-    const data = await res.json();
-    out.groqStatus = res.status;
-    out.groqModels = Array.isArray(data?.data)
-      ? data.data.map((m: { id?: string }) => m.id)
-      : data;
-  }
-  return NextResponse.json(out);
-}
-
 // Reads a receipt photo with a vision model and returns structured line items.
 // The image is never stored — it's held in memory only for the model call.
 export async function POST(request: NextRequest) {
