@@ -15,7 +15,7 @@ export default async function LangToggle() {
         className="rounded-md border border-line px-1.5 py-0.5 text-xs font-semibold text-muted hover:text-ink"
         aria-label={other === "fr" ? "Passer en français" : "Switch to English"}
       >
-        {locale.toUpperCase()}
+        {other.toUpperCase()}
       </button>
     </form>
   );

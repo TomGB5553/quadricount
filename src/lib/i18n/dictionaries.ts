@@ -37,7 +37,7 @@ const en = {
   "login.createYourAccount": "Create your account",
   "login.subtitle": "Split expenses with friends and groups. No email needed.",
   "login.username": "Username",
-  "login.usernamePlaceholder": "alex",
+  "login.usernamePlaceholder": "sam",
   "login.password": "Password",
   "login.passwordPlaceholder": "at least 6 characters",
   "login.noReset":
@@ -93,6 +93,10 @@ const en = {
   "bal.betweenOthers": "Between others",
   "bal.owesWord": "owes",
   "bal.toWord": "to",
+  "bal.nextPayerYou":
+    "You're the most behind ({amount}) — maybe cover the next expense?",
+  "bal.nextPayerOther":
+    "{name} is the most behind ({amount}) — a good moment for them to cover the next one.",
   "bal.moveToGroup": "Move a balance to another group",
   "bal.payments": "Payments",
   "bal.paidWord": "paid",
@@ -279,7 +283,7 @@ const en = {
   "profile.title": "Profile",
   "profile.saved": "Saved.",
   "profile.displayName": "Display name",
-  "profile.displayNamePlaceholder": "Alex",
+  "profile.displayNamePlaceholder": "Sam",
   "profile.displayNameHint":
     "The name suggested when you join a new group. You can set a different name per group from that group's Members tab.",
   "profile.username": "Username",
@@ -409,6 +413,10 @@ const fr: Record<keyof typeof en, string> = {
   "bal.betweenOthers": "Entre les autres",
   "bal.owesWord": "doit",
   "bal.toWord": "à",
+  "bal.nextPayerYou":
+    "C'est toi le plus en retard ({amount}) — tu règles la prochaine dépense ?",
+  "bal.nextPayerOther":
+    "{name} est le plus en retard ({amount}) — l'occasion de régler la prochaine dépense.",
   "bal.moveToGroup": "Transférer un solde vers un autre groupe",
   "bal.payments": "Remboursements",
   "bal.paidWord": "a payé",

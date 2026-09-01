@@ -93,6 +93,31 @@ export default async function GroupPage({
   );
   const myNet = myMemberId ? (balances.get(myMemberId) ?? 0) : null;
 
+  // "Whose turn to pay?" — nudge the person who's furthest behind, but only when
+  // it's genuinely lopsided: a real debt (>= one average expense, >= 5) AND
+  // clearly more behind than the next person (not everyone slightly negative).
+  const nextPayer = (() => {
+    if ((expenses?.length ?? 0) < 2 || activeMembers.length < 2) return null;
+    const ranked = activeMembers
+      .map((m) => ({ m, net: balances.get(m.id) ?? 0 }))
+      .sort((a, b) => a.net - b.net);
+    const worst = ranked[0];
+    const second = ranked[1];
+    if (worst.net >= 0) return null;
+    const debt = -worst.net;
+    const gap = second.net - worst.net;
+    const avg = Math.round(
+      (expenses ?? []).reduce(
+        (s, e) =>
+          s + Math.round(e.total_amount * (e.fx_rate_to_group_currency || 1)),
+        0,
+      ) / (expenses?.length ?? 1),
+    );
+    const bigEnough = debt >= Math.max(500, avg);
+    const lopsided = gap >= Math.max(300, Math.round(avg * 0.5));
+    return bigEnough && lopsided ? { member: worst.m, debt } : null;
+  })();
+
   const card = "rounded-2xl border border-line bg-surface";
   const row =
     "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
@@ -105,6 +130,22 @@ export default async function GroupPage({
   /* ---------- BALANCES PANEL (server-rendered) ---------- */
   const balancesPanel = (
     <section key="balances" className="flex flex-col gap-5">
+      {nextPayer && (
+        <div className="flex items-start gap-2 rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-muted">
+          <span aria-hidden>💡</span>
+          <p>
+            {nextPayer.member.id === myMemberId
+              ? t("bal.nextPayerYou", {
+                  amount: formatMoney(nextPayer.debt, gc),
+                })
+              : t("bal.nextPayerOther", {
+                  name: nextPayer.member.display_name,
+                  amount: formatMoney(nextPayer.debt, gc),
+                })}
+          </p>
+        </div>
+      )}
+
       {mine.length > 0 && (
         <div className="flex flex-col gap-2">
           {mine.map((tr, i) => {
