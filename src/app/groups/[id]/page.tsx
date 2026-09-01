@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { getT } from "@/lib/i18n/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
+import { suggestNextPayer } from "@/lib/next-payer";
 import SubmitButton from "@/components/SubmitButton";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import Avatar from "@/components/Avatar";
@@ -93,30 +94,20 @@ export default async function GroupPage({
   );
   const myNet = myMemberId ? (balances.get(myMemberId) ?? 0) : null;
 
-  // "Whose turn to pay?" — nudge the person who's furthest behind, but only when
-  // it's genuinely lopsided: a real debt (>= one average expense, >= 5) AND
-  // clearly more behind than the next person (not everyone slightly negative).
-  const nextPayer = (() => {
-    if ((expenses?.length ?? 0) < 2 || activeMembers.length < 2) return null;
-    const ranked = activeMembers
-      .map((m) => ({ m, net: balances.get(m.id) ?? 0 }))
-      .sort((a, b) => a.net - b.net);
-    const worst = ranked[0];
-    const second = ranked[1];
-    if (worst.net >= 0) return null;
-    const debt = -worst.net;
-    const gap = second.net - worst.net;
-    const avg = Math.round(
-      (expenses ?? []).reduce(
-        (s, e) =>
-          s + Math.round(e.total_amount * (e.fx_rate_to_group_currency || 1)),
-        0,
-      ) / (expenses?.length ?? 1),
-    );
-    const bigEnough = debt >= Math.max(500, avg);
-    const lopsided = gap >= Math.max(300, Math.round(avg * 0.5));
-    return bigEnough && lopsided ? { member: worst.m, debt } : null;
-  })();
+  // "Whose turn to pay?" — see suggestNextPayer for the heuristics.
+  const nextPayerHit = suggestNextPayer({
+    members: activeMembers,
+    netByMember: balances,
+    expenseAmounts: (expenses ?? []).map((e) =>
+      Math.round(e.total_amount * (e.fx_rate_to_group_currency || 1)),
+    ),
+  });
+  const nextPayer = nextPayerHit
+    ? {
+        member: activeMembers.find((m) => m.id === nextPayerHit.memberId)!,
+        debt: nextPayerHit.debt,
+      }
+    : null;
 
   const card = "rounded-2xl border border-line bg-surface";
   const row =
