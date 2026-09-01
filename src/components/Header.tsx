@@ -9,6 +9,12 @@ export default async function Header() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-lg items-center justify-between px-5 py-3">
@@ -23,9 +29,17 @@ export default async function Header() {
             Overall
           </Link>
         </nav>
-        <form action="/auth/signout" method="post">
-          <button className="text-sm text-muted hover:text-ink">Sign out</button>
-        </form>
+        <div className="flex items-center gap-4 text-sm">
+          <Link
+            href="/profile"
+            className="max-w-[9rem] truncate font-semibold text-muted hover:text-ink"
+          >
+            {profile?.display_name ?? "Profile"}
+          </Link>
+          <form action="/auth/signout" method="post">
+            <button className="text-muted hover:text-ink">Sign out</button>
+          </form>
+        </div>
       </div>
     </header>
   );
