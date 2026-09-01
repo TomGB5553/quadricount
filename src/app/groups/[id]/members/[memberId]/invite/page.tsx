@@ -32,9 +32,9 @@ export default async function InviteMemberPage({
         href={`/groups/${id}`}
         className="text-sm text-muted hover:underline"
       >
-        ← Back to the group
+        ← Retour au groupe
       </Link>
-      <h1 className="text-2xl font-bold">Invite {member?.display_name}</h1>
+      <h1 className="text-2xl font-bold">Inviter {member?.display_name}</h1>
 
       {error ? (
         <p className="text-sm text-neg">{error.message}</p>
@@ -42,9 +42,9 @@ export default async function InviteMemberPage({
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
           <p className="text-xs text-muted">
-            Send this link to {member?.display_name}. When they open it and sign
-            in, they take over this spot — the group&apos;s past expenses for{" "}
-            {member?.display_name} become theirs.
+            Envoie ce lien à {member?.display_name}. En l&apos;ouvrant et en se
+            connectant, cette personne reprend ce profil — les dépenses passées
+            du groupe pour {member?.display_name} deviennent les siennes.
           </p>
         </>
       )}

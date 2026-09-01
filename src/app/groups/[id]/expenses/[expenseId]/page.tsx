@@ -10,10 +10,10 @@ import Avatar from "@/components/Avatar";
 import { deleteExpense } from "../../../actions";
 
 const methodLabel: Record<string, string> = {
-  equal: "split equally",
-  exact: "exact amounts",
-  percentage: "by percentage",
-  shares: "by shares",
+  equal: "à parts égales",
+  exact: "montants exacts",
+  percentage: "par pourcentage",
+  shares: "par parts",
 };
 
 export default async function ExpenseDetailPage({
@@ -45,7 +45,7 @@ export default async function ExpenseDetailPage({
   ]);
 
   const nameOf = (memberId: string) =>
-    members?.find((m) => m.id === memberId)?.display_name ?? "Someone";
+    members?.find((m) => m.id === memberId)?.display_name ?? "Quelqu'un";
   const canEdit =
     expense.created_by === user.id ||
     !!members?.some((m) => m.user_id === user.id && m.role === "owner");
@@ -94,15 +94,15 @@ export default async function ExpenseDetailPage({
               }`}
             >
               {myNet > 0
-                ? `You're owed ${formatMoney(myNet, cur)}`
+                ? `On te doit ${formatMoney(myNet, cur)}`
                 : myNet < 0
-                  ? `You owe ${formatMoney(-myNet, cur)}`
-                  : "You're square on this one"}
+                  ? `Tu dois ${formatMoney(-myNet, cur)}`
+                  : "Tu es à l'équilibre sur celle-ci"}
             </p>
             <p className="text-sm text-muted">
-              Your share {formatMoney(myShare, cur)}
-              {myPaid > 0 && ` · you paid ${formatMoney(myPaid, cur)}`} · total{" "}
-              {formatMoney(expense.total_amount, cur)}
+              Ta part {formatMoney(myShare, cur)}
+              {myPaid > 0 && ` · tu as payé ${formatMoney(myPaid, cur)}`} ·
+              total {formatMoney(expense.total_amount, cur)}
               {converted && ` ≈ ${converted}`}
             </p>
           </>
@@ -115,7 +115,7 @@ export default async function ExpenseDetailPage({
               )}
             </p>
             <p className="text-sm text-muted">
-              You weren&apos;t part of this expense.
+              Tu ne faisais pas partie de cette dépense.
             </p>
           </>
         )}
@@ -124,7 +124,7 @@ export default async function ExpenseDetailPage({
       </div>
 
       <section className="flex flex-col gap-1.5">
-        <h2 className="text-sm font-semibold text-muted">Paid by</h2>
+        <h2 className="text-sm font-semibold text-muted">Payé par</h2>
         {expense.expense_payers.map((p) => (
           <div key={p.member_id} className={row}>
             <span className="flex items-center gap-2.5">
@@ -138,7 +138,7 @@ export default async function ExpenseDetailPage({
 
       <section className="flex flex-col gap-1.5">
         <h2 className="text-sm font-semibold text-muted">
-          {components.length > 1 ? "Split (in parts)" : "How it's split"}
+          {components.length > 1 ? "Répartition (en parts)" : "Répartition"}
         </h2>
         {components.map((c, idx) => (
           <div
@@ -149,7 +149,7 @@ export default async function ExpenseDetailPage({
               {components.length > 1 && `Part ${idx + 1} · `}
               {methodLabel[c.method] ?? c.method}
               {c.basis === "fixed_amount" &&
-                ` · covers ${formatMoney(c.amount ?? 0, cur)}`}
+                ` · couvre ${formatMoney(c.amount ?? 0, cur)}`}
             </div>
             <ul className="flex flex-col gap-0.5">
               {c.expense_split_entries.map((en) => (
@@ -158,9 +158,9 @@ export default async function ExpenseDetailPage({
                   <span className="text-muted">
                     {c.method === "exact" &&
                       formatMoney(en.exact_amount ?? 0, cur)}
-                    {c.method === "percentage" && `${en.percent}%`}
+                    {c.method === "percentage" && `${en.percent} %`}
                     {c.method === "shares" &&
-                      `${en.weight} ${en.weight === 1 ? "share" : "shares"}`}
+                      `${en.weight} ${en.weight === 1 ? "part" : "parts"}`}
                   </span>
                 </li>
               ))}
@@ -170,7 +170,7 @@ export default async function ExpenseDetailPage({
       </section>
 
       <section className="flex flex-col gap-1.5">
-        <h2 className="text-sm font-semibold text-muted">Each person&apos;s share</h2>
+        <h2 className="text-sm font-semibold text-muted">La part de chacun</h2>
         {expense.expense_allocations.map((a) => (
           <div key={a.member_id} className={row}>
             <span className="flex items-center gap-2.5">
@@ -188,16 +188,16 @@ export default async function ExpenseDetailPage({
             href={`/groups/${id}/expenses/${expenseId}/edit`}
             className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
           >
-            Edit
+            Modifier
           </Link>
           <form action={deleteExpense}>
             <input type="hidden" name="groupId" value={id} />
             <input type="hidden" name="expenseId" value={expenseId} />
             <SubmitButton
               className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
-              pendingText="Deleting…"
+              pendingText="Suppression…"
             >
-              Delete
+              Supprimer
             </SubmitButton>
           </form>
         </div>

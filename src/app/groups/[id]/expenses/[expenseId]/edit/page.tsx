@@ -51,7 +51,7 @@ export default async function EditExpensePage({
         >
           ← {expense.description}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Edit expense</h1>
+        <h1 className="mt-1 text-2xl font-bold">Modifier la dépense</h1>
       </div>
 
       <NewExpenseForm

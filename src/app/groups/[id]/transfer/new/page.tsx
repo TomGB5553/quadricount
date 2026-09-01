@@ -62,7 +62,7 @@ export default async function NewTransferPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Move a balance</h1>
+        <h1 className="mt-1 text-2xl font-bold">Transférer un solde</h1>
       </div>
 
       <TransferForm

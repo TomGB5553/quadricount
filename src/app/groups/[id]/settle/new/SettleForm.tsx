@@ -28,7 +28,7 @@ export default function SettleForm({
   const [copied, setCopied] = useState(false);
 
   const payeeName =
-    members.find((m) => m.id === to)?.display_name ?? "them";
+    members.find((m) => m.id === to)?.display_name ?? "cette personne";
   const payout = payoutByMember[to];
 
   return (
@@ -36,7 +36,7 @@ export default function SettleForm({
       <input type="hidden" name="groupId" value={groupId} />
 
       <label className="flex flex-col gap-1 text-sm">
-        Who paid
+        Qui a payé
         <select
           name="fromMember"
           value={from}
@@ -52,7 +52,7 @@ export default function SettleForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Who received it
+        Qui a reçu
         <select
           name="toMember"
           value={to}
@@ -68,13 +68,13 @@ export default function SettleForm({
       </label>
 
       {from === to && (
-        <p className="text-xs text-neg">Pick two different people.</p>
+        <p className="text-xs text-neg">Choisis deux personnes différentes.</p>
       )}
 
       {from !== to && payout && (
         <div className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface-2 p-3 text-sm">
           <span className="text-xs font-semibold text-muted">
-            How to pay {payeeName}
+            Comment payer {payeeName}
           </span>
           {payout.iban && (
             <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function SettleForm({
                 }}
                 className="shrink-0 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-ink"
               >
-                {copied ? "Copied" : "Copy"}
+                {copied ? "Copié" : "Copier"}
               </button>
             </div>
           )}
@@ -104,7 +104,7 @@ export default function SettleForm({
 
       <div className="flex gap-3">
         <label className="flex flex-1 flex-col gap-1 text-sm">
-          Amount
+          Montant
           <input
             name="amount"
             required
@@ -115,7 +115,7 @@ export default function SettleForm({
           />
         </label>
         <label className="flex w-28 flex-col gap-1 text-sm">
-          Currency
+          Devise
           <select
             name="currency"
             defaultValue={currency}
@@ -134,6 +134,7 @@ export default function SettleForm({
         Date
         <input
           type="date"
+          lang="fr-FR"
           name="settledAt"
           defaultValue={today}
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
@@ -141,24 +142,24 @@ export default function SettleForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Note (optional)
+        Note (facultatif)
         <input
           name="note"
           maxLength={200}
-          placeholder="Bank transfer"
+          placeholder="Virement bancaire"
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
       <div className="flex gap-3">
-        <SubmitButton disabled={from === to} pendingText="Recording…">
-          Record payment
+        <SubmitButton disabled={from === to} pendingText="Enregistrement…">
+          Enregistrer
         </SubmitButton>
         <Link
           href={`/groups/${groupId}`}
           className="rounded-xl border border-line px-3 py-2 text-sm"
         >
-          Cancel
+          Annuler
         </Link>
       </div>
     </form>

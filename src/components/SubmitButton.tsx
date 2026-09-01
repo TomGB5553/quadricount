@@ -23,7 +23,7 @@ export default function SubmitButton({
       aria-busy={pending}
       className={className}
     >
-      {pending ? (pendingText ?? "Working…") : children}
+      {pending ? (pendingText ?? "En cours…") : children}
     </button>
   );
 }

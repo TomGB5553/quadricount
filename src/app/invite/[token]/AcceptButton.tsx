@@ -15,7 +15,7 @@ export default function AcceptButton({ token }: { token: string }) {
         disabled={pending}
         className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
-        {pending ? "Joining…" : "Accept & join"}
+        {pending ? "En cours…" : "Accepter et rejoindre"}
       </button>
       {state.error && <p className="text-sm text-neg">{state.error}</p>}
     </form>

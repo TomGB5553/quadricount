@@ -26,7 +26,7 @@ export default function JoinForm({
       {claimable.length > 0 && (
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm text-muted">
-            Are you one of these people already in the group?
+            Es-tu l&apos;une de ces personnes déjà dans le groupe ?
           </legend>
           {claimable.map((m) => (
             <label key={m.id} className="flex items-center gap-2 text-sm">
@@ -37,7 +37,7 @@ export default function JoinForm({
                 checked={choice === m.id}
                 onChange={(e) => setChoice(e.target.value)}
               />
-              Yes, I&apos;m {m.display_name}
+              Oui, je suis {m.display_name}
             </label>
           ))}
           <label className="flex items-center gap-2 text-sm">
@@ -48,14 +48,14 @@ export default function JoinForm({
               checked={choice === "new"}
               onChange={(e) => setChoice(e.target.value)}
             />
-            No, add me as a new member
+            Non, ajoute-moi comme nouveau membre
           </label>
         </fieldset>
       )}
 
       {choice === "new" && (
         <label className="flex flex-col gap-1 text-sm">
-          Your name in this group
+          Ton nom dans ce groupe
           <input
             name="displayName"
             required
@@ -73,7 +73,7 @@ export default function JoinForm({
         disabled={pending}
         className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
-        {pending ? "Joining…" : "Join group"}
+        {pending ? "En cours…" : "Rejoindre le groupe"}
       </button>
     </form>
   );

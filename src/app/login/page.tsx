@@ -31,7 +31,7 @@ export default function LoginPage() {
 
     if (mode === "signup" && !/^[a-z0-9_]{3,20}$/.test(username.toLowerCase())) {
       return setErrorMsg(
-        "Username: 3–20 characters, letters, numbers or underscores.",
+        "Identifiant : 3 à 20 caractères — lettres, chiffres ou tirets bas.",
       );
     }
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
       if (error)
         return setErrorMsg(
           error.message.match(/invalid login/i)
-            ? "Wrong username or password."
+            ? "Identifiant ou mot de passe incorrect."
             : error.message,
         );
     } else {
@@ -61,11 +61,11 @@ export default function LoginPage() {
       if (error)
         return setErrorMsg(
           error.message.match(/already registered/i)
-            ? "That username is taken."
+            ? "Cet identifiant est déjà pris."
             : error.message,
         );
       if (!data.session)
-        return setErrorMsg("Could not sign you in — try again.");
+        return setErrorMsg("Connexion impossible — réessaie.");
     }
 
     const next = new URLSearchParams(window.location.search).get("next");
@@ -80,15 +80,15 @@ export default function LoginPage() {
     <main className="flex flex-1 flex-col items-center justify-center gap-5 p-6">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6">
         <h1 className="mb-1 text-2xl font-extrabold tracking-tight">
-          {isSignup ? "Create your account" : "Welcome back"}
+          {isSignup ? "Créer ton compte" : "Content de te revoir"}
         </h1>
         <p className="mb-5 text-sm text-muted">
-          Split expenses with friends and groups. No email needed.
+          Partage les dépenses entre amis et en groupe. Aucun e-mail requis.
         </p>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Username
+            Identifiant
             <input
               required
               autoCapitalize="none"
@@ -96,12 +96,12 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={field}
-              placeholder="alex"
+              placeholder="camille"
             />
           </label>
 
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Password
+            Mot de passe
             <input
               type="password"
               required
@@ -109,7 +109,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={field}
-              placeholder="at least 6 characters"
+              placeholder="au moins 6 caractères"
             />
           </label>
 
@@ -117,8 +117,8 @@ export default function LoginPage() {
 
           {isSignup && (
             <p className="text-xs text-muted">
-              There&apos;s no password reset — keep it safe. You can add a
-              recovery email later.
+              Aucune réinitialisation de mot de passe — garde-le en lieu sûr. Tu
+              pourras ajouter un e-mail de secours plus tard.
             </p>
           )}
 
@@ -127,7 +127,7 @@ export default function LoginPage() {
             disabled={busy}
             className="mt-1 rounded-xl bg-primary px-3 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
           >
-            {busy ? "…" : isSignup ? "Create account" : "Sign in"}
+            {busy ? "…" : isSignup ? "Créer le compte" : "Se connecter"}
           </button>
         </form>
 
@@ -140,8 +140,8 @@ export default function LoginPage() {
           className="mt-4 w-full text-center text-sm text-muted hover:text-ink"
         >
           {isSignup
-            ? "Already have an account? Sign in"
-            : "New here? Create an account"}
+            ? "Tu as déjà un compte ? Se connecter"
+            : "Nouveau ici ? Créer un compte"}
         </button>
       </div>
     </main>

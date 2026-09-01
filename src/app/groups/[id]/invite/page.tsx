@@ -36,7 +36,9 @@ export default async function GroupInvitePage({
       >
         ← {group.name}
       </Link>
-      <h1 className="text-2xl font-bold">Invite people to {group.name}</h1>
+      <h1 className="text-2xl font-bold">
+        Inviter des personnes dans {group.name}
+      </h1>
 
       {error ? (
         <p className="text-sm text-neg">{error.message}</p>
@@ -44,9 +46,10 @@ export default async function GroupInvitePage({
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
           <p className="text-xs text-muted">
-            Anyone who opens this link and signs in can join. If they&apos;re
-            already listed as a member, they can claim that spot; otherwise they
-            join as someone new. The same link works for everyone.
+            Toute personne qui ouvre ce lien et se connecte peut rejoindre le
+            groupe. Si elle y figure déjà comme membre, elle peut récupérer ce
+            profil ; sinon elle rejoint en tant que nouveau membre. Le même lien
+            fonctionne pour tout le monde.
           </p>
         </>
       )}

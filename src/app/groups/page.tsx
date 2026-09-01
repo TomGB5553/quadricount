@@ -44,12 +44,12 @@ export default async function GroupsPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight">Your groups</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">Tes groupes</h1>
         <Link
           href="/groups/new"
           className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
         >
-          + New group
+          + Nouveau groupe
         </Link>
       </div>
 
@@ -75,7 +75,7 @@ export default async function GroupsPage() {
                     ? `+${formatMoney(g.myNet, g.default_currency)}`
                     : g.myNet < 0
                       ? `−${formatMoney(-g.myNet, g.default_currency)}`
-                      : "settled"}
+                      : "à jour"}
                 </span>
               </Link>
             </li>
@@ -83,7 +83,8 @@ export default async function GroupsPage() {
         </ul>
       ) : (
         <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          No groups yet. Create one to start splitting expenses.
+          Aucun groupe pour l&apos;instant. Crées-en un pour commencer à
+          partager les dépenses.
         </div>
       )}
 
@@ -91,7 +92,7 @@ export default async function GroupsPage() {
         href="/balances"
         className="text-sm text-muted underline hover:text-ink"
       >
-        See your overall balance across all groups →
+        Voir ton bilan sur tous les groupes →
       </Link>
     </main>
   );

@@ -15,8 +15,8 @@ export default async function Home() {
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight">Quadricount</h1>
         <p className="text-muted">
-          Share costs with friends, flatmates and trips — see who owes whom at a
-          glance.
+          Partagez les dépenses entre amis, colocs et voyages — et voyez d&apos;un
+          coup d&apos;œil qui doit combien à qui.
         </p>
       </div>
       <div className="flex gap-3">
@@ -24,13 +24,13 @@ export default async function Home() {
           href="/login?mode=signup"
           className="rounded-xl bg-primary px-5 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover"
         >
-          Create an account
+          Créer un compte
         </Link>
         <Link
           href="/login"
           className="rounded-xl border border-line bg-surface px-5 py-2.5 font-semibold hover:bg-surface-2"
         >
-          Sign in
+          Se connecter
         </Link>
       </div>
     </main>

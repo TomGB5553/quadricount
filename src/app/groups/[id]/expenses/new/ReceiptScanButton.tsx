@@ -60,12 +60,12 @@ export default function ReceiptScanButton({
       if (!res.ok) {
         throw new Error(
           [data?.error, data?.detail].filter(Boolean).join(" — ") ||
-            "Scan failed.",
+            "Échec de la lecture.",
         );
       }
       onResult(data.receipt as ParsedReceipt);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Scan failed.");
+      setError(err instanceof Error ? err.message : "Échec de la lecture.");
     } finally {
       setBusy(false);
     }
@@ -87,14 +87,14 @@ export default function ReceiptScanButton({
         disabled={busy}
         className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
       >
-        {busy ? "Reading receipt…" : "📷 Scan a receipt"}
+        {busy ? "Lecture du ticket…" : "📷 Scanner un ticket"}
         <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-          Beta
+          Bêta
         </span>
       </button>
       <p className="text-xs text-muted">
-        Beta — reads receipts with AI, which can get things wrong. Always
-        check the items and total before saving.
+        Bêta — lecture du ticket par IA, qui peut se tromper. Vérifie toujours
+        les articles et le total avant d&apos;enregistrer.
       </p>
       {error && <p className="text-sm text-neg">{error}</p>}
     </div>

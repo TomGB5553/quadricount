@@ -20,13 +20,13 @@ export default async function Header() {
       <div className="mx-auto flex w-full max-w-lg items-center justify-between px-5 py-3">
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/groups" className="font-semibold text-muted hover:text-ink">
-            Groups
+            Groupes
           </Link>
           <Link
             href="/balances"
             className="font-semibold text-muted hover:text-ink"
           >
-            Overall
+            Bilan global
           </Link>
         </nav>
         <div className="flex items-center gap-4 text-sm">
@@ -34,10 +34,10 @@ export default async function Header() {
             href="/profile"
             className="max-w-[9rem] truncate font-semibold text-muted hover:text-ink"
           >
-            {profile?.display_name ?? "Profile"}
+            {profile?.display_name ?? "Profil"}
           </Link>
           <form action="/auth/signout" method="post">
-            <button className="text-muted hover:text-ink">Sign out</button>
+            <button className="text-muted hover:text-ink">Se déconnecter</button>
           </form>
         </div>
       </div>

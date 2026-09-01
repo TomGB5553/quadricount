@@ -63,7 +63,7 @@ export default async function GroupPage({
   const myMember = members?.find((m) => m.user_id === user.id) ?? null;
   const myMemberId = myMember?.id ?? null;
   const nameOf = (memberId: string) =>
-    members?.find((m) => m.id === memberId)?.display_name ?? "Someone";
+    members?.find((m) => m.id === memberId)?.display_name ?? "Quelqu'un";
 
   const gc = group.default_currency;
   const { net: balances, currencies } = computeGroupBalances(
@@ -117,7 +117,7 @@ export default async function GroupPage({
                 <Avatar name={other} size={40} />
                 <div className="flex-1">
                   <div className="text-sm text-muted">
-                    {iOwe ? "You owe" : `${other} owes you`}
+                    {iOwe ? "Tu dois" : `${other} te doit`}
                   </div>
                   <div
                     className={`text-lg font-extrabold ${iOwe ? "text-neg" : "text-pos"}`}
@@ -126,13 +126,13 @@ export default async function GroupPage({
                     {iOwe && (
                       <span className="text-sm font-semibold text-ink">
                         {" "}
-                        to {other}
+                        à {other}
                       </span>
                     )}
                   </div>
                 </div>
                 <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-ink">
-                  Settle up
+                  Rembourser
                 </span>
               </Link>
             );
@@ -141,7 +141,7 @@ export default async function GroupPage({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-semibold text-muted">Everyone&apos;s balance</h3>
+        <h3 className="text-sm font-semibold text-muted">Le solde de chacun</h3>
         {orderedForBalances.map((m) => {
           const net = balances.get(m.id) ?? 0;
           return (
@@ -153,7 +153,7 @@ export default async function GroupPage({
                 <Avatar name={m.display_name} />
                 {m.display_name}
                 {m.status === "inactive" && (
-                  <span className="text-xs">inactive</span>
+                  <span className="text-xs">inactif</span>
                 )}
               </span>
               <span
@@ -166,10 +166,10 @@ export default async function GroupPage({
                 }
               >
                 {net > 0
-                  ? `gets back ${formatMoney(net, gc)}`
+                  ? `récupère ${formatMoney(net, gc)}`
                   : net < 0
-                    ? `owes ${formatMoney(-net, gc)}`
-                    : "settled"}
+                    ? `doit ${formatMoney(-net, gc)}`
+                    : "à jour"}
               </span>
             </div>
           );
@@ -178,7 +178,7 @@ export default async function GroupPage({
 
       {others.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <h3 className="text-sm font-semibold text-muted">Between others</h3>
+          <h3 className="text-sm font-semibold text-muted">Entre les autres</h3>
           {others.map((t, i) => (
             <Link
               key={i}
@@ -188,11 +188,11 @@ export default async function GroupPage({
               <span className="flex items-center gap-2">
                 <Avatar name={nameOf(t.from)} size={22} />
                 <span className="font-medium">{nameOf(t.from)}</span>
-                <span className="text-muted">owes</span>
+                <span className="text-muted">doit</span>
                 <span className="font-semibold">
                   {formatMoney(t.amount, gc)}
                 </span>
-                <span className="text-muted">to</span>
+                <span className="text-muted">à</span>
                 <Avatar name={nameOf(t.to)} size={22} />
                 <span className="font-medium">{nameOf(t.to)}</span>
               </span>
@@ -206,12 +206,12 @@ export default async function GroupPage({
           href={`/groups/${group.id}/transfer/new`}
           className="text-xs text-muted underline"
         >
-          Move a balance to another group
+          Transférer un solde vers un autre groupe
         </Link>
       )}
 
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-semibold text-muted">Payments</h3>
+        <h3 className="text-sm font-semibold text-muted">Remboursements</h3>
         {settlements && settlements.length > 0 ? (
           settlements.map((s) => {
             const canDelete =
@@ -222,7 +222,7 @@ export default async function GroupPage({
                 <span className="flex items-center gap-2">
                   <Avatar name={nameOf(s.from_member)} size={22} />
                   {nameOf(s.from_member)}
-                  <span className="text-muted">paid</span>
+                  <span className="text-muted">a payé</span>
                   <Avatar name={nameOf(s.to_member)} size={22} />
                   {nameOf(s.to_member)}
                   {s.note && (
@@ -242,12 +242,12 @@ export default async function GroupPage({
                         value={s.id}
                       />
                       <ConfirmSubmit
-                        confirm={`Delete this payment of ${formatMoney(
+                        confirm={`Supprimer ce remboursement de ${formatMoney(
                           s.amount,
                           s.currency,
-                        )}?`}
+                        )} ?`}
                       >
-                        Delete
+                        Supprimer
                       </ConfirmSubmit>
                     </form>
                   )}
@@ -256,14 +256,14 @@ export default async function GroupPage({
             );
           })
         ) : (
-          <p className="text-sm text-muted">No payments recorded yet.</p>
+          <p className="text-sm text-muted">Aucun remboursement enregistré.</p>
         )}
       </div>
 
       {hasConversions && (
         <p className="text-xs text-muted">
-          Amounts in other currencies converted to {gc} at each
-          transaction&apos;s rate on its date.
+          Les montants dans d&apos;autres devises sont convertis en {gc} au taux
+          de chaque transaction à sa date.
         </p>
       )}
     </section>
@@ -278,7 +278,7 @@ export default async function GroupPage({
           className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4"
         >
           <input type="hidden" name="groupId" value={group.id} />
-          <label className="text-sm font-semibold">Your name in this group</label>
+          <label className="text-sm font-semibold">Ton nom dans ce groupe</label>
           <div className="flex gap-2">
             <input
               name="displayName"
@@ -291,11 +291,12 @@ export default async function GroupPage({
               className="rounded-xl border border-line px-3 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
               pendingText="…"
             >
-              Save
+              Enregistrer
             </SubmitButton>
           </div>
           <p className="text-xs text-muted">
-            Only affects this group. Your default name is set in your profile.
+            N&apos;affecte que ce groupe. Ton nom par défaut se règle dans ton
+            profil.
           </p>
         </form>
       )}
@@ -304,7 +305,7 @@ export default async function GroupPage({
         href={`/groups/${group.id}/invite`}
         className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
       >
-        + Invite someone
+        + Inviter quelqu&apos;un
       </Link>
       <div className="flex flex-col gap-1.5">
         {members?.map((m) => (
@@ -317,19 +318,19 @@ export default async function GroupPage({
               {m.display_name}
             </span>
             <div className="flex items-center gap-3 text-xs">
-              {m.role === "owner" && <span className="text-muted">owner</span>}
+              {m.role === "owner" && <span className="text-muted">admin</span>}
               {!m.user_id && m.status === "active" && (
-                <span className="text-muted">not joined</span>
+                <span className="text-muted">pas encore inscrit</span>
               )}
               {m.status === "inactive" && (
-                <span className="text-muted">inactive</span>
+                <span className="text-muted">inactif</span>
               )}
               {!m.user_id && m.status === "active" && (
                 <Link
                   href={`/groups/${group.id}/members/${m.id}/invite`}
                   className="font-semibold text-primary hover:underline"
                 >
-                  Invite
+                  Inviter
                 </Link>
               )}
               {isOwner && m.role !== "owner" && (
@@ -345,7 +346,7 @@ export default async function GroupPage({
                     className="text-muted hover:text-ink disabled:opacity-50"
                     pendingText="…"
                   >
-                    {m.status === "active" ? "Remove" : "Re-activate"}
+                    {m.status === "active" ? "Retirer" : "Réactiver"}
                   </SubmitButton>
                 </form>
               )}
@@ -358,19 +359,20 @@ export default async function GroupPage({
         action={addMember}
         className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
       >
-        <h3 className="text-sm font-semibold">Add a placeholder member</h3>
+        <h3 className="text-sm font-semibold">Ajouter un membre fictif</h3>
         <p className="text-xs text-muted">
-          For someone not on the app yet — invite them to claim it later.
+          Pour quelqu&apos;un qui n&apos;est pas encore sur l&apos;app — tu
+          pourras l&apos;inviter à récupérer ce profil plus tard.
         </p>
         <input type="hidden" name="groupId" value={group.id} />
         <input
           name="name"
           required
           maxLength={100}
-          placeholder="Name"
+          placeholder="Nom"
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
-        <SubmitButton pendingText="Adding…">Add member</SubmitButton>
+        <SubmitButton pendingText="Ajout…">Ajouter le membre</SubmitButton>
       </form>
     </section>
   );
@@ -379,7 +381,7 @@ export default async function GroupPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← All groups
+          ← Tous les groupes
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-extrabold tracking-tight">
@@ -390,7 +392,7 @@ export default async function GroupPage({
               href={`/groups/${group.id}/edit`}
               className="text-sm text-muted underline hover:text-ink"
             >
-              Edit
+              Modifier
             </Link>
           )}
         </div>
@@ -401,7 +403,7 @@ export default async function GroupPage({
 
       <div className={`${card} flex flex-col gap-1 p-4`}>
         <span className="text-xs font-medium uppercase tracking-wide text-muted">
-          Your balance in this group
+          Ton solde dans ce groupe
         </span>
         <span
           className={`text-2xl font-extrabold ${
@@ -413,10 +415,10 @@ export default async function GroupPage({
           }`}
         >
           {myNet && myNet > 0
-            ? `You're owed ${formatMoney(myNet, gc)}`
+            ? `On te doit ${formatMoney(myNet, gc)}`
             : myNet && myNet < 0
-              ? `You owe ${formatMoney(-myNet, gc)}`
-              : "You're settled up"}
+              ? `Tu dois ${formatMoney(-myNet, gc)}`
+              : "Tu es à jour"}
         </span>
       </div>
 
@@ -425,18 +427,18 @@ export default async function GroupPage({
           href={`/groups/${group.id}/expenses/new`}
           className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-ink hover:bg-primary-hover"
         >
-          Add expense
+          Ajouter une dépense
         </Link>
         <Link
           href={`/groups/${group.id}/settle/new`}
           className="flex-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-center text-sm font-semibold hover:bg-surface-2"
         >
-          Record payment
+          Enregistrer un remboursement
         </Link>
       </div>
 
       <GroupTabs
-        labels={["Expenses", "Balances", "Members"]}
+        labels={["Dépenses", "Soldes", "Membres"]}
         panels={[
           <ExpensesPanel
             key="expenses"

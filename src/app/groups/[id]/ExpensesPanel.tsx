@@ -33,7 +33,7 @@ export default function ExpensesPanel({
 }) {
   const [filter, setFilter] = useState<string | null>(null);
   const nameOf = (id: string) =>
-    members.find((m) => m.id === id)?.display_name ?? "Someone";
+    members.find((m) => m.id === id)?.display_name ?? "Quelqu'un";
 
   const paidBy = (e: Expense, id: string) =>
     e.expense_payers
@@ -76,7 +76,7 @@ export default function ExpensesPanel({
             onClick={() => setFilter(null)}
             className={chip(!filter)}
           >
-            Everyone
+            Tout le monde
           </button>
           {members.map((m) => (
             <button
@@ -143,7 +143,7 @@ export default function ExpensesPanel({
                           {formatMoney(shareOf(e, lens), e.currency)}
                         </div>
                         <div className="text-xs text-muted">
-                          of {formatMoney(e.total_amount, e.currency)}
+                          sur {formatMoney(e.total_amount, e.currency)}
                         </div>
                       </>
                     ) : (
@@ -166,8 +166,8 @@ export default function ExpensesPanel({
         ) : (
           <li className="rounded-xl border border-dashed border-line px-3.5 py-6 text-center text-sm text-muted">
             {filter
-              ? `No expenses involving ${nameOf(filter)}.`
-              : "No expenses yet — add the first one."}
+              ? `Aucune dépense impliquant ${nameOf(filter)}.`
+              : "Aucune dépense pour l'instant — ajoute la première."}
           </li>
         )}
       </ul>

@@ -36,9 +36,10 @@ export default async function InvitePage({
   if (!preview) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Invalid invite link</h1>
+        <h1 className="text-xl font-bold">Lien d&apos;invitation invalide</h1>
         <p className="text-sm text-muted">
-          This link is not valid. Ask whoever invited you for a new one.
+          Ce lien n&apos;est pas valide. Demande un nouveau lien à la personne
+          qui t&apos;a invité.
         </p>
       </Shell>
     );
@@ -48,13 +49,15 @@ export default async function InvitePage({
   if (!preview.group_invite && (preview.accepted || preview.claimed)) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">This invite has been used</h1>
+        <h1 className="text-xl font-bold">
+          Cette invitation a déjà été utilisée
+        </h1>
         <p className="text-sm text-muted">
-          The spot for {preview.member_name} in {preview.group_name} is already
-          taken.
+          La place de {preview.member_name} dans {preview.group_name} est déjà
+          prise.
         </p>
         <Link href="/groups" className="text-sm underline">
-          Go to your groups
+          Aller à tes groupes
         </Link>
       </Shell>
     );
@@ -63,18 +66,18 @@ export default async function InvitePage({
   if (!user) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
+        <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
         <p className="text-sm text-muted">
           {preview.group_invite
-            ? "Split expenses together."
-            : `You've been invited to take the spot of ${preview.member_name}.`}{" "}
-          Sign in or create an account to continue.
+            ? "Partagez vos dépenses ensemble."
+            : `Tu es invité à reprendre la place de ${preview.member_name}.`}{" "}
+          Connecte-toi ou crée un compte pour continuer.
         </p>
         <Link
           href={`/login?mode=signup&next=${encodeURIComponent(`/invite/${token}`)}`}
           className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
         >
-          Continue
+          Continuer
         </Link>
       </Shell>
     );
@@ -84,11 +87,11 @@ export default async function InvitePage({
   if (!preview.group_invite) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
+        <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
         <p className="text-sm text-muted">
-          You&apos;ll take over the spot of{" "}
-          <strong>{preview.member_name}</strong> — their share of past expenses
-          becomes yours.
+          Tu vas reprendre la place de{" "}
+          <strong>{preview.member_name}</strong> — sa part des dépenses passées
+          devient la tienne.
         </p>
         <AcceptButton token={token} />
       </Shell>
@@ -104,7 +107,7 @@ export default async function InvitePage({
 
   return (
     <Shell>
-      <h1 className="text-xl font-bold">Join {preview.group_name}</h1>
+      <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
       <JoinForm
         token={token}
         claimable={preview.claimable_members}

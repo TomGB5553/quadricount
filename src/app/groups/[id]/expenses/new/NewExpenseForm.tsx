@@ -45,7 +45,7 @@ function toNum(raw: string): number {
 
 const METHODS: Method[] = ["equal", "exact", "percentage", "shares"];
 const methodLabel = (m: Method) =>
-  m === "exact" ? "Exact" : m === "percentage" ? "%" : m === "shares" ? "Shares" : "Equal";
+  m === "exact" ? "Exact" : m === "percentage" ? "%" : m === "shares" ? "Parts" : "Égal";
 
 export default function NewExpenseForm({
   groupId,
@@ -214,22 +214,22 @@ export default function NewExpenseForm({
         valid: n > 0,
         hint:
           n > 0 && coverage > 0
-            ? `${fmt(Math.round(coverage / n))} each (${n})`
-            : `${n} selected`,
+            ? `${fmt(Math.round(coverage / n))} chacun (${n})`
+            : `${n} sélectionné(s)`,
       };
     }
     if (p.method === "exact") {
       const sum = members.reduce((s, m) => s + toMinor(p.values[m.id] ?? ""), 0);
       return {
         valid: coverage > 0 && sum === coverage,
-        hint: `${fmt(sum)} of ${fmt(coverage)}`,
+        hint: `${fmt(sum)} sur ${fmt(coverage)}`,
       };
     }
     if (p.method === "percentage") {
       const sum = members.reduce((s, m) => s + toNum(p.values[m.id] ?? ""), 0);
       return {
         valid: Math.abs(sum - 100) < 0.01,
-        hint: `${sum.toFixed(2)}% of 100%`,
+        hint: `${sum.toFixed(2)} % sur 100 %`,
       };
     }
     const totalW = members.reduce((s, m) => s + toNum(p.values[m.id] ?? ""), 0);
@@ -237,8 +237,8 @@ export default function NewExpenseForm({
       valid: totalW > 0,
       hint:
         totalW > 0 && coverage > 0
-          ? `${totalW} shares · ${fmt(Math.round(coverage / totalW))} per share`
-          : "no shares set",
+          ? `${totalW} parts · ${fmt(Math.round(coverage / totalW))} par part`
+          : "aucune part définie",
     };
   }
 
@@ -310,21 +310,21 @@ export default function NewExpenseForm({
 
       <div className={card}>
         <label className="flex flex-col gap-1 text-sm font-medium">
-          What for?
+          Pour quoi ?
           <input
             name="description"
             required
             maxLength={200}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Dinner"
+            placeholder="Dîner"
             className={field}
           />
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-            Amount
+            Montant
             <input
               name="amount"
               required
@@ -335,14 +335,14 @@ export default function NewExpenseForm({
               readOnly={receiptActive}
               title={
                 receiptActive
-                  ? "Set from the scanned receipt — clear it to edit"
+                  ? "Défini par le ticket scanné — efface-le pour modifier"
                   : undefined
               }
               className={`${field} ${receiptActive ? "opacity-60" : ""}`}
             />
           </label>
           <label className="flex w-28 flex-col gap-1 text-sm font-medium">
-            Currency
+            Devise
             <select
               name="currency"
               value={currencyCode}
@@ -362,6 +362,7 @@ export default function NewExpenseForm({
           Date
           <input
             type="date"
+            lang="fr-FR"
             name="spentAt"
             value={spentAt}
             onChange={(e) => setSpentAt(e.target.value)}
@@ -374,21 +375,21 @@ export default function NewExpenseForm({
         <fieldset className={`${card} text-sm`}>
           <div className="flex items-center justify-between">
             <legend className="text-sm font-semibold">
-              Assign items ({receiptItems.length})
+              Attribuer les articles ({receiptItems.length})
             </legend>
             <button
               type="button"
               onClick={clearReceipt}
               className="text-xs text-muted hover:text-neg"
             >
-              Clear receipt
+              Effacer le ticket
             </button>
           </div>
 
           {receiptNote && (
             <p
               className={`text-xs ${
-                receiptNote.includes("Check the items")
+                receiptNote.includes("Vérifie")
                   ? "text-neg"
                   : "text-muted"
               }`}
@@ -403,14 +404,14 @@ export default function NewExpenseForm({
               onClick={() => setEveryItemTo(allMemberIds)}
               className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
             >
-              Everyone shares everything
+              Tout le monde partage tout
             </button>
             <button
               type="button"
               onClick={() => setEveryItemTo([])}
               className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
             >
-              Clear all
+              Tout désélectionner
             </button>
           </div>
 
@@ -465,8 +466,8 @@ export default function NewExpenseForm({
                     }`}
                   >
                     {ids.length === 0
-                      ? "Not assigned — pick who shares this"
-                      : `${each} each`}
+                      ? "Non attribué — choisis qui partage"
+                      : `${each} chacun`}
                   </p>
                 </li>
               );
@@ -493,7 +494,7 @@ export default function NewExpenseForm({
       {/* ---- paid by ---- */}
       <fieldset className={card}>
         <div className="flex items-center justify-between">
-          <legend className="text-sm font-semibold">Paid by</legend>
+          <legend className="text-sm font-semibold">Payé par</legend>
           <button
             type="button"
             onClick={() =>
@@ -501,7 +502,9 @@ export default function NewExpenseForm({
             }
             className="text-xs font-medium text-primary hover:underline"
           >
-            {payMode === "single" ? "Multiple people paid" : "One person paid"}
+            {payMode === "single"
+              ? "Plusieurs ont payé"
+              : "Une seule personne a payé"}
           </button>
         </div>
 
@@ -536,7 +539,7 @@ export default function NewExpenseForm({
             <p
               className={`text-xs ${payersBalanced ? "text-muted" : "text-neg"}`}
             >
-              Paid {(paidMinor / 100).toFixed(2)} of{" "}
+              Payé {(paidMinor / 100).toFixed(2)} sur{" "}
               {(totalMinor / 100).toFixed(2)}
             </p>
           </div>
@@ -546,7 +549,7 @@ export default function NewExpenseForm({
       {/* ---- split (hidden while a scanned receipt drives the split) ---- */}
       {!receiptActive && (
       <fieldset className={`${card} text-sm`}>
-        <legend className="text-sm font-semibold">Split</legend>
+        <legend className="text-sm font-semibold">Répartition</legend>
 
         {parts.map((p, idx) => {
           const coverage = coverageOf(p);
@@ -566,7 +569,7 @@ export default function NewExpenseForm({
                     onClick={() => removePart(p.key)}
                     className="text-xs text-muted hover:text-neg"
                   >
-                    Remove
+                    Retirer
                   </button>
                 </div>
               )}
@@ -590,7 +593,7 @@ export default function NewExpenseForm({
 
               {multiPart && (
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted">This part covers</span>
+                  <span className="text-muted">Cette part couvre</span>
                   <input
                     inputMode="decimal"
                     placeholder="0.00"
@@ -613,7 +616,7 @@ export default function NewExpenseForm({
                       }
                       className="text-primary hover:underline"
                     >
-                      + {fmt(unassignedMinor)} left
+                      + {fmt(unassignedMinor)} restant
                     </button>
                   )}
                 </div>
@@ -671,15 +674,17 @@ export default function NewExpenseForm({
             onClick={addPart}
             className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
           >
-            {multiPart ? "+ Add another part" : "+ Split part of it differently"}
+            {multiPart
+              ? "+ Ajouter une part"
+              : "+ Répartir une partie différemment"}
           </button>
           {multiPart && (
             <span className={coverageValid ? "text-muted" : "text-neg"}>
               {assignedMinor === totalMinor
-                ? `All ${fmt(totalMinor)} assigned`
+                ? `${fmt(totalMinor)} entièrement réparti`
                 : assignedMinor > totalMinor
-                  ? `${fmt(assignedMinor - totalMinor)} over the total`
-                  : `${fmt(unassignedMinor)} of ${fmt(totalMinor)} still to assign`}
+                  ? `${fmt(assignedMinor - totalMinor)} au-dessus du total`
+                  : `${fmt(unassignedMinor)} sur ${fmt(totalMinor)} encore à répartir`}
             </span>
           )}
         </div>
@@ -690,9 +695,9 @@ export default function NewExpenseForm({
         <SubmitButton
           className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
           disabled={!canSubmit}
-          pendingText={isEdit ? "Saving…" : "Adding…"}
+          pendingText={isEdit ? "Enregistrement…" : "Ajout…"}
         >
-          {isEdit ? "Save changes" : "Add expense"}
+          {isEdit ? "Enregistrer" : "Ajouter la dépense"}
         </SubmitButton>
         <Link
           href={
@@ -702,7 +707,7 @@ export default function NewExpenseForm({
           }
           className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium"
         >
-          Cancel
+          Annuler
         </Link>
       </div>
     </form>

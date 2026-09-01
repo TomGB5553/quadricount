@@ -34,54 +34,54 @@ export default async function ProfilePage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <div>
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← Your groups
+          ← Tes groupes
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Profile</h1>
+        <h1 className="mt-1 text-2xl font-bold">Profil</h1>
       </div>
 
-      {saved && <p className="text-sm text-pos">Saved.</p>}
+      {saved && <p className="text-sm text-pos">Enregistré.</p>}
       {error && <p className="text-sm text-neg">{error}</p>}
 
       <form action={updateDisplayName} className={card}>
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Display name
+          Nom affiché
           <input
             name="displayName"
             required
             maxLength={100}
             defaultValue={profile?.display_name ?? ""}
-            placeholder="Alex"
+            placeholder="Camille"
             className={field}
           />
           <span className="text-xs text-muted">
-            The name suggested when you join a new group. You can set a
-            different name per group from that group&apos;s Members tab.
+            Le nom proposé quand tu rejoins un nouveau groupe. Tu peux utiliser
+            un nom différent par groupe depuis l&apos;onglet Membres du groupe.
           </span>
         </label>
 
         {profile?.username && (
           <div className="flex flex-col gap-1 text-sm font-medium">
-            Username
+            Identifiant
             <input
               value={profile.username}
               readOnly
               className={`${field} opacity-60`}
             />
             <span className="text-xs text-muted">
-              Used to sign in — can&apos;t be changed.
+              Sert à te connecter — non modifiable.
             </span>
           </div>
         )}
 
-        <SubmitButton pendingText="Saving…">Save</SubmitButton>
+        <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
       </form>
 
       <form action={updatePayoutDetails} className={card}>
         <div>
-          <h2 className="text-sm font-semibold">Payment info</h2>
+          <h2 className="text-sm font-semibold">Infos de paiement</h2>
           <p className="text-xs text-muted">
-            Optional. Shown to people in your groups when they go to pay you
-            back.
+            Facultatif. Visible par les membres de tes groupes quand ils veulent
+            te rembourser.
           </p>
         </div>
 
@@ -97,17 +97,17 @@ export default async function ProfilePage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Other details
+          Autres précisions
           <input
             name="paymentNote"
             maxLength={200}
             defaultValue={payout?.payment_note ?? ""}
-            placeholder="Account name, or Revolut / PayPal / Lydia…"
+            placeholder="Nom du compte, ou Revolut / PayPal / Lydia…"
             className={field}
           />
         </label>
 
-        <SubmitButton pendingText="Saving…">Save</SubmitButton>
+        <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
       </form>
     </main>
   );

@@ -39,7 +39,7 @@ export default async function NewExpensePage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">New expense</h1>
+        <h1 className="mt-1 text-2xl font-bold">Nouvelle dépense</h1>
       </div>
 
       <NewExpenseForm

@@ -126,22 +126,20 @@ export default async function BalancesPage() {
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← Your groups
+          ← Tes groupes
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Overall balance
-        </h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">Bilan global</h1>
       </div>
 
       {perGroup.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          You&apos;re not in any groups yet.
+          Tu n&apos;es dans aucun groupe pour l&apos;instant.
         </div>
       ) : (
         <>
           <div className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4">
             <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              Across all your groups
+              Sur tous tes groupes
             </span>
             <span
               className={`text-2xl font-extrabold ${
@@ -153,15 +151,15 @@ export default async function BalancesPage() {
               }`}
             >
               {overall > 0
-                ? `You're owed ${formatMoney(overall, pc)}`
+                ? `On te doit ${formatMoney(overall, pc)}`
                 : overall < 0
-                  ? `You owe ${formatMoney(-overall, pc)}`
-                  : "You're settled up"}
+                  ? `Tu dois ${formatMoney(-overall, pc)}`
+                  : "Tu es à jour"}
             </span>
           </div>
 
           <section className="flex flex-col gap-1.5">
-            <h2 className="text-sm font-semibold text-muted">By group</h2>
+            <h2 className="text-sm font-semibold text-muted">Par groupe</h2>
             {perGroup.map((r) => (
               <Link
                 key={r.id}
@@ -182,7 +180,7 @@ export default async function BalancesPage() {
                     ? `+${formatMoney(r.myNet, r.currency)}`
                     : r.myNet < 0
                       ? `−${formatMoney(-r.myNet, r.currency)}`
-                      : "settled"}
+                      : "à jour"}
                   {r.currency !== pc &&
                     r.myNet !== 0 &&
                     ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
@@ -194,7 +192,7 @@ export default async function BalancesPage() {
           {people.length > 0 && (
             <section className="flex flex-col gap-1.5">
               <h2 className="text-sm font-semibold text-muted">
-                Across everyone
+                Avec tout le monde
               </h2>
               {people.map((p, i) => (
                 <div key={i} className={row}>
@@ -207,22 +205,22 @@ export default async function BalancesPage() {
                     }
                   >
                     {p.net > 0
-                      ? `owes you ${formatMoney(p.net, pc)}`
-                      : `you owe ${formatMoney(-p.net, pc)}`}
+                      ? `te doit ${formatMoney(p.net, pc)}`
+                      : `tu dois ${formatMoney(-p.net, pc)}`}
                   </span>
                 </div>
               ))}
               <p className="text-xs text-muted">
-                Combined across groups where the person has an account — a
-                suggestion for settling up, not a per-group breakdown.
+                Cumulé sur les groupes où la personne a un compte — une
+                suggestion pour se rembourser, pas un détail par groupe.
               </p>
             </section>
           )}
 
           {converted && (
             <p className="text-xs text-muted">
-              Balances in other currencies converted to {pc} at today&apos;s
-              rate.
+              Les soldes dans d&apos;autres devises sont convertis en {pc} au
+              taux du jour.
             </p>
           )}
         </>

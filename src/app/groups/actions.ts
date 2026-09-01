@@ -31,7 +31,7 @@ export async function createGroup(formData: FormData) {
 // Parse a user-typed amount like "12.34" or "12,34" into integer minor units.
 function toMinorUnits(raw: string): number {
   const n = Number(raw.replace(",", ".").trim());
-  if (!Number.isFinite(n) || n <= 0) throw new Error("Enter a valid amount");
+  if (!Number.isFinite(n) || n <= 0) throw new Error("Saisis un montant valide");
   return Math.round(n * 100);
 }
 
@@ -50,20 +50,20 @@ function readExpenseForm(formData: FormData) {
     payers = JSON.parse(String(formData.get("payers") ?? "[]"));
     components = JSON.parse(String(formData.get("components") ?? "[]"));
   } catch {
-    throw new Error("Could not read the split details");
+    throw new Error("Impossible de lire les détails de la répartition");
   }
   payers = payers.filter((p) => p && p.member_id && p.amount > 0);
 
-  if (!groupId || !description) throw new Error("Fill in a description");
-  if (payers.length === 0) throw new Error("Record who paid");
+  if (!groupId || !description) throw new Error("Renseigne une description");
+  if (payers.length === 0) throw new Error("Indique qui a payé");
   if (!Array.isArray(components) || components.length === 0) {
-    throw new Error("Add a split");
+    throw new Error("Ajoute une répartition");
   }
 
   const payerSum = payers.reduce((s, p) => s + p.amount, 0);
   if (payerSum !== amount) {
     throw new Error(
-      `Payer amounts add up to ${(payerSum / 100).toFixed(2)}, but the total is ${(
+      `Les montants payés font ${(payerSum / 100).toFixed(2)}, mais le total est ${(
         amount / 100
       ).toFixed(2)}`,
     );
@@ -107,7 +107,7 @@ export async function createExpense(formData: FormData) {
 export async function updateExpense(formData: FormData) {
   await requireUser();
   const f = readExpenseForm(formData);
-  if (!f.expenseId) throw new Error("Missing expense");
+  if (!f.expenseId) throw new Error("Dépense manquante");
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_expense_with_splits", {
@@ -138,7 +138,7 @@ export async function deleteExpense(formData: FormData) {
   await requireUser();
   const groupId = String(formData.get("groupId") ?? "");
   const expenseId = String(formData.get("expenseId") ?? "");
-  if (!groupId || !expenseId) throw new Error("Invalid request");
+  if (!groupId || !expenseId) throw new Error("Requête invalide");
 
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
@@ -183,7 +183,7 @@ export async function updateGroup(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
 
-  if (!groupId || !name) throw new Error("The group needs a name");
+  if (!groupId || !name) throw new Error("Le groupe a besoin d'un nom");
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_group", {
@@ -209,15 +209,16 @@ export async function transferBalance(formData: FormData) {
   const amount = toMinorUnits(String(formData.get("amount") ?? ""));
   const note = String(formData.get("note") ?? "").trim() || null;
 
-  if (!sourceGroup || !targetGroup) throw new Error("Pick a target group");
+  if (!sourceGroup || !targetGroup)
+    throw new Error("Choisis un groupe de destination");
   if (targetGroup === sourceGroup) {
-    throw new Error("Pick a different group to move the balance into");
+    throw new Error("Choisis un autre groupe pour y transférer le solde");
   }
   if (!srcFrom || !srcTo || !tgtFrom || !tgtTo) {
-    throw new Error("Choose who owes whom in both groups");
+    throw new Error("Choisis qui doit à qui dans les deux groupes");
   }
   if (srcFrom === srcTo || tgtFrom === tgtTo) {
-    throw new Error("A transfer needs two different people");
+    throw new Error("Un transfert nécessite deux personnes différentes");
   }
 
   const supabase = await createClient();
@@ -244,7 +245,7 @@ export async function setMemberStatus(formData: FormData) {
   const memberId = String(formData.get("memberId") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!groupId || !memberId || !["active", "inactive"].includes(status)) {
-    throw new Error("Invalid request");
+    throw new Error("Requête invalide");
   }
 
   const supabase = await createClient();
@@ -307,10 +308,10 @@ export async function recordSettlement(formData: FormData) {
   const note = String(formData.get("note") ?? "").trim() || null;
 
   if (!groupId || !fromMember || !toMember) {
-    throw new Error("Pick who paid and who received");
+    throw new Error("Choisis qui a payé et qui a reçu");
   }
   if (fromMember === toMember) {
-    throw new Error("A payment needs two different people");
+    throw new Error("Un remboursement nécessite deux personnes différentes");
   }
 
   const supabase = await createClient();

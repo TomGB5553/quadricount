@@ -10,12 +10,12 @@ const appFont = Nunito({
 
 export const metadata: Metadata = {
   title: "Quadricount",
-  description: "Split expenses with friends and groups",
+  description: "Partagez les dépenses entre amis et en groupe",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${appFont.variable} h-full antialiased`}>
+    <html lang="fr" className={`${appFont.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-bg text-ink">
         <Header />
         <div className="flex flex-1 flex-col">{children}</div>

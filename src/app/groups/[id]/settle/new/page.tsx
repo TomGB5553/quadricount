@@ -62,7 +62,7 @@ export default async function NewSettlementPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Record a payment</h1>
+        <h1 className="mt-1 text-2xl font-bold">Enregistrer un remboursement</h1>
       </div>
 
       <SettleForm

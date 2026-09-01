@@ -49,14 +49,14 @@ export default async function EditGroupPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Edit group</h1>
+        <h1 className="mt-1 text-2xl font-bold">Modifier le groupe</h1>
       </div>
 
       <form action={updateGroup} className="flex flex-col gap-4">
         <input type="hidden" name="groupId" value={group.id} />
 
         <label className="flex flex-col gap-1 text-sm">
-          Name
+          Nom
           <input
             name="name"
             required
@@ -67,7 +67,7 @@ export default async function EditGroupPage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          Description (optional)
+          Description (facultatif)
           <input
             name="description"
             maxLength={200}
@@ -77,7 +77,7 @@ export default async function EditGroupPage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          Default currency
+          Devise par défaut
           {currencyLocked ? (
             <>
               <input
@@ -91,7 +91,8 @@ export default async function EditGroupPage({
                 className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-muted"
               />
               <span className="text-xs text-muted">
-                Locked — the group already has expenses or payments.
+                Verrouillée — le groupe a déjà des dépenses ou des
+                remboursements.
               </span>
             </>
           ) : (
@@ -110,12 +111,12 @@ export default async function EditGroupPage({
         </label>
 
         <div className="flex gap-3">
-          <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
+          <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
           <Link
             href={`/groups/${id}`}
             className="rounded-xl border border-line px-3 py-2 text-sm"
           >
-            Cancel
+            Annuler
           </Link>
         </div>
       </form>

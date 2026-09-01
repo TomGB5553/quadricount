@@ -33,7 +33,7 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
       items: items.map((it) => ({ ...it, share: 0 })),
       total,
       adjustment: 0,
-      note: "Couldn't read any priced items — add them by hand.",
+      note: "Aucun article avec prix n'a pu être lu — ajoute-les à la main.",
       ok: false,
     };
   }
@@ -57,13 +57,13 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
 
   if (Math.abs(drift) > CENTS_TOLERANCE) {
     ok = false;
-    note = `The lines add up to ${money(impliedTotal)} but the receipt total is ${money(
+    note = `Les lignes font ${money(impliedTotal)} mais le total du ticket est ${money(
       r.total,
-    )}. Check the items.`;
+    )}. Vérifie les articles.`;
   } else if (adjustment > CENTS_TOLERANCE) {
-    note = `Spread ${money(adjustment)} of tax/service across the items.`;
+    note = `${money(adjustment)} de taxe/service répartis sur les articles.`;
   } else if (adjustment < -CENTS_TOLERANCE) {
-    note = `Applied ${money(-adjustment)} discount across the items.`;
+    note = `Remise de ${money(-adjustment)} répartie sur les articles.`;
   }
 
   return { items: scaled, total, adjustment, note, ok };

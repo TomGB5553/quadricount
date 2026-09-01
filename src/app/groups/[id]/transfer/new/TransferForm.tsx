@@ -64,9 +64,9 @@ export default function TransferForm({
   if (otherGroups.length === 0) {
     return (
       <p className="text-sm text-muted">
-        You need at least one other group to move a balance into.{" "}
+        Il te faut au moins un autre groupe pour y transférer un solde.{" "}
         <Link href="/groups" className="underline">
-          Create one
+          Crées-en un
         </Link>
         .
       </p>
@@ -80,13 +80,13 @@ export default function TransferForm({
       <input type="hidden" name="tgtTo" value={tgtTo} />
 
       <p className="text-sm text-muted">
-        This clears the debt in <strong>{sourceGroup.name}</strong> and re-opens
-        it in the group you choose.
+        Cela solde la dette dans <strong>{sourceGroup.name}</strong> et la
+        rouvre dans le groupe choisi.
       </p>
 
       <div className="flex items-end gap-2 text-sm">
         <label className="flex flex-1 flex-col gap-1">
-          Who owes
+          Qui doit
           <select
             name="srcFrom"
             value={srcFrom}
@@ -105,7 +105,7 @@ export default function TransferForm({
         </label>
         <span className="pb-2">→</span>
         <label className="flex flex-1 flex-col gap-1">
-          Who is owed
+          À qui on doit
           <select
             name="srcTo"
             value={srcTo}
@@ -125,7 +125,7 @@ export default function TransferForm({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        Amount
+        Montant
         <input
           name="amount"
           required
@@ -137,7 +137,7 @@ export default function TransferForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Move into
+        Transférer vers
         <select
           name="targetGroup"
           value={targetId}
@@ -159,10 +159,10 @@ export default function TransferForm({
       {target && (
         <div className="flex flex-col gap-2 rounded-xl border border-line p-3 text-sm">
           <p className="text-xs text-muted">
-            Match the two people in {target.name}
+            Fais correspondre les deux personnes dans {target.name}
           </p>
           <label className="flex items-center justify-between gap-2">
-            {nameOf(srcFrom)} is
+            {nameOf(srcFrom)} est
             <select
               value={tgtFrom}
               onChange={(e) => setTgtFromOverride(e.target.value)}
@@ -176,7 +176,7 @@ export default function TransferForm({
             </select>
           </label>
           <label className="flex items-center justify-between gap-2">
-            {nameOf(srcTo)} is
+            {nameOf(srcTo)} est
             <select
               value={tgtTo}
               onChange={(e) => setTgtToOverride(e.target.value)}
@@ -193,24 +193,24 @@ export default function TransferForm({
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        Note (optional)
+        Note (facultatif)
         <input
           name="note"
           maxLength={200}
-          placeholder="Leftover from the Lisbon trip"
+          placeholder="Reste du voyage à Lisbonne"
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
       <div className="flex gap-3">
-        <SubmitButton disabled={!valid} pendingText="Moving…">
-          Move balance
+        <SubmitButton disabled={!valid} pendingText="Transfert…">
+          Transférer le solde
         </SubmitButton>
         <Link
           href={`/groups/${sourceGroup.id}`}
           className="rounded-xl border border-line px-3 py-2 text-sm"
         >
-          Cancel
+          Annuler
         </Link>
       </div>
     </form>

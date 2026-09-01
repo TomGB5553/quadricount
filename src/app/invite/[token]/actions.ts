@@ -10,7 +10,7 @@ async function accept(
   displayName: string | null,
 ): Promise<string> {
   await requireUser();
-  if (!token) throw new Error("Missing invite");
+  if (!token) throw new Error("Invitation manquante");
 
   const supabase = await createClient();
   const { data: groupId, error } = await supabase.rpc("accept_invitation", {
@@ -48,7 +48,7 @@ export async function acceptInvitationState(
   try {
     groupId = await accept(token, memberId, name);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Something went wrong" };
+    return { error: e instanceof Error ? e.message : "Une erreur est survenue" };
   }
   redirect(`/groups/${groupId}`);
 }
