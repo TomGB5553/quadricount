@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import SettleForm from "./SettleForm";
 
 export default async function NewSettlementPage({
@@ -15,6 +16,7 @@ export default async function NewSettlementPage({
   const prefill = await searchParams;
   await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: group } = await supabase
     .from("groups")
@@ -62,7 +64,7 @@ export default async function NewSettlementPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Enregistrer un remboursement</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("settle.title")}</h1>
       </div>
 
       <SettleForm

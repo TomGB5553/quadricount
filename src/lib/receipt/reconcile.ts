@@ -7,11 +7,18 @@ import type { ParsedReceipt, ReceiptItem } from "./types";
 
 export type ReconciledItem = ReceiptItem & { share: number };
 
+// A structured note so the UI can translate it. Amounts are minor units.
+export type ReconcileNote =
+  | { kind: "noItems" }
+  | { kind: "drift"; implied: number; total: number }
+  | { kind: "spread"; amount: number }
+  | { kind: "discount"; amount: number };
+
 export type Reconciliation = {
   items: ReconciledItem[];
   total: number; // the amount the expense will be recorded as
   adjustment: number; // tax + tip - discount that got spread over items (signed)
-  note: string | null; // a human note when something needed care / looks off
+  note: ReconcileNote | null;
   ok: boolean; // false => the numbers don't add up, user should check the items
 };
 
@@ -33,7 +40,7 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
       items: items.map((it) => ({ ...it, share: 0 })),
       total,
       adjustment: 0,
-      note: "Aucun article avec prix n'a pu être lu — ajoute-les à la main.",
+      note: { kind: "noItems" },
       ok: false,
     };
   }
@@ -52,23 +59,17 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
   const adjustment = total - itemsSum;
   const drift = r.total > 0 ? r.total - impliedTotal : 0;
 
-  let note: string | null = null;
+  let note: ReconcileNote | null = null;
   let ok = true;
 
   if (Math.abs(drift) > CENTS_TOLERANCE) {
     ok = false;
-    note = `Les lignes font ${money(impliedTotal)} mais le total du ticket est ${money(
-      r.total,
-    )}. Vérifie les articles.`;
+    note = { kind: "drift", implied: impliedTotal, total: r.total };
   } else if (adjustment > CENTS_TOLERANCE) {
-    note = `${money(adjustment)} de taxe/service répartis sur les articles.`;
+    note = { kind: "spread", amount: adjustment };
   } else if (adjustment < -CENTS_TOLERANCE) {
-    note = `Remise de ${money(-adjustment)} répartie sur les articles.`;
+    note = { kind: "discount", amount: -adjustment };
   }
 
   return { items: scaled, total, adjustment, note, ok };
-}
-
-function money(minor: number): string {
-  return (minor / 100).toFixed(2);
 }

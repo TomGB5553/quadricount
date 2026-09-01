@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 
 async function accept(
   token: string,
@@ -10,7 +11,7 @@ async function accept(
   displayName: string | null,
 ): Promise<string> {
   await requireUser();
-  if (!token) throw new Error("Invitation manquante");
+  if (!token) throw new Error((await getT())("err.missingInvite"));
 
   const supabase = await createClient();
   const { data: groupId, error } = await supabase.rpc("accept_invitation", {
@@ -48,7 +49,12 @@ export async function acceptInvitationState(
   try {
     groupId = await accept(token, memberId, name);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Une erreur est survenue" };
+    return {
+      error:
+        e instanceof Error
+          ? e.message
+          : (await getT())("invite.somethingWrong"),
+    };
   }
   redirect(`/groups/${groupId}`);
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 export default function CopyLink({ url }: { url: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   return (
@@ -27,7 +29,7 @@ export default function CopyLink({ url }: { url: string }) {
           }}
           className="rounded-xl bg-primary px-3 py-2 text-sm text-primary-ink"
         >
-          {copied ? "Copié" : "Copier"}
+          {copied ? t("common.copied") : t("common.copy")}
         </button>
       </div>
     </div>

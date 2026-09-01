@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { ParsedReceipt } from "@/lib/receipt/types";
+import { useT } from "@/lib/i18n/client";
 
 // Downscale a photo in the browser before upload: phone shots are 3–8 MB, but
 // ~1600px on the long edge is plenty for the model and much faster to send.
@@ -38,6 +39,7 @@ export default function ReceiptScanButton({
   currency: string;
   onResult: (receipt: ParsedReceipt) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -60,12 +62,12 @@ export default function ReceiptScanButton({
       if (!res.ok) {
         throw new Error(
           [data?.error, data?.detail].filter(Boolean).join(" — ") ||
-            "Échec de la lecture.",
+            t("receipt.failed"),
         );
       }
       onResult(data.receipt as ParsedReceipt);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec de la lecture.");
+      setError(err instanceof Error ? err.message : t("receipt.failed"));
     } finally {
       setBusy(false);
     }
@@ -87,15 +89,12 @@ export default function ReceiptScanButton({
         disabled={busy}
         className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
       >
-        {busy ? "Lecture du ticket…" : "📷 Scanner un ticket"}
+        {busy ? t("receipt.reading") : t("receipt.scan")}
         <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-          Bêta
+          {t("receipt.beta")}
         </span>
       </button>
-      <p className="text-xs text-muted">
-        Bêta — lecture du ticket par IA, qui peut se tromper. Vérifie toujours
-        les articles et le total avant d&apos;enregistrer.
-      </p>
+      <p className="text-xs text-muted">{t("receipt.betaHint")}</p>
       {error && <p className="text-sm text-neg">{error}</p>}
     </div>
   );

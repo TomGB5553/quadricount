@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import TransferForm from "./TransferForm";
 
 export default async function NewTransferPage({
@@ -15,6 +16,7 @@ export default async function NewTransferPage({
   const prefill = await searchParams;
   await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: group } = await supabase
     .from("groups")
@@ -62,7 +64,7 @@ export default async function NewTransferPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Transférer un solde</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("transfer.title")}</h1>
       </div>
 
       <TransferForm

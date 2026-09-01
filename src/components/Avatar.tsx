@@ -85,24 +85,29 @@ export function AvatarStack({
 }
 
 // "who paid" avatars, a divider, then "who it's split between" avatars.
+// Labels are passed in so this stays usable from both server and client trees.
 export function PaidSplitAvatars({
   payers,
   participants,
+  paidLabel,
+  forLabel,
   size = 20,
 }: {
   payers: string[];
   participants: string[];
+  paidLabel: string;
+  forLabel: string;
   size?: number;
 }) {
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted">
       <span className="flex items-center gap-1">
-        <span className="uppercase tracking-wide">payé par</span>
+        <span className="uppercase tracking-wide">{paidLabel}</span>
         <AvatarStack people={payers.map((n) => ({ name: n }))} size={size} />
       </span>
       <span className="h-4 w-px bg-line" />
       <span className="flex items-center gap-1">
-        <span className="uppercase tracking-wide">pour</span>
+        <span className="uppercase tracking-wide">{forLabel}</span>
         <AvatarStack
           people={participants.map((n) => ({ name: n }))}
           size={size}

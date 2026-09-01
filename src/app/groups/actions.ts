@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getFxRate } from "@/lib/fx";
+import { getT } from "@/lib/i18n/server";
+import type { TFn } from "@/lib/i18n/core";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -29,18 +31,18 @@ export async function createGroup(formData: FormData) {
 }
 
 // Parse a user-typed amount like "12.34" or "12,34" into integer minor units.
-function toMinorUnits(raw: string): number {
+function toMinorUnits(raw: string, t: TFn): number {
   const n = Number(raw.replace(",", ".").trim());
-  if (!Number.isFinite(n) || n <= 0) throw new Error("Saisis un montant valide");
+  if (!Number.isFinite(n) || n <= 0) throw new Error(t("err.validAmount"));
   return Math.round(n * 100);
 }
 
 // Shared parsing/validation for the create and edit expense forms.
-function readExpenseForm(formData: FormData) {
+function readExpenseForm(formData: FormData, t: TFn) {
   const groupId = String(formData.get("groupId") ?? "");
   const expenseId = String(formData.get("expenseId") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim();
-  const amount = toMinorUnits(String(formData.get("amount") ?? ""));
+  const amount = toMinorUnits(String(formData.get("amount") ?? ""), t);
   const spentAt = String(formData.get("spentAt") ?? "") || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
 
@@ -50,22 +52,23 @@ function readExpenseForm(formData: FormData) {
     payers = JSON.parse(String(formData.get("payers") ?? "[]"));
     components = JSON.parse(String(formData.get("components") ?? "[]"));
   } catch {
-    throw new Error("Impossible de lire les détails de la répartition");
+    throw new Error(t("err.readSplit"));
   }
   payers = payers.filter((p) => p && p.member_id && p.amount > 0);
 
-  if (!groupId || !description) throw new Error("Renseigne une description");
-  if (payers.length === 0) throw new Error("Indique qui a payé");
+  if (!groupId || !description) throw new Error(t("err.fillDescription"));
+  if (payers.length === 0) throw new Error(t("err.recordWhoPaid"));
   if (!Array.isArray(components) || components.length === 0) {
-    throw new Error("Ajoute une répartition");
+    throw new Error(t("err.addSplit"));
   }
 
   const payerSum = payers.reduce((s, p) => s + p.amount, 0);
   if (payerSum !== amount) {
     throw new Error(
-      `Les montants payés font ${(payerSum / 100).toFixed(2)}, mais le total est ${(
-        amount / 100
-      ).toFixed(2)}`,
+      t("expForm.payerMismatch", {
+        paid: (payerSum / 100).toFixed(2),
+        total: (amount / 100).toFixed(2),
+      }),
     );
   }
 
@@ -74,7 +77,7 @@ function readExpenseForm(formData: FormData) {
 
 export async function createExpense(formData: FormData) {
   await requireUser();
-  const f = readExpenseForm(formData);
+  const f = readExpenseForm(formData, await getT());
 
   const supabase = await createClient();
   const { data: expenseId, error } = await supabase.rpc(
@@ -106,8 +109,9 @@ export async function createExpense(formData: FormData) {
 
 export async function updateExpense(formData: FormData) {
   await requireUser();
-  const f = readExpenseForm(formData);
-  if (!f.expenseId) throw new Error("Dépense manquante");
+  const t = await getT();
+  const f = readExpenseForm(formData, t);
+  if (!f.expenseId) throw new Error(t("err.missingExpense"));
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_expense_with_splits", {
@@ -138,7 +142,7 @@ export async function deleteExpense(formData: FormData) {
   await requireUser();
   const groupId = String(formData.get("groupId") ?? "");
   const expenseId = String(formData.get("expenseId") ?? "");
-  if (!groupId || !expenseId) throw new Error("Requête invalide");
+  if (!groupId || !expenseId) throw new Error((await getT())("err.invalidRequest"));
 
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").delete().eq("id", expenseId);
@@ -183,7 +187,8 @@ export async function updateGroup(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim() || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
 
-  if (!groupId || !name) throw new Error("Le groupe a besoin d'un nom");
+  if (!groupId || !name)
+    throw new Error((await getT())("err.groupNeedsName"));
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("update_group", {
@@ -199,6 +204,7 @@ export async function updateGroup(formData: FormData) {
 
 export async function transferBalance(formData: FormData) {
   await requireUser();
+  const t = await getT();
 
   const sourceGroup = String(formData.get("sourceGroup") ?? "");
   const targetGroup = String(formData.get("targetGroup") ?? "");
@@ -206,19 +212,19 @@ export async function transferBalance(formData: FormData) {
   const srcTo = String(formData.get("srcTo") ?? "");
   const tgtFrom = String(formData.get("tgtFrom") ?? "");
   const tgtTo = String(formData.get("tgtTo") ?? "");
-  const amount = toMinorUnits(String(formData.get("amount") ?? ""));
+  const amount = toMinorUnits(String(formData.get("amount") ?? ""), t);
   const note = String(formData.get("note") ?? "").trim() || null;
 
   if (!sourceGroup || !targetGroup)
-    throw new Error("Choisis un groupe de destination");
+    throw new Error(t("err.pickTargetGroup"));
   if (targetGroup === sourceGroup) {
-    throw new Error("Choisis un autre groupe pour y transférer le solde");
+    throw new Error(t("err.pickDifferentGroup"));
   }
   if (!srcFrom || !srcTo || !tgtFrom || !tgtTo) {
-    throw new Error("Choisis qui doit à qui dans les deux groupes");
+    throw new Error(t("err.chooseOwesWhom"));
   }
   if (srcFrom === srcTo || tgtFrom === tgtTo) {
-    throw new Error("Un transfert nécessite deux personnes différentes");
+    throw new Error(t("err.transferTwoPeople"));
   }
 
   const supabase = await createClient();
@@ -245,7 +251,7 @@ export async function setMemberStatus(formData: FormData) {
   const memberId = String(formData.get("memberId") ?? "");
   const status = String(formData.get("status") ?? "");
   if (!groupId || !memberId || !["active", "inactive"].includes(status)) {
-    throw new Error("Requête invalide");
+    throw new Error((await getT())("err.invalidRequest"));
   }
 
   const supabase = await createClient();
@@ -298,20 +304,21 @@ export async function updateMyGroupName(formData: FormData) {
 
 export async function recordSettlement(formData: FormData) {
   await requireUser();
+  const t = await getT();
 
   const groupId = String(formData.get("groupId") ?? "");
   const fromMember = String(formData.get("fromMember") ?? "");
   const toMember = String(formData.get("toMember") ?? "");
-  const amount = toMinorUnits(String(formData.get("amount") ?? ""));
+  const amount = toMinorUnits(String(formData.get("amount") ?? ""), t);
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
   const settledAt = String(formData.get("settledAt") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim() || null;
 
   if (!groupId || !fromMember || !toMember) {
-    throw new Error("Choisis qui a payé et qui a reçu");
+    throw new Error(t("err.pickPaidReceived"));
   }
   if (fromMember === toMember) {
-    throw new Error("Un remboursement nécessite deux personnes différentes");
+    throw new Error(t("err.paymentTwoPeople"));
   }
 
   const supabase = await createClient();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { useT } from "@/lib/i18n/client";
 
 // A submit button that shows a pending state while its <form>'s action runs.
 // Must be rendered inside the <form> (not as the form component itself).
@@ -16,6 +17,7 @@ export default function SubmitButton({
   disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
+  const t = useT();
   return (
     <button
       type="submit"
@@ -23,7 +25,7 @@ export default function SubmitButton({
       aria-busy={pending}
       className={className}
     >
-      {pending ? (pendingText ?? "En cours…") : children}
+      {pending ? (pendingText ?? t("common.working")) : children}
     </button>
   );
 }

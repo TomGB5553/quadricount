@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
+import LangToggle from "./LangToggle";
 
 // Thin top bar, shown only when signed in.
 export default async function Header() {
@@ -9,6 +11,7 @@ export default async function Header() {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
+  const t = await getT();
   const { data: profile } = await supabase
     .from("profiles")
     .select("display_name")
@@ -20,24 +23,27 @@ export default async function Header() {
       <div className="mx-auto flex w-full max-w-lg items-center justify-between px-5 py-3">
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/groups" className="font-semibold text-muted hover:text-ink">
-            Groupes
+            {t("nav.groups")}
           </Link>
           <Link
             href="/balances"
             className="font-semibold text-muted hover:text-ink"
           >
-            Bilan global
+            {t("nav.overall")}
           </Link>
         </nav>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-3 text-sm">
           <Link
             href="/profile"
-            className="max-w-[9rem] truncate font-semibold text-muted hover:text-ink"
+            className="max-w-[7rem] truncate font-semibold text-muted hover:text-ink"
           >
-            {profile?.display_name ?? "Profil"}
+            {profile?.display_name ?? t("nav.profile")}
           </Link>
+          <LangToggle />
           <form action="/auth/signout" method="post">
-            <button className="text-muted hover:text-ink">Se déconnecter</button>
+            <button className="text-muted hover:text-ink">
+              {t("nav.signOut")}
+            </button>
           </form>
         </div>
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import NewExpenseForm from "./NewExpenseForm";
 
 export default async function NewExpensePage({
@@ -12,6 +13,7 @@ export default async function NewExpensePage({
   const { id } = await params;
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: group } = await supabase
     .from("groups")
@@ -39,7 +41,7 @@ export default async function NewExpensePage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Nouvelle dépense</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("expForm.newTitle")}</h1>
       </div>
 
       <NewExpenseForm

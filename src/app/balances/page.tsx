@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
+import { getT } from "@/lib/i18n/server";
 
 // "Overall" balance across every group the user belongs to, converted to their
 // preferred currency. Members are matched across groups by account (user_id),
@@ -11,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 export default async function BalancesPage() {
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -126,20 +128,22 @@ export default async function BalancesPage() {
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← Tes groupes
+          {t("groups.backToYours")}
         </Link>
-        <h1 className="text-2xl font-extrabold tracking-tight">Bilan global</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          {t("overall.title")}
+        </h1>
       </div>
 
       {perGroup.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          Tu n&apos;es dans aucun groupe pour l&apos;instant.
+          {t("overall.notInGroups")}
         </div>
       ) : (
         <>
           <div className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4">
             <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              Sur tous tes groupes
+              {t("overall.acrossAll")}
             </span>
             <span
               className={`text-2xl font-extrabold ${
@@ -151,15 +155,17 @@ export default async function BalancesPage() {
               }`}
             >
               {overall > 0
-                ? `On te doit ${formatMoney(overall, pc)}`
+                ? t("overall.youreOwed", { amount: formatMoney(overall, pc) })
                 : overall < 0
-                  ? `Tu dois ${formatMoney(-overall, pc)}`
-                  : "Tu es à jour"}
+                  ? t("overall.youOwe", { amount: formatMoney(-overall, pc) })
+                  : t("overall.settledUp")}
             </span>
           </div>
 
           <section className="flex flex-col gap-1.5">
-            <h2 className="text-sm font-semibold text-muted">Par groupe</h2>
+            <h2 className="text-sm font-semibold text-muted">
+              {t("overall.byGroup")}
+            </h2>
             {perGroup.map((r) => (
               <Link
                 key={r.id}
@@ -180,7 +186,7 @@ export default async function BalancesPage() {
                     ? `+${formatMoney(r.myNet, r.currency)}`
                     : r.myNet < 0
                       ? `−${formatMoney(-r.myNet, r.currency)}`
-                      : "à jour"}
+                      : t("overall.settled")}
                   {r.currency !== pc &&
                     r.myNet !== 0 &&
                     ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
@@ -192,7 +198,7 @@ export default async function BalancesPage() {
           {people.length > 0 && (
             <section className="flex flex-col gap-1.5">
               <h2 className="text-sm font-semibold text-muted">
-                Avec tout le monde
+                {t("overall.acrossEveryone")}
               </h2>
               {people.map((p, i) => (
                 <div key={i} className={row}>
@@ -205,22 +211,20 @@ export default async function BalancesPage() {
                     }
                   >
                     {p.net > 0
-                      ? `te doit ${formatMoney(p.net, pc)}`
-                      : `tu dois ${formatMoney(-p.net, pc)}`}
+                      ? t("overall.owesYou", { amount: formatMoney(p.net, pc) })
+                      : t("overall.youOweShort", {
+                          amount: formatMoney(-p.net, pc),
+                        })}
                   </span>
                 </div>
               ))}
-              <p className="text-xs text-muted">
-                Cumulé sur les groupes où la personne a un compte — une
-                suggestion pour se rembourser, pas un détail par groupe.
-              </p>
+              <p className="text-xs text-muted">{t("overall.acrossNote")}</p>
             </section>
           )}
 
           {converted && (
             <p className="text-xs text-muted">
-              Les soldes dans d&apos;autres devises sont convertis en {pc} au
-              taux du jour.
+              {t("overall.fxNote", { currency: pc })}
             </p>
           )}
         </>

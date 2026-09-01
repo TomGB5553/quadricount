@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 import { acceptInvitationState } from "./actions";
 
 type Claimable = { id: string; display_name: string };
@@ -14,6 +15,7 @@ export default function JoinForm({
   claimable: Claimable[];
   defaultName: string;
 }) {
+  const t = useT();
   const [state, formAction, pending] = useActionState(acceptInvitationState, {
     error: "",
   });
@@ -26,7 +28,7 @@ export default function JoinForm({
       {claimable.length > 0 && (
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-1 text-sm text-muted">
-            Es-tu l&apos;une de ces personnes déjà dans le groupe ?
+            {t("invite.areYouOne")}
           </legend>
           {claimable.map((m) => (
             <label key={m.id} className="flex items-center gap-2 text-sm">
@@ -37,7 +39,7 @@ export default function JoinForm({
                 checked={choice === m.id}
                 onChange={(e) => setChoice(e.target.value)}
               />
-              Oui, je suis {m.display_name}
+              {t("invite.yesImOne", { name: m.display_name })}
             </label>
           ))}
           <label className="flex items-center gap-2 text-sm">
@@ -48,14 +50,14 @@ export default function JoinForm({
               checked={choice === "new"}
               onChange={(e) => setChoice(e.target.value)}
             />
-            Non, ajoute-moi comme nouveau membre
+            {t("invite.noNewMember")}
           </label>
         </fieldset>
       )}
 
       {choice === "new" && (
         <label className="flex flex-col gap-1 text-sm">
-          Ton nom dans ce groupe
+          {t("invite.yourNameInGroup")}
           <input
             name="displayName"
             required
@@ -73,7 +75,7 @@ export default function JoinForm({
         disabled={pending}
         className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
-        {pending ? "En cours…" : "Rejoindre le groupe"}
+        {pending ? t("invite.joining") : t("invite.joinGroup")}
       </button>
     </form>
   );

@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import { getT } from "@/lib/i18n/server";
 import { updateGroup } from "../../actions";
 
 export default async function EditGroupPage({
@@ -14,6 +15,7 @@ export default async function EditGroupPage({
   const { id } = await params;
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: group } = await supabase
     .from("groups")
@@ -49,14 +51,14 @@ export default async function EditGroupPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Modifier le groupe</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("editGroup.title")}</h1>
       </div>
 
       <form action={updateGroup} className="flex flex-col gap-4">
         <input type="hidden" name="groupId" value={group.id} />
 
         <label className="flex flex-col gap-1 text-sm">
-          Nom
+          {t("editGroup.name")}
           <input
             name="name"
             required
@@ -67,7 +69,7 @@ export default async function EditGroupPage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          Description (facultatif)
+          {t("editGroup.description")}
           <input
             name="description"
             maxLength={200}
@@ -77,7 +79,7 @@ export default async function EditGroupPage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm">
-          Devise par défaut
+          {t("editGroup.defaultCurrency")}
           {currencyLocked ? (
             <>
               <input
@@ -91,8 +93,7 @@ export default async function EditGroupPage({
                 className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-muted"
               />
               <span className="text-xs text-muted">
-                Verrouillée — le groupe a déjà des dépenses ou des
-                remboursements.
+                {t("editGroup.currencyLocked")}
               </span>
             </>
           ) : (
@@ -111,12 +112,14 @@ export default async function EditGroupPage({
         </label>
 
         <div className="flex gap-3">
-          <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
+          <SubmitButton pendingText={t("common.saving")}>
+            {t("common.save")}
+          </SubmitButton>
           <Link
             href={`/groups/${id}`}
             className="rounded-xl border border-line px-3 py-2 text-sm"
           >
-            Annuler
+            {t("common.cancel")}
           </Link>
         </div>
       </form>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import SubmitButton from "@/components/SubmitButton";
+import { useT } from "@/lib/i18n/client";
 import { transferBalance } from "../../../actions";
 
 type Member = { id: string; display_name: string; user_id: string | null };
@@ -19,6 +20,7 @@ export default function TransferForm({
   otherGroups: Group[];
   prefill: { from?: string; to?: string; amount?: string };
 }) {
+  const t = useT();
   const [srcFrom, setSrcFrom] = useState(
     prefill.from ?? sourceMembers[0]?.id ?? "",
   );
@@ -64,9 +66,9 @@ export default function TransferForm({
   if (otherGroups.length === 0) {
     return (
       <p className="text-sm text-muted">
-        Il te faut au moins un autre groupe pour y transférer un solde.{" "}
+        {t("transfer.needOther")}{" "}
         <Link href="/groups" className="underline">
-          Crées-en un
+          {t("transfer.createOne")}
         </Link>
         .
       </p>
@@ -80,13 +82,12 @@ export default function TransferForm({
       <input type="hidden" name="tgtTo" value={tgtTo} />
 
       <p className="text-sm text-muted">
-        Cela solde la dette dans <strong>{sourceGroup.name}</strong> et la
-        rouvre dans le groupe choisi.
+        {t("transfer.explain", { group: sourceGroup.name })}
       </p>
 
       <div className="flex items-end gap-2 text-sm">
         <label className="flex flex-1 flex-col gap-1">
-          Qui doit
+          {t("transfer.whoOwes")}
           <select
             name="srcFrom"
             value={srcFrom}
@@ -105,7 +106,7 @@ export default function TransferForm({
         </label>
         <span className="pb-2">→</span>
         <label className="flex flex-1 flex-col gap-1">
-          À qui on doit
+          {t("transfer.whoIsOwed")}
           <select
             name="srcTo"
             value={srcTo}
@@ -125,7 +126,7 @@ export default function TransferForm({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        Montant
+        {t("transfer.amount")}
         <input
           name="amount"
           required
@@ -137,7 +138,7 @@ export default function TransferForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Transférer vers
+        {t("transfer.moveInto")}
         <select
           name="targetGroup"
           value={targetId}
@@ -159,10 +160,10 @@ export default function TransferForm({
       {target && (
         <div className="flex flex-col gap-2 rounded-xl border border-line p-3 text-sm">
           <p className="text-xs text-muted">
-            Fais correspondre les deux personnes dans {target.name}
+            {t("transfer.matchPeople", { group: target.name })}
           </p>
           <label className="flex items-center justify-between gap-2">
-            {nameOf(srcFrom)} est
+            {nameOf(srcFrom)} {t("transfer.isWord")}
             <select
               value={tgtFrom}
               onChange={(e) => setTgtFromOverride(e.target.value)}
@@ -176,7 +177,7 @@ export default function TransferForm({
             </select>
           </label>
           <label className="flex items-center justify-between gap-2">
-            {nameOf(srcTo)} est
+            {nameOf(srcTo)} {t("transfer.isWord")}
             <select
               value={tgtTo}
               onChange={(e) => setTgtToOverride(e.target.value)}
@@ -193,24 +194,24 @@ export default function TransferForm({
       )}
 
       <label className="flex flex-col gap-1 text-sm">
-        Note (facultatif)
+        {t("transfer.note")}
         <input
           name="note"
           maxLength={200}
-          placeholder="Reste du voyage à Lisbonne"
+          placeholder={t("transfer.notePlaceholder")}
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
       <div className="flex gap-3">
-        <SubmitButton disabled={!valid} pendingText="Transfert…">
-          Transférer le solde
+        <SubmitButton disabled={!valid} pendingText={t("transfer.moving")}>
+          {t("transfer.move")}
         </SubmitButton>
         <Link
           href={`/groups/${sourceGroup.id}`}
           className="rounded-xl border border-line px-3 py-2 text-sm"
         >
-          Annuler
+          {t("common.cancel")}
         </Link>
       </div>
     </form>

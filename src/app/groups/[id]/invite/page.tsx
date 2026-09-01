@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import CopyLink from "@/components/CopyLink";
+import { getT } from "@/lib/i18n/server";
 
 export default async function GroupInvitePage({
   params,
@@ -13,6 +14,7 @@ export default async function GroupInvitePage({
   const { id } = await params;
   await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: group } = await supabase
     .from("groups")
@@ -37,7 +39,7 @@ export default async function GroupInvitePage({
         ← {group.name}
       </Link>
       <h1 className="text-2xl font-bold">
-        Inviter des personnes dans {group.name}
+        {t("invite.groupTitle", { group: group.name })}
       </h1>
 
       {error ? (
@@ -45,12 +47,7 @@ export default async function GroupInvitePage({
       ) : (
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
-          <p className="text-xs text-muted">
-            Toute personne qui ouvre ce lien et se connecte peut rejoindre le
-            groupe. Si elle y figure déjà comme membre, elle peut récupérer ce
-            profil ; sinon elle rejoint en tant que nouveau membre. Le même lien
-            fonctionne pour tout le monde.
-          </p>
+          <p className="text-xs text-muted">{t("invite.groupHint")}</p>
         </>
       )}
     </main>

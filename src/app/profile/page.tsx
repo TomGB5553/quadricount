@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "@/components/SubmitButton";
+import { getT } from "@/lib/i18n/server";
 import { updateDisplayName, updatePayoutDetails } from "./actions";
 
 export default async function ProfilePage({
@@ -12,6 +13,7 @@ export default async function ProfilePage({
   const { saved, error } = await searchParams;
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const [{ data: profile }, { data: payout }] = await Promise.all([
     supabase
@@ -34,59 +36,57 @@ export default async function ProfilePage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <div>
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← Tes groupes
+          {t("groups.backToYours")}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Profil</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("profile.title")}</h1>
       </div>
 
-      {saved && <p className="text-sm text-pos">Enregistré.</p>}
+      {saved && <p className="text-sm text-pos">{t("profile.saved")}</p>}
       {error && <p className="text-sm text-neg">{error}</p>}
 
       <form action={updateDisplayName} className={card}>
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Nom affiché
+          {t("profile.displayName")}
           <input
             name="displayName"
             required
             maxLength={100}
             defaultValue={profile?.display_name ?? ""}
-            placeholder="Camille"
+            placeholder={t("profile.displayNamePlaceholder")}
             className={field}
           />
           <span className="text-xs text-muted">
-            Le nom proposé quand tu rejoins un nouveau groupe. Tu peux utiliser
-            un nom différent par groupe depuis l&apos;onglet Membres du groupe.
+            {t("profile.displayNameHint")}
           </span>
         </label>
 
         {profile?.username && (
           <div className="flex flex-col gap-1 text-sm font-medium">
-            Identifiant
+            {t("profile.username")}
             <input
               value={profile.username}
               readOnly
               className={`${field} opacity-60`}
             />
             <span className="text-xs text-muted">
-              Sert à te connecter — non modifiable.
+              {t("profile.usernameHint")}
             </span>
           </div>
         )}
 
-        <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
+        <SubmitButton pendingText={t("common.saving")}>
+          {t("common.save")}
+        </SubmitButton>
       </form>
 
       <form action={updatePayoutDetails} className={card}>
         <div>
-          <h2 className="text-sm font-semibold">Infos de paiement</h2>
-          <p className="text-xs text-muted">
-            Facultatif. Visible par les membres de tes groupes quand ils veulent
-            te rembourser.
-          </p>
+          <h2 className="text-sm font-semibold">{t("profile.paymentInfo")}</h2>
+          <p className="text-xs text-muted">{t("profile.paymentInfoHint")}</p>
         </div>
 
         <label className="flex flex-col gap-1 text-sm font-medium">
-          IBAN
+          {t("profile.iban")}
           <input
             name="iban"
             defaultValue={payout?.iban ?? ""}
@@ -97,17 +97,19 @@ export default async function ProfilePage({
         </label>
 
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Autres précisions
+          {t("profile.otherDetails")}
           <input
             name="paymentNote"
             maxLength={200}
             defaultValue={payout?.payment_note ?? ""}
-            placeholder="Nom du compte, ou Revolut / PayPal / Lydia…"
+            placeholder={t("profile.otherDetailsPlaceholder")}
             className={field}
           />
         </label>
 
-        <SubmitButton pendingText="Enregistrement…">Enregistrer</SubmitButton>
+        <SubmitButton pendingText={t("common.saving")}>
+          {t("common.save")}
+        </SubmitButton>
       </form>
     </main>
   );

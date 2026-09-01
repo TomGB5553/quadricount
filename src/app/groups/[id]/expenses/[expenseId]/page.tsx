@@ -7,14 +7,8 @@ import { formatDate } from "@/lib/date";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
 import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
+import { getT } from "@/lib/i18n/server";
 import { deleteExpense } from "../../../actions";
-
-const methodLabel: Record<string, string> = {
-  equal: "à parts égales",
-  exact: "montants exacts",
-  percentage: "par pourcentage",
-  shares: "par parts",
-};
 
 export default async function ExpenseDetailPage({
   params,
@@ -24,6 +18,14 @@ export default async function ExpenseDetailPage({
   const { id, expenseId } = await params;
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
+
+  const methodLabel: Record<string, string> = {
+    equal: t("expDetail.methodEqual"),
+    exact: t("expDetail.methodExact"),
+    percentage: t("expDetail.methodPercentage"),
+    shares: t("expDetail.methodShares"),
+  };
 
   const { data: expense } = await supabase
     .from("expenses")
@@ -45,7 +47,7 @@ export default async function ExpenseDetailPage({
   ]);
 
   const nameOf = (memberId: string) =>
-    members?.find((m) => m.id === memberId)?.display_name ?? "Quelqu'un";
+    members?.find((m) => m.id === memberId)?.display_name ?? t("common.somebody");
   const canEdit =
     expense.created_by === user.id ||
     !!members?.some((m) => m.user_id === user.id && m.role === "owner");
@@ -94,15 +96,24 @@ export default async function ExpenseDetailPage({
               }`}
             >
               {myNet > 0
-                ? `On te doit ${formatMoney(myNet, cur)}`
+                ? t("expDetail.youreOwed", { amount: formatMoney(myNet, cur) })
                 : myNet < 0
-                  ? `Tu dois ${formatMoney(-myNet, cur)}`
-                  : "Tu es à l'équilibre sur celle-ci"}
+                  ? t("expDetail.youOwe", {
+                      amount: formatMoney(-myNet, cur),
+                    })
+                  : t("expDetail.square")}
             </p>
             <p className="text-sm text-muted">
-              Ta part {formatMoney(myShare, cur)}
-              {myPaid > 0 && ` · tu as payé ${formatMoney(myPaid, cur)}`} ·
-              total {formatMoney(expense.total_amount, cur)}
+              {t("expDetail.yourShareLine", {
+                share: formatMoney(myShare, cur),
+                paid:
+                  myPaid > 0
+                    ? t("expDetail.youPaidClause", {
+                        amount: formatMoney(myPaid, cur),
+                      })
+                    : "",
+                total: formatMoney(expense.total_amount, cur),
+              })}
               {converted && ` ≈ ${converted}`}
             </p>
           </>
@@ -114,9 +125,7 @@ export default async function ExpenseDetailPage({
                 <span className="text-sm font-normal"> ≈ {converted}</span>
               )}
             </p>
-            <p className="text-sm text-muted">
-              Tu ne faisais pas partie de cette dépense.
-            </p>
+            <p className="text-sm text-muted">{t("expDetail.notPart")}</p>
           </>
         )}
 
@@ -124,7 +133,9 @@ export default async function ExpenseDetailPage({
       </div>
 
       <section className="flex flex-col gap-1.5">
-        <h2 className="text-sm font-semibold text-muted">Payé par</h2>
+        <h2 className="text-sm font-semibold text-muted">
+          {t("expDetail.paidBy")}
+        </h2>
         {expense.expense_payers.map((p) => (
           <div key={p.member_id} className={row}>
             <span className="flex items-center gap-2.5">
@@ -138,7 +149,9 @@ export default async function ExpenseDetailPage({
 
       <section className="flex flex-col gap-1.5">
         <h2 className="text-sm font-semibold text-muted">
-          {components.length > 1 ? "Répartition (en parts)" : "Répartition"}
+          {components.length > 1
+            ? t("expDetail.splitParts")
+            : t("expDetail.howSplit")}
         </h2>
         {components.map((c, idx) => (
           <div
@@ -146,10 +159,13 @@ export default async function ExpenseDetailPage({
             className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2 p-3 text-sm"
           >
             <div className="text-xs text-muted">
-              {components.length > 1 && `Part ${idx + 1} · `}
+              {components.length > 1 &&
+                `${t("expForm.part", { n: idx + 1 })} · `}
               {methodLabel[c.method] ?? c.method}
               {c.basis === "fixed_amount" &&
-                ` · couvre ${formatMoney(c.amount ?? 0, cur)}`}
+                t("expDetail.covers", {
+                  amount: formatMoney(c.amount ?? 0, cur),
+                })}
             </div>
             <ul className="flex flex-col gap-0.5">
               {c.expense_split_entries.map((en) => (
@@ -160,7 +176,11 @@ export default async function ExpenseDetailPage({
                       formatMoney(en.exact_amount ?? 0, cur)}
                     {c.method === "percentage" && `${en.percent} %`}
                     {c.method === "shares" &&
-                      `${en.weight} ${en.weight === 1 ? "part" : "parts"}`}
+                      `${en.weight} ${
+                        en.weight === 1
+                          ? t("expDetail.share")
+                          : t("expDetail.shares")
+                      }`}
                   </span>
                 </li>
               ))}
@@ -170,7 +190,9 @@ export default async function ExpenseDetailPage({
       </section>
 
       <section className="flex flex-col gap-1.5">
-        <h2 className="text-sm font-semibold text-muted">La part de chacun</h2>
+        <h2 className="text-sm font-semibold text-muted">
+          {t("expDetail.eachShare")}
+        </h2>
         {expense.expense_allocations.map((a) => (
           <div key={a.member_id} className={row}>
             <span className="flex items-center gap-2.5">
@@ -188,16 +210,16 @@ export default async function ExpenseDetailPage({
             href={`/groups/${id}/expenses/${expenseId}/edit`}
             className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
           >
-            Modifier
+            {t("common.edit")}
           </Link>
           <form action={deleteExpense}>
             <input type="hidden" name="groupId" value={id} />
             <input type="hidden" name="expenseId" value={expenseId} />
             <SubmitButton
               className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
-              pendingText="Suppression…"
+              pendingText={t("common.deleting")}
             >
-              Supprimer
+              {t("common.delete")}
             </SubmitButton>
           </form>
         </div>

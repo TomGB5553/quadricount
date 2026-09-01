@@ -7,8 +7,14 @@ import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
 import ReceiptScanButton from "./ReceiptScanButton";
-import { reconcile, type ReconciledItem } from "@/lib/receipt/reconcile";
+import {
+  reconcile,
+  type ReconciledItem,
+  type ReconcileNote,
+} from "@/lib/receipt/reconcile";
 import type { ParsedReceipt } from "@/lib/receipt/types";
+import { useT } from "@/lib/i18n/client";
+import type { TFn } from "@/lib/i18n/core";
 import { createExpense, updateExpense } from "../../../actions";
 
 type Member = { id: string; display_name: string };
@@ -44,8 +50,14 @@ function toNum(raw: string): number {
 }
 
 const METHODS: Method[] = ["equal", "exact", "percentage", "shares"];
-const methodLabel = (m: Method) =>
-  m === "exact" ? "Exact" : m === "percentage" ? "%" : m === "shares" ? "Parts" : "Égal";
+const methodLabel = (t: TFn, m: Method) =>
+  m === "exact"
+    ? t("expForm.methodExact")
+    : m === "percentage"
+      ? t("expForm.methodPercent")
+      : m === "shares"
+        ? t("expForm.methodShares")
+        : t("expForm.methodEqual");
 
 export default function NewExpenseForm({
   groupId,
@@ -64,6 +76,7 @@ export default function NewExpenseForm({
   defaultPayer?: string;
   canScan?: boolean;
 }) {
+  const t = useT();
   const isEdit = !!expenseId;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -74,7 +87,24 @@ export default function NewExpenseForm({
 
   // Items read off a scanned receipt, and who shares each one (by item index).
   const [receiptItems, setReceiptItems] = useState<ReconciledItem[] | null>(null);
-  const [receiptNote, setReceiptNote] = useState<string | null>(null);
+  const [receiptNote, setReceiptNote] = useState<ReconcileNote | null>(null);
+
+  const money2 = (minor: number) => (minor / 100).toFixed(2);
+  function noteText(note: ReconcileNote): string {
+    switch (note.kind) {
+      case "noItems":
+        return t("receipt.noItems");
+      case "drift":
+        return t("receipt.driftNote", {
+          implied: money2(note.implied),
+          total: money2(note.total),
+        });
+      case "spread":
+        return t("receipt.spreadNote", { amount: money2(note.amount) });
+      case "discount":
+        return t("receipt.discountNote", { amount: money2(note.amount) });
+    }
+  }
   const [assign, setAssign] = useState<Record<number, string[]>>({});
   const receiptActive = !!receiptItems;
 
@@ -214,22 +244,22 @@ export default function NewExpenseForm({
         valid: n > 0,
         hint:
           n > 0 && coverage > 0
-            ? `${fmt(Math.round(coverage / n))} chacun (${n})`
-            : `${n} sélectionné(s)`,
+            ? t("expForm.hintEach", { amount: fmt(Math.round(coverage / n)), n })
+            : t("expForm.hintSelected", { n }),
       };
     }
     if (p.method === "exact") {
       const sum = members.reduce((s, m) => s + toMinor(p.values[m.id] ?? ""), 0);
       return {
         valid: coverage > 0 && sum === coverage,
-        hint: `${fmt(sum)} sur ${fmt(coverage)}`,
+        hint: t("expForm.hintOf", { sum: fmt(sum), coverage: fmt(coverage) }),
       };
     }
     if (p.method === "percentage") {
       const sum = members.reduce((s, m) => s + toNum(p.values[m.id] ?? ""), 0);
       return {
         valid: Math.abs(sum - 100) < 0.01,
-        hint: `${sum.toFixed(2)} % sur 100 %`,
+        hint: t("expForm.hintPercent", { sum: sum.toFixed(2) }),
       };
     }
     const totalW = members.reduce((s, m) => s + toNum(p.values[m.id] ?? ""), 0);
@@ -237,8 +267,11 @@ export default function NewExpenseForm({
       valid: totalW > 0,
       hint:
         totalW > 0 && coverage > 0
-          ? `${totalW} parts · ${fmt(Math.round(coverage / totalW))} par part`
-          : "aucune part définie",
+          ? t("expForm.hintShares", {
+              shares: totalW,
+              each: fmt(Math.round(coverage / totalW)),
+            })
+          : t("expForm.hintNoShares"),
     };
   }
 
@@ -310,21 +343,21 @@ export default function NewExpenseForm({
 
       <div className={card}>
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Pour quoi ?
+          {t("expForm.whatFor")}
           <input
             name="description"
             required
             maxLength={200}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Dîner"
+            placeholder={t("expForm.whatForPlaceholder")}
             className={field}
           />
         </label>
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1 text-sm font-medium">
-            Montant
+            {t("expForm.amount")}
             <input
               name="amount"
               required
@@ -333,16 +366,12 @@ export default function NewExpenseForm({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
               readOnly={receiptActive}
-              title={
-                receiptActive
-                  ? "Défini par le ticket scanné — efface-le pour modifier"
-                  : undefined
-              }
+              title={receiptActive ? t("expForm.amountLocked") : undefined}
               className={`${field} ${receiptActive ? "opacity-60" : ""}`}
             />
           </label>
           <label className="flex w-28 flex-col gap-1 text-sm font-medium">
-            Devise
+            {t("expForm.currency")}
             <select
               name="currency"
               value={currencyCode}
@@ -359,10 +388,9 @@ export default function NewExpenseForm({
         </div>
 
         <label className="flex flex-col gap-1 text-sm font-medium">
-          Date
+          {t("expForm.date")}
           <input
             type="date"
-            lang="fr-FR"
             name="spentAt"
             value={spentAt}
             onChange={(e) => setSpentAt(e.target.value)}
@@ -375,26 +403,26 @@ export default function NewExpenseForm({
         <fieldset className={`${card} text-sm`}>
           <div className="flex items-center justify-between">
             <legend className="text-sm font-semibold">
-              Attribuer les articles ({receiptItems.length})
+              {t("expForm.assignItems", { count: receiptItems.length })}
             </legend>
             <button
               type="button"
               onClick={clearReceipt}
               className="text-xs text-muted hover:text-neg"
             >
-              Effacer le ticket
+              {t("expForm.clearReceipt")}
             </button>
           </div>
 
           {receiptNote && (
             <p
               className={`text-xs ${
-                receiptNote.includes("Vérifie")
+                receiptNote.kind === "drift" || receiptNote.kind === "noItems"
                   ? "text-neg"
                   : "text-muted"
               }`}
             >
-              {receiptNote}
+              {noteText(receiptNote)}
             </p>
           )}
 
@@ -404,14 +432,14 @@ export default function NewExpenseForm({
               onClick={() => setEveryItemTo(allMemberIds)}
               className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
             >
-              Tout le monde partage tout
+              {t("expForm.everyoneShares")}
             </button>
             <button
               type="button"
               onClick={() => setEveryItemTo([])}
               className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
             >
-              Tout désélectionner
+              {t("expForm.clearAll")}
             </button>
           </div>
 
@@ -466,8 +494,8 @@ export default function NewExpenseForm({
                     }`}
                   >
                     {ids.length === 0
-                      ? "Non attribué — choisis qui partage"
-                      : `${each} chacun`}
+                      ? t("expForm.notAssigned")
+                      : t("expForm.each", { amount: each ?? "" })}
                   </p>
                 </li>
               );
@@ -484,7 +512,7 @@ export default function NewExpenseForm({
               </div>
             ))}
             <div className="flex justify-between font-semibold">
-              <span>Total</span>
+              <span>{t("common.total")}</span>
               <span className="tabular-nums">{fmt(totalMinor)}</span>
             </div>
           </div>
@@ -494,7 +522,9 @@ export default function NewExpenseForm({
       {/* ---- paid by ---- */}
       <fieldset className={card}>
         <div className="flex items-center justify-between">
-          <legend className="text-sm font-semibold">Payé par</legend>
+          <legend className="text-sm font-semibold">
+            {t("expForm.paidBy")}
+          </legend>
           <button
             type="button"
             onClick={() =>
@@ -503,8 +533,8 @@ export default function NewExpenseForm({
             className="text-xs font-medium text-primary hover:underline"
           >
             {payMode === "single"
-              ? "Plusieurs ont payé"
-              : "Une seule personne a payé"}
+              ? t("expForm.multiplePaid")
+              : t("expForm.onePaid")}
           </button>
         </div>
 
@@ -539,8 +569,10 @@ export default function NewExpenseForm({
             <p
               className={`text-xs ${payersBalanced ? "text-muted" : "text-neg"}`}
             >
-              Payé {(paidMinor / 100).toFixed(2)} sur{" "}
-              {(totalMinor / 100).toFixed(2)}
+              {t("expForm.paidOf", {
+                paid: (paidMinor / 100).toFixed(2),
+                total: (totalMinor / 100).toFixed(2),
+              })}
             </p>
           </div>
         )}
@@ -549,7 +581,7 @@ export default function NewExpenseForm({
       {/* ---- split (hidden while a scanned receipt drives the split) ---- */}
       {!receiptActive && (
       <fieldset className={`${card} text-sm`}>
-        <legend className="text-sm font-semibold">Répartition</legend>
+        <legend className="text-sm font-semibold">{t("expForm.split")}</legend>
 
         {parts.map((p, idx) => {
           const coverage = coverageOf(p);
@@ -562,14 +594,14 @@ export default function NewExpenseForm({
               {multiPart && (
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-muted">
-                    Part {idx + 1}
+                    {t("expForm.part", { n: idx + 1 })}
                   </span>
                   <button
                     type="button"
                     onClick={() => removePart(p.key)}
                     className="text-xs text-muted hover:text-neg"
                   >
-                    Retirer
+                    {t("common.remove")}
                   </button>
                 </div>
               )}
@@ -586,14 +618,16 @@ export default function NewExpenseForm({
                         : "text-muted hover:text-ink"
                     }`}
                   >
-                    {methodLabel(m)}
+                    {methodLabel(t, m)}
                   </button>
                 ))}
               </div>
 
               {multiPart && (
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted">Cette part couvre</span>
+                  <span className="text-muted">
+                    {t("expForm.thisPartCovers")}
+                  </span>
                   <input
                     inputMode="decimal"
                     placeholder="0.00"
@@ -616,7 +650,7 @@ export default function NewExpenseForm({
                       }
                       className="text-primary hover:underline"
                     >
-                      + {fmt(unassignedMinor)} restant
+                      {t("expForm.leftShort", { amount: fmt(unassignedMinor) })}
                     </button>
                   )}
                 </div>
@@ -675,16 +709,21 @@ export default function NewExpenseForm({
             className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
           >
             {multiPart
-              ? "+ Ajouter une part"
-              : "+ Répartir une partie différemment"}
+              ? t("expForm.addPart")
+              : t("expForm.splitDifferently")}
           </button>
           {multiPart && (
             <span className={coverageValid ? "text-muted" : "text-neg"}>
               {assignedMinor === totalMinor
-                ? `${fmt(totalMinor)} entièrement réparti`
+                ? t("expForm.allAssigned", { amount: fmt(totalMinor) })
                 : assignedMinor > totalMinor
-                  ? `${fmt(assignedMinor - totalMinor)} au-dessus du total`
-                  : `${fmt(unassignedMinor)} sur ${fmt(totalMinor)} encore à répartir`}
+                  ? t("expForm.overTotal", {
+                      amount: fmt(assignedMinor - totalMinor),
+                    })
+                  : t("expForm.stillToAssign", {
+                      amount: fmt(unassignedMinor),
+                      total: fmt(totalMinor),
+                    })}
             </span>
           )}
         </div>
@@ -695,9 +734,9 @@ export default function NewExpenseForm({
         <SubmitButton
           className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
           disabled={!canSubmit}
-          pendingText={isEdit ? "Enregistrement…" : "Ajout…"}
+          pendingText={isEdit ? t("common.saving") : t("common.adding")}
         >
-          {isEdit ? "Enregistrer" : "Ajouter la dépense"}
+          {isEdit ? t("common.saveChanges") : t("expForm.addExpense")}
         </SubmitButton>
         <Link
           href={
@@ -707,7 +746,7 @@ export default function NewExpenseForm({
           }
           className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium"
         >
-          Annuler
+          {t("common.cancel")}
         </Link>
       </div>
     </form>

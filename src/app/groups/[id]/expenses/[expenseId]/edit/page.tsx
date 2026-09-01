@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { EXPENSE_SELECT, type FullExpense, toExpenseInitial } from "@/lib/expense";
+import { getT } from "@/lib/i18n/server";
 import NewExpenseForm from "../../new/NewExpenseForm";
 
 export default async function EditExpensePage({
@@ -13,6 +14,7 @@ export default async function EditExpensePage({
   const { id, expenseId } = await params;
   await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: expense } = await supabase
     .from("expenses")
@@ -51,7 +53,7 @@ export default async function EditExpensePage({
         >
           ← {expense.description}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">Modifier la dépense</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("expForm.editTitle")}</h1>
       </div>
 
       <NewExpenseForm

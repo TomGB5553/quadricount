@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import AcceptButton from "./AcceptButton";
 import JoinForm from "./JoinForm";
 
@@ -19,6 +20,7 @@ export default async function InvitePage({
 }) {
   const { token } = await params;
   const supabase = await createClient();
+  const t = await getT();
 
   const {
     data: { user },
@@ -36,11 +38,8 @@ export default async function InvitePage({
   if (!preview) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Lien d&apos;invitation invalide</h1>
-        <p className="text-sm text-muted">
-          Ce lien n&apos;est pas valide. Demande un nouveau lien à la personne
-          qui t&apos;a invité.
-        </p>
+        <h1 className="text-xl font-bold">{t("invite.invalidTitle")}</h1>
+        <p className="text-sm text-muted">{t("invite.invalidBody")}</p>
       </Shell>
     );
   }
@@ -49,15 +48,15 @@ export default async function InvitePage({
   if (!preview.group_invite && (preview.accepted || preview.claimed)) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">
-          Cette invitation a déjà été utilisée
-        </h1>
+        <h1 className="text-xl font-bold">{t("invite.usedTitle")}</h1>
         <p className="text-sm text-muted">
-          La place de {preview.member_name} dans {preview.group_name} est déjà
-          prise.
+          {t("invite.usedBody", {
+            name: preview.member_name ?? "",
+            group: preview.group_name,
+          })}
         </p>
         <Link href="/groups" className="text-sm underline">
-          Aller à tes groupes
+          {t("invite.goToGroups")}
         </Link>
       </Shell>
     );
@@ -66,18 +65,22 @@ export default async function InvitePage({
   if (!user) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
+        <h1 className="text-xl font-bold">
+          {t("invite.joinTitle", { group: preview.group_name })}
+        </h1>
         <p className="text-sm text-muted">
           {preview.group_invite
-            ? "Partagez vos dépenses ensemble."
-            : `Tu es invité à reprendre la place de ${preview.member_name}.`}{" "}
-          Connecte-toi ou crée un compte pour continuer.
+            ? t("invite.splitTogether")
+            : t("invite.invitedToTake", {
+                name: preview.member_name ?? "",
+              })}{" "}
+          {t("invite.signInToContinue")}
         </p>
         <Link
           href={`/login?mode=signup&next=${encodeURIComponent(`/invite/${token}`)}`}
           className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
         >
-          Continuer
+          {t("invite.continue")}
         </Link>
       </Shell>
     );
@@ -87,11 +90,11 @@ export default async function InvitePage({
   if (!preview.group_invite) {
     return (
       <Shell>
-        <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
+        <h1 className="text-xl font-bold">
+          {t("invite.joinTitle", { group: preview.group_name })}
+        </h1>
         <p className="text-sm text-muted">
-          Tu vas reprendre la place de{" "}
-          <strong>{preview.member_name}</strong> — sa part des dépenses passées
-          devient la tienne.
+          {t("invite.takeOver", { name: preview.member_name ?? "" })}
         </p>
         <AcceptButton token={token} />
       </Shell>
@@ -107,7 +110,9 @@ export default async function InvitePage({
 
   return (
     <Shell>
-      <h1 className="text-xl font-bold">Rejoindre {preview.group_name}</h1>
+      <h1 className="text-xl font-bold">
+        {t("invite.joinTitle", { group: preview.group_name })}
+      </h1>
       <JoinForm
         token={token}
         claimable={preview.claimable_members}

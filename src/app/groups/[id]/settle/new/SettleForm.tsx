@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import { useT } from "@/lib/i18n/client";
 import { recordSettlement } from "../../../actions";
 
 type Member = { id: string; display_name: string };
@@ -22,13 +23,14 @@ export default function SettleForm({
   payoutByMember: Record<string, Payout>;
   prefill: { from?: string; to?: string; amount?: string };
 }) {
+  const t = useT();
   const today = new Date().toISOString().slice(0, 10);
   const [from, setFrom] = useState(prefill.from ?? members[0]?.id ?? "");
   const [to, setTo] = useState(prefill.to ?? members[1]?.id ?? "");
   const [copied, setCopied] = useState(false);
 
   const payeeName =
-    members.find((m) => m.id === to)?.display_name ?? "cette personne";
+    members.find((m) => m.id === to)?.display_name ?? t("settle.themFallback");
   const payout = payoutByMember[to];
 
   return (
@@ -36,7 +38,7 @@ export default function SettleForm({
       <input type="hidden" name="groupId" value={groupId} />
 
       <label className="flex flex-col gap-1 text-sm">
-        Qui a payé
+        {t("settle.whoPaid")}
         <select
           name="fromMember"
           value={from}
@@ -52,7 +54,7 @@ export default function SettleForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Qui a reçu
+        {t("settle.whoReceived")}
         <select
           name="toMember"
           value={to}
@@ -68,13 +70,13 @@ export default function SettleForm({
       </label>
 
       {from === to && (
-        <p className="text-xs text-neg">Choisis deux personnes différentes.</p>
+        <p className="text-xs text-neg">{t("settle.pickTwo")}</p>
       )}
 
       {from !== to && payout && (
         <div className="flex flex-col gap-1.5 rounded-xl border border-line bg-surface-2 p-3 text-sm">
           <span className="text-xs font-semibold text-muted">
-            Comment payer {payeeName}
+            {t("settle.howToPay", { name: payeeName })}
           </span>
           {payout.iban && (
             <div className="flex items-center gap-2">
@@ -92,7 +94,7 @@ export default function SettleForm({
                 }}
                 className="shrink-0 rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-ink"
               >
-                {copied ? "Copié" : "Copier"}
+                {copied ? t("common.copied") : t("common.copy")}
               </button>
             </div>
           )}
@@ -104,7 +106,7 @@ export default function SettleForm({
 
       <div className="flex gap-3">
         <label className="flex flex-1 flex-col gap-1 text-sm">
-          Montant
+          {t("settle.amount")}
           <input
             name="amount"
             required
@@ -115,7 +117,7 @@ export default function SettleForm({
           />
         </label>
         <label className="flex w-28 flex-col gap-1 text-sm">
-          Devise
+          {t("settle.currency")}
           <select
             name="currency"
             defaultValue={currency}
@@ -131,10 +133,9 @@ export default function SettleForm({
       </div>
 
       <label className="flex flex-col gap-1 text-sm">
-        Date
+        {t("settle.date")}
         <input
           type="date"
-          lang="fr-FR"
           name="settledAt"
           defaultValue={today}
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
@@ -142,24 +143,27 @@ export default function SettleForm({
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        Note (facultatif)
+        {t("settle.note")}
         <input
           name="note"
           maxLength={200}
-          placeholder="Virement bancaire"
+          placeholder={t("settle.notePlaceholder")}
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
       </label>
 
       <div className="flex gap-3">
-        <SubmitButton disabled={from === to} pendingText="Enregistrement…">
-          Enregistrer
+        <SubmitButton
+          disabled={from === to}
+          pendingText={t("settle.recording")}
+        >
+          {t("settle.record")}
         </SubmitButton>
         <Link
           href={`/groups/${groupId}`}
           className="rounded-xl border border-line px-3 py-2 text-sm"
         >
-          Annuler
+          {t("common.cancel")}
         </Link>
       </div>
     </form>

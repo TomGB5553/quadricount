@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
+import { getT } from "@/lib/i18n/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
 import SubmitButton from "@/components/SubmitButton";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
@@ -24,6 +25,7 @@ export default async function GroupPage({
   const { id } = await params;
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const [{ data: group }, { data: members }, { data: expenses }, { data: settlements }] =
     await Promise.all([
@@ -63,7 +65,7 @@ export default async function GroupPage({
   const myMember = members?.find((m) => m.user_id === user.id) ?? null;
   const myMemberId = myMember?.id ?? null;
   const nameOf = (memberId: string) =>
-    members?.find((m) => m.id === memberId)?.display_name ?? "Quelqu'un";
+    members?.find((m) => m.id === memberId)?.display_name ?? t("common.somebody");
 
   const gc = group.default_currency;
   const { net: balances, currencies } = computeGroupBalances(
@@ -84,10 +86,10 @@ export default async function GroupPage({
   ];
   const transfers = settleUp(balances);
   const mine = transfers.filter(
-    (t) => t.from === myMemberId || t.to === myMemberId,
+    (tr) => tr.from === myMemberId || tr.to === myMemberId,
   );
   const others = transfers.filter(
-    (t) => t.from !== myMemberId && t.to !== myMemberId,
+    (tr) => tr.from !== myMemberId && tr.to !== myMemberId,
   );
   const myNet = myMemberId ? (balances.get(myMemberId) ?? 0) : null;
 
@@ -95,9 +97,9 @@ export default async function GroupPage({
   const row =
     "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
 
-  const settleHref = (t: { from: string; to: string; amount: number }) =>
-    `/groups/${group.id}/settle/new?from=${t.from}&to=${t.to}&amount=${(
-      t.amount / 100
+  const settleHref = (tr: { from: string; to: string; amount: number }) =>
+    `/groups/${group.id}/settle/new?from=${tr.from}&to=${tr.to}&amount=${(
+      tr.amount / 100
     ).toFixed(2)}`;
 
   /* ---------- BALANCES PANEL (server-rendered) ---------- */
@@ -105,34 +107,34 @@ export default async function GroupPage({
     <section key="balances" className="flex flex-col gap-5">
       {mine.length > 0 && (
         <div className="flex flex-col gap-2">
-          {mine.map((t, i) => {
-            const iOwe = t.from === myMemberId;
-            const other = nameOf(iOwe ? t.to : t.from);
+          {mine.map((tr, i) => {
+            const iOwe = tr.from === myMemberId;
+            const other = nameOf(iOwe ? tr.to : tr.from);
             return (
               <Link
                 key={i}
-                href={settleHref(t)}
+                href={settleHref(tr)}
                 className={`${card} flex items-center gap-3 p-4 hover:bg-surface-2`}
               >
                 <Avatar name={other} size={40} />
                 <div className="flex-1">
                   <div className="text-sm text-muted">
-                    {iOwe ? "Tu dois" : `${other} te doit`}
+                    {iOwe ? t("bal.iOwe") : t("bal.owesYou", { name: other })}
                   </div>
                   <div
                     className={`text-lg font-extrabold ${iOwe ? "text-neg" : "text-pos"}`}
                   >
-                    {formatMoney(t.amount, gc)}
+                    {formatMoney(tr.amount, gc)}
                     {iOwe && (
                       <span className="text-sm font-semibold text-ink">
                         {" "}
-                        à {other}
+                        {t("bal.to", { name: other })}
                       </span>
                     )}
                   </div>
                 </div>
                 <span className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-ink">
-                  Rembourser
+                  {t("bal.settleUp")}
                 </span>
               </Link>
             );
@@ -141,7 +143,7 @@ export default async function GroupPage({
       )}
 
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-semibold text-muted">Le solde de chacun</h3>
+        <h3 className="text-sm font-semibold text-muted">{t("bal.everyone")}</h3>
         {orderedForBalances.map((m) => {
           const net = balances.get(m.id) ?? 0;
           return (
@@ -153,7 +155,7 @@ export default async function GroupPage({
                 <Avatar name={m.display_name} />
                 {m.display_name}
                 {m.status === "inactive" && (
-                  <span className="text-xs">inactif</span>
+                  <span className="text-xs">{t("bal.inactive")}</span>
                 )}
               </span>
               <span
@@ -166,10 +168,10 @@ export default async function GroupPage({
                 }
               >
                 {net > 0
-                  ? `récupère ${formatMoney(net, gc)}`
+                  ? t("bal.getsBack", { amount: formatMoney(net, gc) })
                   : net < 0
-                    ? `doit ${formatMoney(-net, gc)}`
-                    : "à jour"}
+                    ? t("bal.owes", { amount: formatMoney(-net, gc) })
+                    : t("bal.settled")}
               </span>
             </div>
           );
@@ -178,23 +180,25 @@ export default async function GroupPage({
 
       {others.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <h3 className="text-sm font-semibold text-muted">Entre les autres</h3>
-          {others.map((t, i) => (
+          <h3 className="text-sm font-semibold text-muted">
+            {t("bal.betweenOthers")}
+          </h3>
+          {others.map((tr, i) => (
             <Link
               key={i}
-              href={settleHref(t)}
+              href={settleHref(tr)}
               className={`${row} hover:bg-surface-2`}
             >
               <span className="flex items-center gap-2">
-                <Avatar name={nameOf(t.from)} size={22} />
-                <span className="font-medium">{nameOf(t.from)}</span>
-                <span className="text-muted">doit</span>
+                <Avatar name={nameOf(tr.from)} size={22} />
+                <span className="font-medium">{nameOf(tr.from)}</span>
+                <span className="text-muted">{t("bal.owesWord")}</span>
                 <span className="font-semibold">
-                  {formatMoney(t.amount, gc)}
+                  {formatMoney(tr.amount, gc)}
                 </span>
-                <span className="text-muted">à</span>
-                <Avatar name={nameOf(t.to)} size={22} />
-                <span className="font-medium">{nameOf(t.to)}</span>
+                <span className="text-muted">{t("bal.toWord")}</span>
+                <Avatar name={nameOf(tr.to)} size={22} />
+                <span className="font-medium">{nameOf(tr.to)}</span>
               </span>
             </Link>
           ))}
@@ -206,12 +210,12 @@ export default async function GroupPage({
           href={`/groups/${group.id}/transfer/new`}
           className="text-xs text-muted underline"
         >
-          Transférer un solde vers un autre groupe
+          {t("bal.moveToGroup")}
         </Link>
       )}
 
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-semibold text-muted">Remboursements</h3>
+        <h3 className="text-sm font-semibold text-muted">{t("bal.payments")}</h3>
         {settlements && settlements.length > 0 ? (
           settlements.map((s) => {
             const canDelete =
@@ -222,7 +226,7 @@ export default async function GroupPage({
                 <span className="flex items-center gap-2">
                   <Avatar name={nameOf(s.from_member)} size={22} />
                   {nameOf(s.from_member)}
-                  <span className="text-muted">a payé</span>
+                  <span className="text-muted">{t("bal.paidWord")}</span>
                   <Avatar name={nameOf(s.to_member)} size={22} />
                   {nameOf(s.to_member)}
                   {s.note && (
@@ -242,12 +246,11 @@ export default async function GroupPage({
                         value={s.id}
                       />
                       <ConfirmSubmit
-                        confirm={`Supprimer ce remboursement de ${formatMoney(
-                          s.amount,
-                          s.currency,
-                        )} ?`}
+                        confirm={t("bal.deletePaymentConfirm", {
+                          amount: formatMoney(s.amount, s.currency),
+                        })}
                       >
-                        Supprimer
+                        {t("common.delete")}
                       </ConfirmSubmit>
                     </form>
                   )}
@@ -256,14 +259,13 @@ export default async function GroupPage({
             );
           })
         ) : (
-          <p className="text-sm text-muted">Aucun remboursement enregistré.</p>
+          <p className="text-sm text-muted">{t("bal.noPayments")}</p>
         )}
       </div>
 
       {hasConversions && (
         <p className="text-xs text-muted">
-          Les montants dans d&apos;autres devises sont convertis en {gc} au taux
-          de chaque transaction à sa date.
+          {t("bal.fxNote", { currency: gc })}
         </p>
       )}
     </section>
@@ -278,7 +280,9 @@ export default async function GroupPage({
           className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4"
         >
           <input type="hidden" name="groupId" value={group.id} />
-          <label className="text-sm font-semibold">Ton nom dans ce groupe</label>
+          <label className="text-sm font-semibold">
+            {t("members.yourName")}
+          </label>
           <div className="flex gap-2">
             <input
               name="displayName"
@@ -291,13 +295,10 @@ export default async function GroupPage({
               className="rounded-xl border border-line px-3 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
               pendingText="…"
             >
-              Enregistrer
+              {t("common.save")}
             </SubmitButton>
           </div>
-          <p className="text-xs text-muted">
-            N&apos;affecte que ce groupe. Ton nom par défaut se règle dans ton
-            profil.
-          </p>
+          <p className="text-xs text-muted">{t("members.yourNameHint")}</p>
         </form>
       )}
 
@@ -305,7 +306,7 @@ export default async function GroupPage({
         href={`/groups/${group.id}/invite`}
         className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
       >
-        + Inviter quelqu&apos;un
+        {t("members.invite")}
       </Link>
       <div className="flex flex-col gap-1.5">
         {members?.map((m) => (
@@ -318,19 +319,21 @@ export default async function GroupPage({
               {m.display_name}
             </span>
             <div className="flex items-center gap-3 text-xs">
-              {m.role === "owner" && <span className="text-muted">admin</span>}
+              {m.role === "owner" && (
+                <span className="text-muted">{t("members.owner")}</span>
+              )}
               {!m.user_id && m.status === "active" && (
-                <span className="text-muted">pas encore inscrit</span>
+                <span className="text-muted">{t("members.notJoined")}</span>
               )}
               {m.status === "inactive" && (
-                <span className="text-muted">inactif</span>
+                <span className="text-muted">{t("members.inactive")}</span>
               )}
               {!m.user_id && m.status === "active" && (
                 <Link
                   href={`/groups/${group.id}/members/${m.id}/invite`}
                   className="font-semibold text-primary hover:underline"
                 >
-                  Inviter
+                  {t("members.inviteWord")}
                 </Link>
               )}
               {isOwner && m.role !== "owner" && (
@@ -346,7 +349,9 @@ export default async function GroupPage({
                     className="text-muted hover:text-ink disabled:opacity-50"
                     pendingText="…"
                   >
-                    {m.status === "active" ? "Retirer" : "Réactiver"}
+                    {m.status === "active"
+                      ? t("common.remove")
+                      : t("members.reactivate")}
                   </SubmitButton>
                 </form>
               )}
@@ -359,20 +364,19 @@ export default async function GroupPage({
         action={addMember}
         className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
       >
-        <h3 className="text-sm font-semibold">Ajouter un membre fictif</h3>
-        <p className="text-xs text-muted">
-          Pour quelqu&apos;un qui n&apos;est pas encore sur l&apos;app — tu
-          pourras l&apos;inviter à récupérer ce profil plus tard.
-        </p>
+        <h3 className="text-sm font-semibold">{t("members.addPlaceholder")}</h3>
+        <p className="text-xs text-muted">{t("members.addPlaceholderHint")}</p>
         <input type="hidden" name="groupId" value={group.id} />
         <input
           name="name"
           required
           maxLength={100}
-          placeholder="Nom"
+          placeholder={t("members.namePlaceholder")}
           className="rounded-xl border border-line bg-surface px-3 py-2.5"
         />
-        <SubmitButton pendingText="Ajout…">Ajouter le membre</SubmitButton>
+        <SubmitButton pendingText={t("common.adding")}>
+          {t("members.addMember")}
+        </SubmitButton>
       </form>
     </section>
   );
@@ -381,7 +385,7 @@ export default async function GroupPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex flex-col gap-1">
         <Link href="/groups" className="text-sm text-muted hover:underline">
-          ← Tous les groupes
+          {t("group.backAll")}
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-extrabold tracking-tight">
@@ -392,7 +396,7 @@ export default async function GroupPage({
               href={`/groups/${group.id}/edit`}
               className="text-sm text-muted underline hover:text-ink"
             >
-              Modifier
+              {t("common.edit")}
             </Link>
           )}
         </div>
@@ -403,7 +407,7 @@ export default async function GroupPage({
 
       <div className={`${card} flex flex-col gap-1 p-4`}>
         <span className="text-xs font-medium uppercase tracking-wide text-muted">
-          Ton solde dans ce groupe
+          {t("group.yourBalance")}
         </span>
         <span
           className={`text-2xl font-extrabold ${
@@ -415,10 +419,10 @@ export default async function GroupPage({
           }`}
         >
           {myNet && myNet > 0
-            ? `On te doit ${formatMoney(myNet, gc)}`
+            ? t("group.youreOwed", { amount: formatMoney(myNet, gc) })
             : myNet && myNet < 0
-              ? `Tu dois ${formatMoney(-myNet, gc)}`
-              : "Tu es à jour"}
+              ? t("group.youOwe", { amount: formatMoney(-myNet, gc) })
+              : t("group.settledUp")}
         </span>
       </div>
 
@@ -427,18 +431,22 @@ export default async function GroupPage({
           href={`/groups/${group.id}/expenses/new`}
           className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-ink hover:bg-primary-hover"
         >
-          Ajouter une dépense
+          {t("group.addExpense")}
         </Link>
         <Link
           href={`/groups/${group.id}/settle/new`}
           className="flex-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-center text-sm font-semibold hover:bg-surface-2"
         >
-          Enregistrer un remboursement
+          {t("group.recordPayment")}
         </Link>
       </div>
 
       <GroupTabs
-        labels={["Dépenses", "Soldes", "Membres"]}
+        labels={[
+          t("group.tabExpenses"),
+          t("group.tabBalances"),
+          t("group.tabMembers"),
+        ]}
         panels={[
           <ExpensesPanel
             key="expenses"

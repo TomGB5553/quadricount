@@ -5,6 +5,7 @@ import { useState } from "react";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/date";
 import { PaidSplitAvatars } from "@/components/Avatar";
+import { useT } from "@/lib/i18n/client";
 
 type Member = { id: string; display_name: string };
 type Expense = {
@@ -31,9 +32,10 @@ export default function ExpensesPanel({
   expenses: Expense[];
   myMemberId: string | null;
 }) {
+  const t = useT();
   const [filter, setFilter] = useState<string | null>(null);
   const nameOf = (id: string) =>
-    members.find((m) => m.id === id)?.display_name ?? "Quelqu'un";
+    members.find((m) => m.id === id)?.display_name ?? t("common.somebody");
 
   const paidBy = (e: Expense, id: string) =>
     e.expense_payers
@@ -76,7 +78,7 @@ export default function ExpensesPanel({
             onClick={() => setFilter(null)}
             className={chip(!filter)}
           >
-            Tout le monde
+            {t("exp.filterEveryone")}
           </button>
           {members.map((m) => (
             <button
@@ -133,6 +135,8 @@ export default function ExpensesPanel({
                       <PaidSplitAvatars
                         payers={payerNames}
                         participants={splitNames}
+                        paidLabel={t("exp.paidBy")}
+                        forLabel={t("exp.for")}
                       />
                     </div>
                   </div>
@@ -143,7 +147,9 @@ export default function ExpensesPanel({
                           {formatMoney(shareOf(e, lens), e.currency)}
                         </div>
                         <div className="text-xs text-muted">
-                          sur {formatMoney(e.total_amount, e.currency)}
+                          {t("exp.of", {
+                            amount: formatMoney(e.total_amount, e.currency),
+                          })}
                         </div>
                       </>
                     ) : (
@@ -166,8 +172,8 @@ export default function ExpensesPanel({
         ) : (
           <li className="rounded-xl border border-dashed border-line px-3.5 py-6 text-center text-sm text-muted">
             {filter
-              ? `Aucune dépense impliquant ${nameOf(filter)}.`
-              : "Aucune dépense pour l'instant — ajoute la première."}
+              ? t("exp.noneInvolving", { name: nameOf(filter) })
+              : t("exp.noneYet")}
           </li>
         )}
       </ul>

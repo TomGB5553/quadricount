@@ -3,10 +3,12 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { computeGroupBalances } from "@/lib/balances";
 import { formatMoney } from "@/lib/money";
+import { getT } from "@/lib/i18n/server";
 
 export default async function GroupsPage() {
   const user = await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: groups } = await supabase
     .from("groups")
@@ -44,12 +46,14 @@ export default async function GroupsPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight">Tes groupes</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          {t("groups.title")}
+        </h1>
         <Link
           href="/groups/new"
           className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
         >
-          + Nouveau groupe
+          {t("groups.new")}
         </Link>
       </div>
 
@@ -75,7 +79,7 @@ export default async function GroupsPage() {
                     ? `+${formatMoney(g.myNet, g.default_currency)}`
                     : g.myNet < 0
                       ? `−${formatMoney(-g.myNet, g.default_currency)}`
-                      : "à jour"}
+                      : t("groups.settled")}
                 </span>
               </Link>
             </li>
@@ -83,8 +87,7 @@ export default async function GroupsPage() {
         </ul>
       ) : (
         <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          Aucun groupe pour l&apos;instant. Crées-en un pour commencer à
-          partager les dépenses.
+          {t("groups.empty")}
         </div>
       )}
 
@@ -92,7 +95,7 @@ export default async function GroupsPage() {
         href="/balances"
         className="text-sm text-muted underline hover:text-ink"
       >
-        Voir ton bilan sur tous les groupes →
+        {t("groups.seeOverall")}
       </Link>
     </main>
   );

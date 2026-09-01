@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n/client";
 
 // Usernames are stored in Supabase Auth as a synthetic email the user never
 // sees. Existing accounts created with a real email still sign in with it.
@@ -12,6 +13,7 @@ const toLoginEmail = (handle: string) =>
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   useEffect(() => {
@@ -30,9 +32,7 @@ export default function LoginPage() {
     setErrorMsg("");
 
     if (mode === "signup" && !/^[a-z0-9_]{3,20}$/.test(username.toLowerCase())) {
-      return setErrorMsg(
-        "Identifiant : 3 à 20 caractères — lettres, chiffres ou tirets bas.",
-      );
+      return setErrorMsg(t("login.errUsernameFormat"));
     }
 
     setBusy(true);
@@ -47,7 +47,7 @@ export default function LoginPage() {
       if (error)
         return setErrorMsg(
           error.message.match(/invalid login/i)
-            ? "Identifiant ou mot de passe incorrect."
+            ? t("login.errWrongCreds")
             : error.message,
         );
     } else {
@@ -61,11 +61,10 @@ export default function LoginPage() {
       if (error)
         return setErrorMsg(
           error.message.match(/already registered/i)
-            ? "Cet identifiant est déjà pris."
+            ? t("login.errUsernameTaken")
             : error.message,
         );
-      if (!data.session)
-        return setErrorMsg("Connexion impossible — réessaie.");
+      if (!data.session) return setErrorMsg(t("login.errNoSession"));
     }
 
     const next = new URLSearchParams(window.location.search).get("next");
@@ -80,15 +79,13 @@ export default function LoginPage() {
     <main className="flex flex-1 flex-col items-center justify-center gap-5 p-6">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-surface p-6">
         <h1 className="mb-1 text-2xl font-extrabold tracking-tight">
-          {isSignup ? "Créer ton compte" : "Content de te revoir"}
+          {isSignup ? t("login.createYourAccount") : t("login.welcomeBack")}
         </h1>
-        <p className="mb-5 text-sm text-muted">
-          Partage les dépenses entre amis et en groupe. Aucun e-mail requis.
-        </p>
+        <p className="mb-5 text-sm text-muted">{t("login.subtitle")}</p>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Identifiant
+            {t("login.username")}
             <input
               required
               autoCapitalize="none"
@@ -96,12 +93,12 @@ export default function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={field}
-              placeholder="camille"
+              placeholder={t("login.usernamePlaceholder")}
             />
           </label>
 
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Mot de passe
+            {t("login.password")}
             <input
               type="password"
               required
@@ -109,17 +106,14 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={field}
-              placeholder="au moins 6 caractères"
+              placeholder={t("login.passwordPlaceholder")}
             />
           </label>
 
           {errorMsg && <p className="text-sm text-neg">{errorMsg}</p>}
 
           {isSignup && (
-            <p className="text-xs text-muted">
-              Aucune réinitialisation de mot de passe — garde-le en lieu sûr. Tu
-              pourras ajouter un e-mail de secours plus tard.
-            </p>
+            <p className="text-xs text-muted">{t("login.noReset")}</p>
           )}
 
           <button
@@ -127,7 +121,11 @@ export default function LoginPage() {
             disabled={busy}
             className="mt-1 rounded-xl bg-primary px-3 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
           >
-            {busy ? "…" : isSignup ? "Créer le compte" : "Se connecter"}
+            {busy
+              ? "…"
+              : isSignup
+                ? t("login.createButton")
+                : t("login.signInButton")}
           </button>
         </form>
 
@@ -139,9 +137,7 @@ export default function LoginPage() {
           }}
           className="mt-4 w-full text-center text-sm text-muted hover:text-ink"
         >
-          {isSignup
-            ? "Tu as déjà un compte ? Se connecter"
-            : "Nouveau ici ? Créer un compte"}
+          {isSignup ? t("login.toSignIn") : t("login.toSignUp")}
         </button>
       </div>
     </main>

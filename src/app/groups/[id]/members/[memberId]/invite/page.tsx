@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import CopyLink from "@/components/CopyLink";
+import { getT } from "@/lib/i18n/server";
 
 export default async function InviteMemberPage({
   params,
@@ -12,6 +13,7 @@ export default async function InviteMemberPage({
   const { id, memberId } = await params;
   await requireUser();
   const supabase = await createClient();
+  const t = await getT();
 
   const { data: member } = await supabase
     .from("group_members")
@@ -32,9 +34,11 @@ export default async function InviteMemberPage({
         href={`/groups/${id}`}
         className="text-sm text-muted hover:underline"
       >
-        ← Retour au groupe
+        {t("invite.memberBack")}
       </Link>
-      <h1 className="text-2xl font-bold">Inviter {member?.display_name}</h1>
+      <h1 className="text-2xl font-bold">
+        {t("invite.memberTitle", { name: member?.display_name ?? "" })}
+      </h1>
 
       {error ? (
         <p className="text-sm text-neg">{error.message}</p>
@@ -42,9 +46,7 @@ export default async function InviteMemberPage({
         <>
           <CopyLink url={`${origin}/invite/${token}`} />
           <p className="text-xs text-muted">
-            Envoie ce lien à {member?.display_name}. En l&apos;ouvrant et en se
-            connectant, cette personne reprend ce profil — les dépenses passées
-            du groupe pour {member?.display_name} deviennent les siennes.
+            {t("invite.memberHint", { name: member?.display_name ?? "" })}
           </p>
         </>
       )}
