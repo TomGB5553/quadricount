@@ -387,7 +387,6 @@ export default async function GroupPage({
               display_name: m.display_name,
             }))}
             expenses={expenses ?? []}
-            myMemberId={myMemberId}
           />,
           balancesPanel,
           membersPanel,

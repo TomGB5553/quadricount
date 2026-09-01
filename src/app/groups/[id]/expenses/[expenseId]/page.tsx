@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
 import SubmitButton from "@/components/SubmitButton";
+import Avatar from "@/components/Avatar";
 import { deleteExpense } from "../../../actions";
 
 const methodLabel: Record<string, string> = {
@@ -30,16 +31,17 @@ export default async function ExpenseDetailPage({
     .maybeSingle<FullExpense>();
   if (!expense || expense.group_id !== id) notFound();
 
-  const { data: group } = await supabase
-    .from("groups")
-    .select("id, name, default_currency")
-    .eq("id", id)
-    .single();
-
-  const { data: members } = await supabase
-    .from("group_members")
-    .select("id, display_name, user_id, role")
-    .eq("group_id", id);
+  const [{ data: group }, { data: members }] = await Promise.all([
+    supabase
+      .from("groups")
+      .select("id, name, default_currency")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("group_members")
+      .select("id, display_name, user_id, role")
+      .eq("group_id", id),
+  ]);
 
   const nameOf = (memberId: string) =>
     members?.find((m) => m.id === memberId)?.display_name ?? "Someone";
@@ -47,66 +49,105 @@ export default async function ExpenseDetailPage({
     expense.created_by === user.id ||
     !!members?.some((m) => m.user_id === user.id && m.role === "owner");
 
-  const gc = group?.default_currency ?? expense.currency;
+  const cur = expense.currency;
+  const gc = group?.default_currency ?? cur;
   const converted =
-    expense.currency !== gc
+    cur !== gc
       ? formatMoney(
-          Math.round(
-            expense.total_amount * (expense.fx_rate_to_group_currency || 1),
-          ),
+          Math.round(expense.total_amount * (expense.fx_rate_to_group_currency || 1)),
           gc,
         )
       : null;
 
+  const myMemberId = members?.find((m) => m.user_id === user.id)?.id;
+  const myPaid = expense.expense_payers
+    .filter((p) => p.member_id === myMemberId)
+    .reduce((s, p) => s + p.amount, 0);
+  const myShare = expense.expense_allocations
+    .filter((a) => a.member_id === myMemberId)
+    .reduce((s, a) => s + a.amount, 0);
+  const myNet = myPaid - myShare;
+  const inIt = myPaid > 0 || myShare > 0;
+
   const components = [...expense.expense_split_components].sort(
     (a, b) => a.seq - b.seq,
   );
+  const row =
+    "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm";
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-6">
-      <div>
-        <Link
-          href={`/groups/${id}`}
-          className="text-sm text-muted hover:underline"
-        >
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
+      <div className="flex flex-col gap-1">
+        <Link href={`/groups/${id}`} className="text-sm text-muted hover:underline">
           ← {group?.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{expense.description}</h1>
-        <p className="text-muted">
-          {formatMoney(expense.total_amount, expense.currency)}
-          {converted && ` (≈ ${converted})`} · {expense.spent_at}
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          {expense.description}
+        </h1>
+        <p className="text-lg font-bold">
+          {formatMoney(expense.total_amount, cur)}
+          {converted && (
+            <span className="text-sm font-normal text-muted"> ≈ {converted}</span>
+          )}
         </p>
+        <p className="text-sm text-muted">{expense.spent_at}</p>
       </div>
 
-      <section className="flex flex-col gap-1">
-        <h2 className="text-sm font-medium text-muted">Paid by</h2>
-        <ul className="flex flex-col gap-1 text-sm">
-          {expense.expense_payers.map((p) => (
-            <li
-              key={p.member_id}
-              className="flex justify-between rounded-xl border border-line bg-surface px-3 py-2.5"
+      {/* your impact */}
+      <div className="rounded-2xl border border-line bg-surface p-4">
+        {inIt ? (
+          <>
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">
+              For you
+            </span>
+            <p
+              className={`text-xl font-extrabold ${
+                myNet > 0 ? "text-pos" : myNet < 0 ? "text-neg" : "text-muted"
+              }`}
             >
-              <span>{nameOf(p.member_id)}</span>
-              <span>{formatMoney(p.amount, expense.currency)}</span>
-            </li>
-          ))}
-        </ul>
+              {myNet > 0
+                ? `You're owed ${formatMoney(myNet, cur)}`
+                : myNet < 0
+                  ? `You owe ${formatMoney(-myNet, cur)}`
+                  : "You're square on this one"}
+            </p>
+            <p className="mt-1 text-xs text-muted">
+              You paid {formatMoney(myPaid, cur)} · your share is{" "}
+              {formatMoney(myShare, cur)}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-muted">You weren&apos;t part of this expense.</p>
+        )}
+      </div>
+
+      <section className="flex flex-col gap-1.5">
+        <h2 className="text-sm font-semibold text-muted">Paid by</h2>
+        {expense.expense_payers.map((p) => (
+          <div key={p.member_id} className={row}>
+            <span className="flex items-center gap-2.5">
+              <Avatar name={nameOf(p.member_id)} />
+              {nameOf(p.member_id)}
+            </span>
+            <span className="font-semibold">{formatMoney(p.amount, cur)}</span>
+          </div>
+        ))}
       </section>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-muted">Split</h2>
+      <section className="flex flex-col gap-1.5">
+        <h2 className="text-sm font-semibold text-muted">
+          {components.length > 1 ? "Split (in parts)" : "How it's split"}
+        </h2>
         {components.map((c, idx) => (
           <div
             key={c.id}
-            className="flex flex-col gap-1 rounded-xl border border-line p-3 text-sm"
+            className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2 p-3 text-sm"
           >
             <div className="text-xs text-muted">
               {components.length > 1 && `Part ${idx + 1} · `}
               {methodLabel[c.method] ?? c.method}
-              {" · "}
-              {c.basis === "remainder"
-                ? "covers the rest"
-                : `covers ${formatMoney(c.amount ?? 0, expense.currency)}`}
+              {c.basis === "fixed_amount" &&
+                ` · covers ${formatMoney(c.amount ?? 0, cur)}`}
             </div>
             <ul className="flex flex-col gap-0.5">
               {c.expense_split_entries.map((en) => (
@@ -114,7 +155,7 @@ export default async function ExpenseDetailPage({
                   <span>{nameOf(en.member_id)}</span>
                   <span className="text-muted">
                     {c.method === "exact" &&
-                      formatMoney(en.exact_amount ?? 0, expense.currency)}
+                      formatMoney(en.exact_amount ?? 0, cur)}
                     {c.method === "percentage" && `${en.percent}%`}
                     {c.method === "shares" &&
                       `${en.weight} ${en.weight === 1 ? "share" : "shares"}`}
@@ -126,26 +167,24 @@ export default async function ExpenseDetailPage({
         ))}
       </section>
 
-      <section className="flex flex-col gap-1">
-        <h2 className="text-sm font-medium text-muted">Each person owes</h2>
-        <ul className="flex flex-col gap-1 text-sm">
-          {expense.expense_allocations.map((a) => (
-            <li
-              key={a.member_id}
-              className="flex justify-between rounded-xl border border-line bg-surface px-3 py-2.5"
-            >
-              <span>{nameOf(a.member_id)}</span>
-              <span>{formatMoney(a.amount, expense.currency)}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="flex flex-col gap-1.5">
+        <h2 className="text-sm font-semibold text-muted">Each person&apos;s share</h2>
+        {expense.expense_allocations.map((a) => (
+          <div key={a.member_id} className={row}>
+            <span className="flex items-center gap-2.5">
+              <Avatar name={nameOf(a.member_id)} />
+              {nameOf(a.member_id)}
+            </span>
+            <span className="font-semibold">{formatMoney(a.amount, cur)}</span>
+          </div>
+        ))}
       </section>
 
       {canEdit && (
         <div className="flex gap-3">
           <Link
             href={`/groups/${id}/expenses/${expenseId}/edit`}
-            className="rounded-xl bg-primary px-3 py-2 text-sm text-primary-ink"
+            className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
           >
             Edit
           </Link>
@@ -153,7 +192,7 @@ export default async function ExpenseDetailPage({
             <input type="hidden" name="groupId" value={id} />
             <input type="hidden" name="expenseId" value={expenseId} />
             <SubmitButton
-              className="rounded-xl border border-line px-3 py-2 text-sm text-neg disabled:opacity-50"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
               pendingText="Deleting…"
             >
               Delete
