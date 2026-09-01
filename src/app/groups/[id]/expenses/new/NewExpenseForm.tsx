@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/money";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import Avatar from "@/components/Avatar";
 import ReceiptScanButton from "./ReceiptScanButton";
 import { reconcile, type ReconciledItem } from "@/lib/receipt/reconcile";
 import type { ParsedReceipt } from "@/lib/receipt/types";
@@ -71,9 +72,13 @@ export default function NewExpenseForm({
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [currencyCode, setCurrencyCode] = useState(initial?.currency ?? currency);
 
-  // Items read off a scanned receipt (Phase 1: shown for review only).
+  // Items read off a scanned receipt, and who shares each one (by item index).
   const [receiptItems, setReceiptItems] = useState<ReconciledItem[] | null>(null);
   const [receiptNote, setReceiptNote] = useState<string | null>(null);
+  const [assign, setAssign] = useState<Record<number, string[]>>({});
+  const receiptActive = !!receiptItems;
+
+  const allMemberIds = useMemo(() => members.map((m) => m.id), [members]);
 
   function applyReceipt(r: ParsedReceipt) {
     const rec = reconcile(r);
@@ -85,7 +90,55 @@ export default function NewExpenseForm({
     if (r.date) setSpentAt(r.date);
     setReceiptItems(rec.items);
     setReceiptNote(rec.note);
+    // start with every item shared by everyone; the user narrows it down
+    setAssign(Object.fromEntries(rec.items.map((_, i) => [i, allMemberIds])));
   }
+
+  function clearReceipt() {
+    setReceiptItems(null);
+    setReceiptNote(null);
+    setAssign({});
+  }
+
+  function toggleItemMember(i: number, memberId: string) {
+    setAssign((prev) => {
+      const cur = prev[i] ?? [];
+      return {
+        ...prev,
+        [i]: cur.includes(memberId)
+          ? cur.filter((x) => x !== memberId)
+          : [...cur, memberId],
+      };
+    });
+  }
+
+  function setEveryItemTo(ids: string[]) {
+    if (!receiptItems) return;
+    setAssign(Object.fromEntries(receiptItems.map((_, i) => [i, ids])));
+  }
+
+  // Split each item's cost equally among whoever shares it, then total per person.
+  // Whole-cent remainders go to the first sharers (in member order), so the
+  // per-person amounts always add back up to the receipt total exactly.
+  const memberShares = useMemo(() => {
+    const out: Record<string, number> = {};
+    if (!receiptItems) return out;
+    for (const m of members) out[m.id] = 0;
+    receiptItems.forEach((it, i) => {
+      const ids = allMemberIds.filter((id) => (assign[i] ?? []).includes(id));
+      if (ids.length === 0) return;
+      const base = Math.floor(it.share / ids.length);
+      let rem = it.share - base * ids.length;
+      for (const id of ids) out[id] += base + (rem-- > 0 ? 1 : 0);
+    });
+    return out;
+  }, [receiptItems, assign, members, allMemberIds]);
+
+  const unassignedItems = receiptItems
+    ? receiptItems.filter((_, i) => (assign[i] ?? []).length === 0).length
+    : 0;
+  const receiptSplitValid = receiptActive && unassignedItems === 0;
+
   const totalMinor = toMinor(amount);
   const fmt = (minor: number) => formatMoney(minor, currencyCode);
 
@@ -207,18 +260,33 @@ export default function NewExpenseForm({
       .filter((e) => e.weight > 0);
   }
 
-  const components = parts.map((p) => ({
-    method: p.method,
-    basis: multiPart ? "fixed_amount" : "remainder",
-    ...(multiPart ? { amount: toMinor(p.amount) } : {}),
-    entries: entriesOf(p),
-  }));
+  const components = receiptActive
+    ? [
+        {
+          method: "exact" as Method,
+          basis: "remainder",
+          entries: members
+            .map((m) => ({
+              member_id: m.id,
+              exact_amount: memberShares[m.id] ?? 0,
+            }))
+            .filter((e) => e.exact_amount > 0),
+        },
+      ]
+    : parts.map((p) => ({
+        method: p.method,
+        basis: multiPart ? "fixed_amount" : "remainder",
+        ...(multiPart ? { amount: toMinor(p.amount) } : {}),
+        entries: entriesOf(p),
+      }));
 
   const partsValid = parts.every((p) => evalPart(p, coverageOf(p)).valid);
   const coverageValid = !multiPart || assignedMinor === totalMinor;
 
   const canSubmit =
-    totalMinor > 0 && payersBalanced && partsValid && coverageValid;
+    totalMinor > 0 &&
+    payersBalanced &&
+    (receiptActive ? receiptSplitValid : partsValid && coverageValid);
 
   const field =
     "rounded-xl border border-line bg-surface px-3 py-2.5 w-full";
@@ -264,7 +332,13 @@ export default function NewExpenseForm({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className={field}
+              readOnly={receiptActive}
+              title={
+                receiptActive
+                  ? "Set from the scanned receipt — clear it to edit"
+                  : undefined
+              }
+              className={`${field} ${receiptActive ? "opacity-60" : ""}`}
             />
           </label>
           <label className="flex w-28 flex-col gap-1 text-sm font-medium">
@@ -297,45 +371,123 @@ export default function NewExpenseForm({
       </div>
 
       {receiptItems && (
-        <div className={`${card} text-sm`}>
+        <fieldset className={`${card} text-sm`}>
           <div className="flex items-center justify-between">
-            <span className="font-semibold">
-              Receipt items ({receiptItems.length})
-            </span>
+            <legend className="text-sm font-semibold">
+              Assign items ({receiptItems.length})
+            </legend>
             <button
               type="button"
-              onClick={() => {
-                setReceiptItems(null);
-                setReceiptNote(null);
-              }}
+              onClick={clearReceipt}
               className="text-xs text-muted hover:text-neg"
             >
-              Clear
+              Clear receipt
             </button>
           </div>
-          <ul className="flex flex-col gap-1">
-            {receiptItems.map((it, i) => (
-              <li key={i} className="flex justify-between gap-3">
-                <span className="min-w-0 truncate">
-                  {it.qty > 1 && (
-                    <span className="text-muted">{it.qty}× </span>
-                  )}
-                  {it.name}
-                </span>
-                <span className="shrink-0 tabular-nums">
-                  {formatMoney(it.share, currencyCode)}
-                </span>
-              </li>
-            ))}
-          </ul>
+
           {receiptNote && (
-            <p className="text-xs text-muted">{receiptNote}</p>
+            <p
+              className={`text-xs ${
+                receiptNote.includes("Check the items")
+                  ? "text-neg"
+                  : "text-muted"
+              }`}
+            >
+              {receiptNote}
+            </p>
           )}
-          <p className="text-xs text-muted">
-            Assigning items to each person comes next. For now the total is
-            filled in and split as set below.
-          </p>
-        </div>
+
+          <div className="flex flex-wrap gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setEveryItemTo(allMemberIds)}
+              className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
+            >
+              Everyone shares everything
+            </button>
+            <button
+              type="button"
+              onClick={() => setEveryItemTo([])}
+              className="rounded-lg border border-line bg-surface px-2.5 py-1.5 font-medium hover:bg-surface-2"
+            >
+              Clear all
+            </button>
+          </div>
+
+          <ul className="flex flex-col gap-2">
+            {receiptItems.map((it, i) => {
+              const ids = assign[i] ?? [];
+              const each =
+                ids.length > 0
+                  ? formatMoney(Math.round(it.share / ids.length), currencyCode)
+                  : null;
+              return (
+                <li
+                  key={i}
+                  className="flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3"
+                >
+                  <div className="flex justify-between gap-3">
+                    <span className="min-w-0">
+                      {it.qty > 1 && (
+                        <span className="text-muted">{it.qty}× </span>
+                      )}
+                      {it.name}
+                    </span>
+                    <span className="shrink-0 tabular-nums font-semibold">
+                      {formatMoney(it.share, currencyCode)}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {members.map((m) => {
+                      const on = ids.includes(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => toggleItemMember(i, m.id)}
+                          className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2.5 text-xs ${
+                            on
+                              ? "border-primary bg-primary text-primary-ink"
+                              : "border-line text-muted"
+                          }`}
+                        >
+                          <Avatar name={m.display_name} size={18} />
+                          {m.display_name}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <p
+                    className={`text-xs ${
+                      ids.length === 0 ? "text-neg" : "text-muted"
+                    }`}
+                  >
+                    {ids.length === 0
+                      ? "Not assigned — pick who shares this"
+                      : `${each} each`}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="flex flex-col gap-1 border-t border-line pt-2 text-xs">
+            {members.map((m) => (
+              <div key={m.id} className="flex justify-between">
+                <span>{m.display_name}</span>
+                <span className="tabular-nums text-muted">
+                  {formatMoney(memberShares[m.id] ?? 0, currencyCode)}
+                </span>
+              </div>
+            ))}
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span className="tabular-nums">{fmt(totalMinor)}</span>
+            </div>
+          </div>
+        </fieldset>
       )}
 
       {/* ---- paid by ---- */}
@@ -391,7 +543,8 @@ export default function NewExpenseForm({
         )}
       </fieldset>
 
-      {/* ---- split ---- */}
+      {/* ---- split (hidden while a scanned receipt drives the split) ---- */}
+      {!receiptActive && (
       <fieldset className={`${card} text-sm`}>
         <legend className="text-sm font-semibold">Split</legend>
 
@@ -531,6 +684,7 @@ export default function NewExpenseForm({
           )}
         </div>
       </fieldset>
+      )}
 
       <div className="flex gap-3">
         <SubmitButton
