@@ -5,10 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
 import SubmitButton from "@/components/SubmitButton";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 import Avatar from "@/components/Avatar";
 import GroupTabs from "./GroupTabs";
 import ExpensesPanel from "./ExpensesPanel";
-import { addMember, setMemberStatus, updateMyGroupName } from "../actions";
+import {
+  addMember,
+  deleteSettlement,
+  setMemberStatus,
+  updateMyGroupName,
+} from "../actions";
 
 export default async function GroupPage({
   params,
@@ -42,7 +48,7 @@ export default async function GroupPage({
       supabase
         .from("settlements")
         .select(
-          "id, from_member, to_member, amount, currency, fx_rate_to_group_currency, settled_at, note",
+          "id, from_member, to_member, amount, currency, fx_rate_to_group_currency, settled_at, note, source, created_by",
         )
         .eq("group_id", id)
         .order("settled_at", { ascending: false })
@@ -207,23 +213,48 @@ export default async function GroupPage({
       <div className="flex flex-col gap-1.5">
         <h3 className="text-sm font-semibold text-muted">Payments</h3>
         {settlements && settlements.length > 0 ? (
-          settlements.map((s) => (
-            <div key={s.id} className={row}>
-              <span className="flex items-center gap-2">
-                <Avatar name={nameOf(s.from_member)} size={22} />
-                {nameOf(s.from_member)}
-                <span className="text-muted">paid</span>
-                <Avatar name={nameOf(s.to_member)} size={22} />
-                {nameOf(s.to_member)}
-                {s.note && (
-                  <span className="text-xs text-muted"> · {s.note}</span>
-                )}
-              </span>
-              <span className="text-muted">
-                {formatMoney(s.amount, s.currency)}
-              </span>
-            </div>
-          ))
+          settlements.map((s) => {
+            const canDelete =
+              s.source === "manual_payment" &&
+              (s.created_by === user.id || isOwner);
+            return (
+              <div key={s.id} className={row}>
+                <span className="flex items-center gap-2">
+                  <Avatar name={nameOf(s.from_member)} size={22} />
+                  {nameOf(s.from_member)}
+                  <span className="text-muted">paid</span>
+                  <Avatar name={nameOf(s.to_member)} size={22} />
+                  {nameOf(s.to_member)}
+                  {s.note && (
+                    <span className="text-xs text-muted"> · {s.note}</span>
+                  )}
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className="text-muted">
+                    {formatMoney(s.amount, s.currency)}
+                  </span>
+                  {canDelete && (
+                    <form action={deleteSettlement}>
+                      <input type="hidden" name="groupId" value={group.id} />
+                      <input
+                        type="hidden"
+                        name="settlementId"
+                        value={s.id}
+                      />
+                      <ConfirmSubmit
+                        confirm={`Delete this payment of ${formatMoney(
+                          s.amount,
+                          s.currency,
+                        )}?`}
+                      >
+                        Delete
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                </span>
+              </div>
+            );
+          })
         ) : (
           <p className="text-sm text-muted">No payments recorded yet.</p>
         )}

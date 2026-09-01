@@ -13,9 +13,7 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight">
-          Expense Splitter
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">Quadricount</h1>
         <p className="text-muted">
           Share costs with friends, flatmates and trips — see who owes whom at a
           glance.

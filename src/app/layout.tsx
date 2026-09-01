@@ -9,7 +9,7 @@ const appFont = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Expense Splitter",
+  title: "Quadricount",
   description: "Split expenses with friends and groups",
 };
 

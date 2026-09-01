@@ -258,6 +258,26 @@ export async function setMemberStatus(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export async function deleteSettlement(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const settlementId = String(formData.get("settlementId") ?? "");
+  if (!groupId || !settlementId) return;
+
+  const supabase = await createClient();
+  // RLS lets the creator or a group owner delete; the source guard stops this
+  // from touching the paired settlements a group transfer creates.
+  const { error } = await supabase
+    .from("settlements")
+    .delete()
+    .eq("id", settlementId)
+    .eq("source", "manual_payment");
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/groups/${groupId}`);
+}
+
 export async function updateMyGroupName(formData: FormData) {
   await requireUser();
 
