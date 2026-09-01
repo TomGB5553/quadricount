@@ -57,7 +57,12 @@ export default function ReceiptScanButton({
 
       const res = await fetch("/api/receipt/scan", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error ?? "Scan failed.");
+      if (!res.ok) {
+        throw new Error(
+          [data?.error, data?.detail].filter(Boolean).join(" — ") ||
+            "Scan failed.",
+        );
+      }
       onResult(data.receipt as ParsedReceipt);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Scan failed.");

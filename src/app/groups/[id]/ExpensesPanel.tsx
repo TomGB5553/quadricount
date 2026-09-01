@@ -35,15 +35,21 @@ export default function ExpensesPanel({
   const nameOf = (id: string) =>
     members.find((m) => m.id === id)?.display_name ?? "Someone";
 
-  // my net on an expense, just for the subtle colored left edge
-  const myNetOn = (e: Expense): number | null => {
-    if (!myMemberId) return null;
-    const paid = e.expense_payers
-      .filter((p) => p.member_id === myMemberId)
+  const paidBy = (e: Expense, id: string) =>
+    e.expense_payers
+      .filter((p) => p.member_id === id)
       .reduce((s, p) => s + p.amount, 0);
-    const share = e.expense_allocations
-      .filter((a) => a.member_id === myMemberId)
+  const shareOf = (e: Expense, id: string) =>
+    e.expense_allocations
+      .filter((a) => a.member_id === id)
       .reduce((s, a) => s + a.amount, 0);
+
+  // someone's net on an expense (what they paid minus their share); null if
+  // they're not involved. Used for the colored left edge.
+  const netOn = (e: Expense, id: string | null): number | null => {
+    if (!id) return null;
+    const paid = paidBy(e, id);
+    const share = shareOf(e, id);
     if (paid === 0 && share === 0) return null;
     return paid - share;
   };
@@ -101,7 +107,9 @@ export default function ExpensesPanel({
                     groupCurrency,
                   )
                 : null;
-            const net = myNetOn(e);
+            // when a person is selected, show the list through their eyes
+            const lens = filter;
+            const net = netOn(e, lens ?? myMemberId);
             const edge =
               net && net > 0
                 ? "border-l-4 border-l-pos"
@@ -129,11 +137,26 @@ export default function ExpensesPanel({
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="font-bold">
-                      {formatMoney(e.total_amount, e.currency)}
-                    </div>
-                    {converted && (
-                      <div className="text-xs text-muted">≈ {converted}</div>
+                    {lens ? (
+                      <>
+                        <div className="font-bold">
+                          {formatMoney(shareOf(e, lens), e.currency)}
+                        </div>
+                        <div className="text-xs text-muted">
+                          of {formatMoney(e.total_amount, e.currency)}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold">
+                          {formatMoney(e.total_amount, e.currency)}
+                        </div>
+                        {converted && (
+                          <div className="text-xs text-muted">
+                            ≈ {converted}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </Link>

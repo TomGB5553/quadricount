@@ -6,13 +6,23 @@ import type { ParsedReceipt, ReceiptItem } from "./types";
 // Everything provider-specific lives in this file — swapping to Groq / OpenAI /
 // Claude means rewriting only `callModel` and keeping the same return shape.
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-const ENDPOINT = (key: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
+// Tried in order until one works — model names drift and vary by key/region.
+const MODELS = [
+  process.env.GEMINI_MODEL,
+  "gemini-flash-latest",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+].filter((m): m is string => !!m);
+
+const endpoint = (model: string, key: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
 export function receiptScanConfigured(): boolean {
   return !!process.env.GEMINI_API_KEY;
 }
+
+export class ReceiptScanError extends Error {}
 
 const PROMPT = `You are reading a photo of a shop or restaurant receipt.
 It may be in French, English or Portuguese. Extract what was bought.
@@ -33,34 +43,11 @@ Rules:
   or language if not written.
 - "date": purchase date as YYYY-MM-DD, or null.
 - "merchant": shop / restaurant name, or null.
-Return ONLY the JSON.`;
-
-const RESPONSE_SCHEMA = {
-  type: "object",
-  properties: {
-    merchant: { type: "string", nullable: true },
-    date: { type: "string", nullable: true },
-    currency: { type: "string" },
-    taxIncluded: { type: "boolean" },
-    tax: { type: "number" },
-    tip: { type: "number" },
-    discount: { type: "number" },
-    total: { type: "number" },
-    items: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          qty: { type: "number" },
-          total: { type: "number" },
-        },
-        required: ["name", "qty", "total"],
-      },
-    },
-  },
-  required: ["currency", "taxIncluded", "tax", "tip", "discount", "total", "items"],
-};
+Return ONLY a JSON object with keys:
+{ "merchant": string|null, "date": "YYYY-MM-DD"|null, "currency": string,
+  "taxIncluded": boolean, "tax": number, "tip": number, "discount": number,
+  "total": number,
+  "items": [ { "name": string, "qty": number, "total": number } ] }`;
 
 type RawItem = { name?: unknown; qty?: unknown; total?: unknown };
 type RawReceipt = {
@@ -75,42 +62,74 @@ type RawReceipt = {
   items?: unknown;
 };
 
-async function callModel(
+async function callOneModel(
+  model: string,
+  key: string,
   imageBase64: string,
   mimeType: string,
 ): Promise<RawReceipt> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("GEMINI_API_KEY is not set");
-
-  const res = await fetch(ENDPOINT(key), {
+  const res = await fetch(endpoint(model, key), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [
         {
           parts: [
-            { inline_data: { mime_type: mimeType, data: imageBase64 } },
+            { inlineData: { mimeType, data: imageBase64 } },
             { text: PROMPT },
           ],
         },
       ],
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
         temperature: 0,
       },
     }),
   });
 
+  const bodyText = await res.text();
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${detail.slice(0, 300)}`);
+    let msg = bodyText.slice(0, 200);
+    try {
+      msg = JSON.parse(bodyText)?.error?.message ?? msg;
+    } catch {}
+    throw new ReceiptScanError(`${model}: ${res.status} ${msg}`);
   }
 
-  const data = await res.json();
+  const data = JSON.parse(bodyText);
   const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") throw new Error("Model returned no text");
-  return JSON.parse(text) as RawReceipt;
+  if (typeof text !== "string") {
+    const reason = data?.promptFeedback?.blockReason ?? "no text in response";
+    throw new ReceiptScanError(`${model}: ${reason}`);
+  }
+  // The model sometimes wraps JSON in ```json fences despite instructions.
+  const json = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
+  return JSON.parse(json) as RawReceipt;
+}
+
+async function callModel(
+  imageBase64: string,
+  mimeType: string,
+): Promise<RawReceipt> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new ReceiptScanError("GEMINI_API_KEY is not set");
+
+  let lastErr: unknown;
+  for (const model of MODELS) {
+    try {
+      return await callOneModel(model, key, imageBase64, mimeType);
+    } catch (err) {
+      lastErr = err;
+      const m = err instanceof Error ? err.message : String(err);
+      // A 404 / "not found" means this model name is dead — try the next one.
+      // Anything else (bad key, quota, safety block, parse) won't be fixed by
+      // another model, so stop and report it.
+      if (!/not found|404|is not supported|does not exist/i.test(m)) break;
+    }
+  }
+  throw lastErr instanceof Error
+    ? lastErr
+    : new ReceiptScanError("receipt scan failed");
 }
 
 // --- normalisation ----------------------------------------------------------

@@ -7,6 +7,32 @@ export const maxDuration = 30;
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
+// GET /api/receipt/scan?models=1 -> which Gemini models this key can use.
+// A quick diagnostic; safe to remove later.
+export async function GET(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return NextResponse.json({ error: "No GEMINI_API_KEY." }, { status: 501 });
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
+  );
+  const data = await res.json();
+  const models = Array.isArray(data?.models)
+    ? data.models
+        .filter((m: { supportedGenerationMethods?: string[] }) =>
+          m.supportedGenerationMethods?.includes("generateContent"),
+        )
+        .map((m: { name?: string }) => m.name)
+    : data;
+  return NextResponse.json({ status: res.status, models });
+}
+
 // Reads a receipt photo with a vision model and returns structured line items.
 // The image is never stored — it's held in memory only for the model call.
 export async function POST(request: NextRequest) {
@@ -50,8 +76,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ receipt });
   } catch (err) {
     console.error("[receipt/scan]", err);
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Couldn't read that receipt. Try a clearer, straighter photo." },
+      {
+        error: "Couldn't read that receipt. Try a clearer, straighter photo.",
+        detail,
+      },
       { status: 502 },
     );
   }
