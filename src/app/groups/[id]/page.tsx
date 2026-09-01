@@ -102,12 +102,34 @@ export default async function GroupPage({
       Math.round(e.total_amount * (e.fx_rate_to_group_currency || 1)),
     ),
   });
-  const nextPayer = nextPayerHit
-    ? {
-        member: activeMembers.find((m) => m.id === nextPayerHit.memberId)!,
-        debt: nextPayerHit.debt,
+  const nextPayers = nextPayerHit
+    ? nextPayerHit.memberIds
+        .map((mid) => activeMembers.find((m) => m.id === mid))
+        .filter((m): m is (typeof activeMembers)[number] => !!m)
+    : [];
+
+  function nextPayerMessage(): string | null {
+    if (nextPayers.length === 1) {
+      const m = nextPayers[0];
+      const amount = formatMoney(-(balances.get(m.id) ?? 0), gc);
+      return m.id === myMemberId
+        ? t("bal.nextPayerYou", { amount })
+        : t("bal.nextPayerOther", { name: m.display_name, amount });
+    }
+    if (nextPayers.length === 2) {
+      const mine = nextPayers.find((m) => m.id === myMemberId);
+      if (mine) {
+        const other = nextPayers.find((m) => m.id !== myMemberId)!;
+        return t("bal.nextPayerYouAnd", { name: other.display_name });
       }
-    : null;
+      return t("bal.nextPayerPair", {
+        a: nextPayers[0].display_name,
+        b: nextPayers[1].display_name,
+      });
+    }
+    return null;
+  }
+  const nextPayerText = nextPayerMessage();
 
   const card = "rounded-2xl border border-line bg-surface";
   const row =
@@ -121,19 +143,10 @@ export default async function GroupPage({
   /* ---------- BALANCES PANEL (server-rendered) ---------- */
   const balancesPanel = (
     <section key="balances" className="flex flex-col gap-5">
-      {nextPayer && (
+      {nextPayerText && (
         <div className="flex items-start gap-2 rounded-xl border border-line bg-surface-2 px-3.5 py-3 text-sm text-muted">
           <span aria-hidden>💡</span>
-          <p>
-            {nextPayer.member.id === myMemberId
-              ? t("bal.nextPayerYou", {
-                  amount: formatMoney(nextPayer.debt, gc),
-                })
-              : t("bal.nextPayerOther", {
-                  name: nextPayer.member.display_name,
-                  amount: formatMoney(nextPayer.debt, gc),
-                })}
-          </p>
+          <p>{nextPayerText}</p>
         </div>
       )}
 

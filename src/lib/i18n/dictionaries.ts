@@ -97,6 +97,10 @@ const en = {
     "You're the most behind ({amount}) — maybe cover the next expense?",
   "bal.nextPayerOther":
     "{name} is the most behind ({amount}) — a good moment for them to cover the next one.",
+  "bal.nextPayerYouAnd":
+    "You and {name} are the most behind — one of you could cover the next expense.",
+  "bal.nextPayerPair":
+    "{a} and {b} are the most behind — a good moment for one of them to cover the next one.",
   "bal.moveToGroup": "Move a balance to another group",
   "bal.payments": "Payments",
   "bal.paidWord": "paid",
@@ -417,6 +421,10 @@ const fr: Record<keyof typeof en, string> = {
     "C'est toi le plus en retard ({amount}) — tu règles la prochaine dépense ?",
   "bal.nextPayerOther":
     "{name} est le plus en retard ({amount}) — l'occasion de régler la prochaine dépense.",
+  "bal.nextPayerYouAnd":
+    "Toi et {name} êtes les plus en retard — l'un de vous pourrait régler la prochaine dépense.",
+  "bal.nextPayerPair":
+    "{a} et {b} sont les plus en retard — l'occasion pour l'un d'eux de régler la prochaine dépense.",
   "bal.moveToGroup": "Transférer un solde vers un autre groupe",
   "bal.payments": "Remboursements",
   "bal.paidWord": "a payé",
