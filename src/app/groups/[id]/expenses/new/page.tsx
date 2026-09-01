@@ -47,7 +47,7 @@ export default async function NewExpensePage({
         currency={group.default_currency}
         members={members ?? []}
         defaultPayer={myMemberId}
-        canScan={!!process.env.GEMINI_API_KEY}
+        canScan={!!(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY)}
       />
     </main>
   );
