@@ -33,6 +33,17 @@ export async function GET() {
           .map((m: { name?: string }) => m.name)
       : data;
   }
+
+  if (process.env.GROQ_API_KEY) {
+    const res = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+    });
+    const data = await res.json();
+    out.groqStatus = res.status;
+    out.groqModels = Array.isArray(data?.data)
+      ? data.data.map((m: { id?: string }) => m.id)
+      : data;
+  }
   return NextResponse.json(out);
 }
 

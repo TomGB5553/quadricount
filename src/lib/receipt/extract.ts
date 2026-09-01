@@ -9,8 +9,9 @@ import type { ParsedReceipt, ReceiptItem } from "./types";
 
 const GROQ_MODELS = [
   process.env.GROQ_MODEL,
+  "qwen/qwen3.6-27b",
+  "qwen/qwen3.8-27b",
   "meta-llama/llama-4-scout-17b-16e-instruct",
-  "meta-llama/llama-4-maverick-17b-128e-instruct",
 ].filter((m): m is string => !!m);
 
 const GEMINI_MODELS = [
@@ -198,15 +199,16 @@ async function callModel(
   if (attempts.length === 0)
     throw new ReceiptScanError("No GROQ_API_KEY or GEMINI_API_KEY set");
 
-  let lastErr: unknown;
+  const errors: string[] = [];
   for (const run of attempts) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         return await run();
       } catch (err) {
-        lastErr = err;
         const status = err instanceof ReceiptScanError ? err.status : undefined;
         const msg = err instanceof Error ? err.message : String(err);
+        if (attempt === 1 || !(status === 503 || status === 429 || status === 500))
+          errors.push(msg);
 
         // Overloaded / rate-limited / hiccup: wait, retry once, then move on.
         if (status === 503 || status === 429 || status === 500) {
@@ -224,9 +226,8 @@ async function callModel(
       }
     }
   }
-  throw lastErr instanceof Error
-    ? lastErr
-    : new ReceiptScanError("receipt scan failed");
+  // Nothing worked — report what each provider said (deduped).
+  throw new ReceiptScanError([...new Set(errors)].join(" | ") || "receipt scan failed");
 }
 
 // --- normalisation ----------------------------------------------------------
