@@ -4,6 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+// Usernames are stored in Supabase Auth as a synthetic email the user never
+// sees. Existing accounts created with a real email still sign in with it.
+const USER_DOMAIN = "quadricount.app";
+const toLoginEmail = (handle: string) =>
+  handle.includes("@") ? handle.trim() : `${handle.trim().toLowerCase()}@${USER_DOMAIN}`;
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -13,53 +19,58 @@ export default function LoginPage() {
       setMode("signup");
     }
   }, []);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [checkEmail, setCheckEmail] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setErrorMsg("");
+
+    if (mode === "signup" && !/^[a-z0-9_]{3,20}$/.test(username.toLowerCase())) {
+      return setErrorMsg(
+        "Username: 3–20 characters, letters, numbers or underscores.",
+      );
+    }
+
+    setBusy(true);
     const supabase = createClient();
 
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: toLoginEmail(username),
         password,
       });
       setBusy(false);
-      if (error) return setErrorMsg(error.message);
+      if (error)
+        return setErrorMsg(
+          error.message.match(/invalid login/i)
+            ? "Wrong username or password."
+            : error.message,
+        );
     } else {
+      const handle = username.trim().toLowerCase();
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: `${handle}@${USER_DOMAIN}`,
         password,
-        options: { data: { display_name: name.trim() || undefined } },
+        options: { data: { username: handle, display_name: handle } },
       });
       setBusy(false);
-      if (error) return setErrorMsg(error.message);
-      // Email confirmation on -> a user is returned but no session yet.
-      if (!data.session) return setCheckEmail(true);
+      if (error)
+        return setErrorMsg(
+          error.message.match(/already registered/i)
+            ? "That username is taken."
+            : error.message,
+        );
+      if (!data.session)
+        return setErrorMsg("Could not sign you in — try again.");
     }
 
     const next = new URLSearchParams(window.location.search).get("next");
     router.push(next && next.startsWith("/") ? next : "/");
     router.refresh();
-  }
-
-  if (checkEmail) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-        <h1 className="text-2xl font-bold">Check your email</h1>
-        <p className="max-w-sm text-sm text-muted">
-          We sent a confirmation link to <strong>{email}</strong>. Click it, then
-          come back and sign in.
-        </p>
-      </main>
-    );
   }
 
   const isSignup = mode === "signup";
@@ -72,32 +83,20 @@ export default function LoginPage() {
           {isSignup ? "Create your account" : "Welcome back"}
         </h1>
         <p className="mb-5 text-sm text-muted">
-          Split expenses with friends and groups.
+          Split expenses with friends and groups. No email needed.
         </p>
 
         <form onSubmit={submit} className="flex flex-col gap-3">
-          {isSignup && (
-            <label className="flex flex-col gap-1 text-sm font-medium">
-              Your name
-              <input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={field}
-                placeholder="Sam"
-              />
-            </label>
-          )}
-
           <label className="flex flex-col gap-1 text-sm font-medium">
-            Email
+            Username
             <input
-              type="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoCapitalize="none"
+              autoCorrect="off"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className={field}
-              placeholder="you@example.com"
+              placeholder="alex"
             />
           </label>
 
@@ -115,6 +114,13 @@ export default function LoginPage() {
           </label>
 
           {errorMsg && <p className="text-sm text-neg">{errorMsg}</p>}
+
+          {isSignup && (
+            <p className="text-xs text-muted">
+              There&apos;s no password reset — keep it safe. You can add a
+              recovery email later.
+            </p>
+          )}
 
           <button
             type="submit"
