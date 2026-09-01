@@ -97,12 +97,12 @@ export function PaidSplitAvatars({
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted">
       <span className="flex items-center gap-1">
-        <span className="uppercase tracking-wide">paid</span>
+        <span className="uppercase tracking-wide">paid by</span>
         <AvatarStack people={payers.map((n) => ({ name: n }))} size={size} />
       </span>
       <span className="h-4 w-px bg-line" />
       <span className="flex items-center gap-1">
-        <span className="uppercase tracking-wide">split</span>
+        <span className="uppercase tracking-wide">for</span>
         <AvatarStack
           people={participants.map((n) => ({ name: n }))}
           size={size}

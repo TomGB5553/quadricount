@@ -6,14 +6,18 @@ import type { ParsedReceipt, ReceiptItem } from "./types";
 // Everything provider-specific lives in this file — swapping to Groq / OpenAI /
 // Claude means rewriting only `callModel` and keeping the same return shape.
 
-// Tried in order until one works — model names drift and vary by key/region.
+// Tried in order until one works — model names drift and vary by key/region,
+// and any one of them can be transiently overloaded (503). Lite models first:
+// they're cheap, fast, plenty for reading a receipt, and less contended.
 const MODELS = [
   process.env.GEMINI_MODEL,
-  "gemini-flash-latest",
-  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
 ].filter((m): m is string => !!m);
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const endpoint = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
@@ -22,7 +26,9 @@ export function receiptScanConfigured(): boolean {
   return !!process.env.GEMINI_API_KEY;
 }
 
-export class ReceiptScanError extends Error {}
+export class ReceiptScanError extends Error {
+  status?: number;
+}
 
 const PROMPT = `You are reading a photo of a shop or restaurant receipt.
 It may be in French, English or Portuguese. Extract what was bought.
@@ -93,7 +99,9 @@ async function callOneModel(
     try {
       msg = JSON.parse(bodyText)?.error?.message ?? msg;
     } catch {}
-    throw new ReceiptScanError(`${model}: ${res.status} ${msg}`);
+    const e = new ReceiptScanError(`${model}: ${res.status} ${msg}`);
+    e.status = res.status;
+    throw e;
   }
 
   const data = JSON.parse(bodyText);
@@ -116,15 +124,29 @@ async function callModel(
 
   let lastErr: unknown;
   for (const model of MODELS) {
-    try {
-      return await callOneModel(model, key, imageBase64, mimeType);
-    } catch (err) {
-      lastErr = err;
-      const m = err instanceof Error ? err.message : String(err);
-      // A 404 / "not found" means this model name is dead — try the next one.
-      // Anything else (bad key, quota, safety block, parse) won't be fixed by
-      // another model, so stop and report it.
-      if (!/not found|404|is not supported|does not exist/i.test(m)) break;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await callOneModel(model, key, imageBase64, mimeType);
+      } catch (err) {
+        lastErr = err;
+        const status = err instanceof ReceiptScanError ? err.status : undefined;
+        const msg = err instanceof Error ? err.message : String(err);
+
+        // Overloaded / rate-limited / server hiccup: wait a beat and retry the
+        // same model once, then fall through to the next model.
+        if (status === 503 || status === 429 || status === 500) {
+          if (attempt === 0) {
+            await sleep(1200);
+            continue;
+          }
+          break; // next model
+        }
+        // Dead model name -> straight to the next model.
+        if (/not found|404|is not supported|does not exist/i.test(msg)) break;
+        // Bad key, safety block, malformed request, parse error: won't be
+        // fixed by retrying or by another model.
+        return Promise.reject(err);
+      }
     }
   }
   throw lastErr instanceof Error
