@@ -1,15 +1,19 @@
 import { CURRENCIES } from "@/lib/currencies";
 import type { ParsedReceipt, ReceiptItem } from "./types";
 
-// --- provider ----------------------------------------------------------------
-// Right now this talks to Google's Gemini API (it has a genuinely free tier).
-// Everything provider-specific lives in this file — swapping to Groq / OpenAI /
-// Claude means rewriting only `callModel` and keeping the same return shape.
+// --- providers ---------------------------------------------------------------
+// Two interchangeable free vision APIs. Groq (Llama 4) is tried first when its
+// key is set — it's currently far less congested than Gemini's free tier, which
+// hands out 503 "high demand" under load. Whichever keys are present are used.
+// Adding another provider = one more `call*` function + a line in `attempts`.
 
-// Tried in order until one works — model names drift and vary by key/region,
-// and any one of them can be transiently overloaded (503). Lite models first:
-// they're cheap, fast, plenty for reading a receipt, and less contended.
-const MODELS = [
+const GROQ_MODELS = [
+  process.env.GROQ_MODEL,
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "meta-llama/llama-4-maverick-17b-128e-instruct",
+].filter((m): m is string => !!m);
+
+const GEMINI_MODELS = [
   process.env.GEMINI_MODEL,
   "gemini-2.5-flash-lite",
   "gemini-2.0-flash",
@@ -19,15 +23,20 @@ const MODELS = [
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const endpoint = (model: string, key: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-
 export function receiptScanConfigured(): boolean {
-  return !!process.env.GEMINI_API_KEY;
+  return !!(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY);
 }
 
 export class ReceiptScanError extends Error {
   status?: number;
+}
+
+function extractJson(text: string): RawReceipt {
+  // Models occasionally wrap the JSON in ``` fences or add a stray prefix.
+  const cleaned = text
+    .replace(/^[^{[]*/, "")
+    .replace(/[^}\]]*$/, "");
+  return JSON.parse(cleaned || text) as RawReceipt;
 }
 
 const PROMPT = `You are reading a photo of a shop or restaurant receipt.
@@ -68,28 +77,86 @@ type RawReceipt = {
   items?: unknown;
 };
 
-async function callOneModel(
+function fail(label: string, status: number | undefined, msg: string) {
+  const e = new ReceiptScanError(`${label}: ${status ?? ""} ${msg}`.trim());
+  e.status = status;
+  return e;
+}
+
+async function callGemini(
   model: string,
   key: string,
   imageBase64: string,
   mimeType: string,
 ): Promise<RawReceipt> {
-  const res = await fetch(endpoint(model, key), {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { inlineData: { mimeType, data: imageBase64 } },
+              { text: PROMPT },
+            ],
+          },
+        ],
+        generationConfig: { responseMimeType: "application/json", temperature: 0 },
+      }),
+    },
+  );
+
+  const bodyText = await res.text();
+  if (!res.ok) {
+    let msg = bodyText.slice(0, 200);
+    try {
+      msg = JSON.parse(bodyText)?.error?.message ?? msg;
+    } catch {}
+    throw fail(`gemini/${model}`, res.status, msg);
+  }
+
+  const data = JSON.parse(bodyText);
+  const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (typeof text !== "string") {
+    throw fail(
+      `gemini/${model}`,
+      undefined,
+      data?.promptFeedback?.blockReason ?? "no text in response",
+    );
+  }
+  return extractJson(text);
+}
+
+async function callGroq(
+  model: string,
+  key: string,
+  imageBase64: string,
+  mimeType: string,
+): Promise<RawReceipt> {
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
     body: JSON.stringify({
-      contents: [
+      model,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
         {
-          parts: [
-            { inlineData: { mimeType, data: imageBase64 } },
-            { text: PROMPT },
+          role: "user",
+          content: [
+            { type: "text", text: PROMPT },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mimeType};base64,${imageBase64}` },
+            },
           ],
         },
       ],
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0,
-      },
     }),
   });
 
@@ -99,53 +166,61 @@ async function callOneModel(
     try {
       msg = JSON.parse(bodyText)?.error?.message ?? msg;
     } catch {}
-    const e = new ReceiptScanError(`${model}: ${res.status} ${msg}`);
-    e.status = res.status;
-    throw e;
+    throw fail(`groq/${model}`, res.status, msg);
   }
 
-  const data = JSON.parse(bodyText);
-  const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") {
-    const reason = data?.promptFeedback?.blockReason ?? "no text in response";
-    throw new ReceiptScanError(`${model}: ${reason}`);
+  const content: unknown = JSON.parse(bodyText)?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") {
+    throw fail(`groq/${model}`, undefined, "no text in response");
   }
-  // The model sometimes wraps JSON in ```json fences despite instructions.
-  const json = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "");
-  return JSON.parse(json) as RawReceipt;
+  return extractJson(content);
 }
 
 async function callModel(
   imageBase64: string,
   mimeType: string,
 ): Promise<RawReceipt> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new ReceiptScanError("GEMINI_API_KEY is not set");
+  const groqKey = process.env.GROQ_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
+
+  const attempts: (() => Promise<RawReceipt>)[] = [
+    ...(groqKey
+      ? GROQ_MODELS.map(
+          (m) => () => callGroq(m, groqKey, imageBase64, mimeType),
+        )
+      : []),
+    ...(geminiKey
+      ? GEMINI_MODELS.map(
+          (m) => () => callGemini(m, geminiKey, imageBase64, mimeType),
+        )
+      : []),
+  ];
+  if (attempts.length === 0)
+    throw new ReceiptScanError("No GROQ_API_KEY or GEMINI_API_KEY set");
 
   let lastErr: unknown;
-  for (const model of MODELS) {
+  for (const run of attempts) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await callOneModel(model, key, imageBase64, mimeType);
+        return await run();
       } catch (err) {
         lastErr = err;
         const status = err instanceof ReceiptScanError ? err.status : undefined;
         const msg = err instanceof Error ? err.message : String(err);
 
-        // Overloaded / rate-limited / server hiccup: wait a beat and retry the
-        // same model once, then fall through to the next model.
+        // Overloaded / rate-limited / hiccup: wait, retry once, then move on.
         if (status === 503 || status === 429 || status === 500) {
           if (attempt === 0) {
-            await sleep(1200);
+            await sleep(1500);
             continue;
           }
-          break; // next model
+          break;
         }
-        // Dead model name -> straight to the next model.
-        if (/not found|404|is not supported|does not exist/i.test(msg)) break;
-        // Bad key, safety block, malformed request, parse error: won't be
-        // fixed by retrying or by another model.
-        return Promise.reject(err);
+        // Dead model name -> next model.
+        if (/not found|404|is not supported|does not exist|decommission/i.test(msg))
+          break;
+        // Bad key, safety block, malformed request, parse error: unrecoverable.
+        throw err;
       }
     }
   }

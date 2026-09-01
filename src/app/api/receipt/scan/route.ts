@@ -7,30 +7,33 @@ export const maxDuration = 30;
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
-// GET /api/receipt/scan?models=1 -> which Gemini models this key can use.
-// A quick diagnostic; safe to remove later.
-export async function GET(request: NextRequest) {
+// GET /api/receipt/scan -> which providers are configured. A quick diagnostic.
+export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return NextResponse.json({ error: "No GEMINI_API_KEY." }, { status: 501 });
+  const out: Record<string, unknown> = {
+    groq: !!process.env.GROQ_API_KEY,
+    gemini: !!process.env.GEMINI_API_KEY,
+  };
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`,
-  );
-  const data = await res.json();
-  const models = Array.isArray(data?.models)
-    ? data.models
-        .filter((m: { supportedGenerationMethods?: string[] }) =>
-          m.supportedGenerationMethods?.includes("generateContent"),
-        )
-        .map((m: { name?: string }) => m.name)
-    : data;
-  return NextResponse.json({ status: res.status, models });
+  if (process.env.GEMINI_API_KEY) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`,
+    );
+    const data = await res.json();
+    out.geminiModels = Array.isArray(data?.models)
+      ? data.models
+          .filter((m: { supportedGenerationMethods?: string[] }) =>
+            m.supportedGenerationMethods?.includes("generateContent"),
+          )
+          .map((m: { name?: string }) => m.name)
+      : data;
+  }
+  return NextResponse.json(out);
 }
 
 // Reads a receipt photo with a vision model and returns structured line items.
