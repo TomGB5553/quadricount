@@ -22,15 +22,30 @@ export default function ExpensesPanel({
   groupCurrency,
   members,
   expenses,
+  myMemberId,
 }: {
   groupId: string;
   groupCurrency: string;
   members: Member[];
   expenses: Expense[];
+  myMemberId: string | null;
 }) {
   const [filter, setFilter] = useState<string | null>(null);
   const nameOf = (id: string) =>
     members.find((m) => m.id === id)?.display_name ?? "Someone";
+
+  // my net on an expense, just for the subtle colored left edge
+  const myNetOn = (e: Expense): number | null => {
+    if (!myMemberId) return null;
+    const paid = e.expense_payers
+      .filter((p) => p.member_id === myMemberId)
+      .reduce((s, p) => s + p.amount, 0);
+    const share = e.expense_allocations
+      .filter((a) => a.member_id === myMemberId)
+      .reduce((s, a) => s + a.amount, 0);
+    if (paid === 0 && share === 0) return null;
+    return paid - share;
+  };
 
   const involves = (e: Expense, id: string) =>
     e.expense_payers.some((p) => p.member_id === id) ||
@@ -85,11 +100,18 @@ export default function ExpensesPanel({
                     groupCurrency,
                   )
                 : null;
+            const net = myNetOn(e);
+            const edge =
+              net && net > 0
+                ? "border-l-4 border-l-pos"
+                : net && net < 0
+                  ? "border-l-4 border-l-neg"
+                  : "";
             return (
               <li key={e.id}>
                 <Link
                   href={`/groups/${groupId}/expenses/${e.id}`}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 hover:bg-surface-2"
+                  className={`flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 hover:bg-surface-2 ${edge}`}
                 >
                   <div className="min-w-0">
                     <div className="truncate font-semibold">
