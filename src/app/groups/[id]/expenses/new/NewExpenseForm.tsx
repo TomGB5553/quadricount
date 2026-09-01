@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import { formatMoney } from "@/lib/money";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import ReceiptScanButton from "./ReceiptScanButton";
+import { reconcile, type ReconciledItem } from "@/lib/receipt/reconcile";
+import type { ParsedReceipt } from "@/lib/receipt/types";
 import { createExpense, updateExpense } from "../../../actions";
 
 type Member = { id: string; display_name: string };
@@ -50,6 +53,7 @@ export default function NewExpenseForm({
   expenseId,
   initial,
   defaultPayer,
+  canScan,
 }: {
   groupId: string;
   currency: string;
@@ -57,12 +61,31 @@ export default function NewExpenseForm({
   expenseId?: string;
   initial?: ExpenseInitial;
   defaultPayer?: string;
+  canScan?: boolean;
 }) {
   const isEdit = !!expenseId;
   const today = new Date().toISOString().slice(0, 10);
 
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [spentAt, setSpentAt] = useState(initial?.spentAt ?? today);
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [currencyCode, setCurrencyCode] = useState(initial?.currency ?? currency);
+
+  // Items read off a scanned receipt (Phase 1: shown for review only).
+  const [receiptItems, setReceiptItems] = useState<ReconciledItem[] | null>(null);
+  const [receiptNote, setReceiptNote] = useState<string | null>(null);
+
+  function applyReceipt(r: ParsedReceipt) {
+    const rec = reconcile(r);
+    setAmount((rec.total / 100).toFixed(2));
+    if ((CURRENCIES as readonly string[]).includes(r.currency)) {
+      setCurrencyCode(r.currency);
+    }
+    if (!description.trim() && r.merchant) setDescription(r.merchant);
+    if (r.date) setSpentAt(r.date);
+    setReceiptItems(rec.items);
+    setReceiptNote(rec.note);
+  }
   const totalMinor = toMinor(amount);
   const fmt = (minor: number) => formatMoney(minor, currencyCode);
 
@@ -213,6 +236,10 @@ export default function NewExpenseForm({
       <input type="hidden" name="payers" value={JSON.stringify(payers)} />
       <input type="hidden" name="components" value={JSON.stringify(components)} />
 
+      {canScan && !isEdit && (
+        <ReceiptScanButton currency={currencyCode} onResult={applyReceipt} />
+      )}
+
       <div className={card}>
         <label className="flex flex-col gap-1 text-sm font-medium">
           What for?
@@ -220,7 +247,8 @@ export default function NewExpenseForm({
             name="description"
             required
             maxLength={200}
-            defaultValue={initial?.description ?? ""}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             placeholder="Dinner"
             className={field}
           />
@@ -261,11 +289,54 @@ export default function NewExpenseForm({
           <input
             type="date"
             name="spentAt"
-            defaultValue={initial?.spentAt ?? today}
+            value={spentAt}
+            onChange={(e) => setSpentAt(e.target.value)}
             className={field}
           />
         </label>
       </div>
+
+      {receiptItems && (
+        <div className={`${card} text-sm`}>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold">
+              Receipt items ({receiptItems.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setReceiptItems(null);
+                setReceiptNote(null);
+              }}
+              className="text-xs text-muted hover:text-neg"
+            >
+              Clear
+            </button>
+          </div>
+          <ul className="flex flex-col gap-1">
+            {receiptItems.map((it, i) => (
+              <li key={i} className="flex justify-between gap-3">
+                <span className="min-w-0 truncate">
+                  {it.qty > 1 && (
+                    <span className="text-muted">{it.qty}× </span>
+                  )}
+                  {it.name}
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {formatMoney(it.share, currencyCode)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {receiptNote && (
+            <p className="text-xs text-muted">{receiptNote}</p>
+          )}
+          <p className="text-xs text-muted">
+            Assigning items to each person comes next. For now the total is
+            filled in and split as set below.
+          </p>
+        </div>
+      )}
 
       {/* ---- paid by ---- */}
       <fieldset className={card}>
