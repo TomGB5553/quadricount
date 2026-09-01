@@ -96,7 +96,7 @@ export default async function GroupPage({
 
   /* ---------- BALANCES PANEL (server-rendered) ---------- */
   const balancesPanel = (
-    <section className="flex flex-col gap-5">
+    <section key="balances" className="flex flex-col gap-5">
       {mine.length > 0 && (
         <div className="flex flex-col gap-2">
           {mine.map((t, i) => {
@@ -240,7 +240,7 @@ export default async function GroupPage({
 
   /* ---------- MEMBERS PANEL (server-rendered) ---------- */
   const membersPanel = (
-    <section className="flex flex-col gap-3">
+    <section key="members" className="flex flex-col gap-3">
       {myMember && (
         <form
           action={updateMyGroupName}
@@ -408,7 +408,7 @@ export default async function GroupPage({
         labels={["Expenses", "Balances", "Members"]}
         panels={[
           <ExpensesPanel
-            key="e"
+            key="expenses"
             groupId={group.id}
             groupCurrency={gc}
             members={(members ?? []).map((m) => ({
