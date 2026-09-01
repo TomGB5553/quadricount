@@ -45,7 +45,8 @@ export default async function ProfilePage({
             className={field}
           />
           <span className="text-xs text-muted">
-            This is how you appear in every group.
+            The name suggested when you join a new group. You can set a
+            different name per group from that group&apos;s Members tab.
           </span>
         </label>
 

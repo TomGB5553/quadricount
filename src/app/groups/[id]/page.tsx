@@ -8,7 +8,7 @@ import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
 import GroupTabs from "./GroupTabs";
 import ExpensesPanel from "./ExpensesPanel";
-import { addMember, setMemberStatus } from "../actions";
+import { addMember, setMemberStatus, updateMyGroupName } from "../actions";
 
 export default async function GroupPage({
   params,
@@ -54,7 +54,8 @@ export default async function GroupPage({
   const isOwner = members?.some(
     (m) => m.user_id === user.id && m.role === "owner" && m.status === "active",
   );
-  const myMemberId = members?.find((m) => m.user_id === user.id)?.id ?? null;
+  const myMember = members?.find((m) => m.user_id === user.id) ?? null;
+  const myMemberId = myMember?.id ?? null;
   const nameOf = (memberId: string) =>
     members?.find((m) => m.id === memberId)?.display_name ?? "Someone";
 
@@ -240,6 +241,34 @@ export default async function GroupPage({
   /* ---------- MEMBERS PANEL (server-rendered) ---------- */
   const membersPanel = (
     <section className="flex flex-col gap-3">
+      {myMember && (
+        <form
+          action={updateMyGroupName}
+          className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4"
+        >
+          <input type="hidden" name="groupId" value={group.id} />
+          <label className="text-sm font-semibold">Your name in this group</label>
+          <div className="flex gap-2">
+            <input
+              name="displayName"
+              required
+              maxLength={100}
+              defaultValue={myMember.display_name}
+              className="flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm"
+            />
+            <SubmitButton
+              className="rounded-xl border border-line px-3 py-2 text-sm font-semibold hover:bg-surface-2 disabled:opacity-50"
+              pendingText="…"
+            >
+              Save
+            </SubmitButton>
+          </div>
+          <p className="text-xs text-muted">
+            Only affects this group. Your default name is set in your profile.
+          </p>
+        </form>
+      )}
+
       <Link
         href={`/groups/${group.id}/invite`}
         className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"

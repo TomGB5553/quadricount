@@ -258,6 +258,23 @@ export async function setMemberStatus(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export async function updateMyGroupName(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const name = String(formData.get("displayName") ?? "").trim();
+  if (!groupId || !name) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_my_group_name", {
+    p_group_id: groupId,
+    p_display_name: name,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/groups/${groupId}`);
+}
+
 export async function recordSettlement(formData: FormData) {
   await requireUser();
 
