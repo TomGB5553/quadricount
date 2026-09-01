@@ -26,9 +26,32 @@ export default async function NewSettlementPage({
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("id, display_name")
+    .select("id, display_name, user_id")
     .eq("group_id", id)
     .order("joined_at", { ascending: true });
+
+  // payout info for the members who are real users — RLS only returns rows
+  // for people who share an active group with the viewer.
+  const userIds = (members ?? [])
+    .map((m) => m.user_id)
+    .filter((u): u is string => !!u);
+  const { data: payouts } = userIds.length
+    ? await supabase
+        .from("payout_details")
+        .select("user_id, iban, payment_note")
+        .in("user_id", userIds)
+    : { data: [] };
+
+  const payoutByMember: Record<
+    string,
+    { iban: string | null; payment_note: string | null }
+  > = {};
+  for (const m of members ?? []) {
+    const p = payouts?.find((x) => x.user_id === m.user_id);
+    if (p && (p.iban || p.payment_note)) {
+      payoutByMember[m.id] = { iban: p.iban, payment_note: p.payment_note };
+    }
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-6">
@@ -45,7 +68,11 @@ export default async function NewSettlementPage({
       <SettleForm
         groupId={group.id}
         currency={group.default_currency}
-        members={members ?? []}
+        members={(members ?? []).map((m) => ({
+          id: m.id,
+          display_name: m.display_name,
+        }))}
+        payoutByMember={payoutByMember}
         prefill={prefill}
       />
     </main>
