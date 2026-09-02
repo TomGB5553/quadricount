@@ -6,6 +6,7 @@ import { getT } from "@/lib/i18n/server";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
 import SubmitButton from "@/components/SubmitButton";
+import PayoutInfo from "@/components/PayoutInfo";
 import { buildSettlePlan } from "@/lib/settle-plan";
 import { settleUpEverywhere } from "@/app/groups/actions";
 
@@ -21,19 +22,25 @@ export default async function SettleEverywherePage({
 
   if (userId === user.id) notFound();
 
-  const [{ data: me }, { data: other }, plan] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("preferred_currency")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("id", userId)
-      .maybeSingle(),
-    buildSettlePlan(user.id, userId),
-  ]);
+  const [{ data: me }, { data: other }, { data: payout }, plan] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("preferred_currency")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase
+        .from("payout_details")
+        .select("iban, payment_note")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      buildSettlePlan(user.id, userId),
+    ]);
 
   const pc = me?.preferred_currency ?? "EUR";
   const otherName = plan[0]?.otherName ?? other?.display_name ?? "?";
@@ -77,6 +84,14 @@ export default async function SettleEverywherePage({
           <p className="text-sm text-muted">
             {t("settleAll.intro", { name: otherName })}
           </p>
+
+          {payout && (payout.iban || payout.payment_note) && (
+            <PayoutInfo
+              name={otherName}
+              iban={payout.iban}
+              note={payout.payment_note}
+            />
+          )}
 
           <div className="flex flex-col gap-1.5">
             {plan.map((l) => (
