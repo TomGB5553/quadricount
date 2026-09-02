@@ -291,9 +291,23 @@ const en = {
   "overall.owesYou": "owes you {amount}",
   "overall.youOweShort": "you owe {amount}",
   "overall.acrossNote":
-    "Combined across groups where the person has an account — a suggestion for settling up, not a per-group breakdown.",
+    "Combined across groups where the person has an account — tap a row to settle up everywhere at once.",
   "overall.fxNote":
     "Balances in other currencies converted to {currency} at today's rate.",
+
+  // settle up across groups
+  "settleAll.back": "← Overall",
+  "settleAll.title": "Settle up with {name}",
+  "settleAll.intro":
+    "Records a payment in each group so you're square with {name} everywhere:",
+  "settleAll.lineIPay": "you pay {amount}",
+  "settleAll.lineTheyPay": "{name} pays {amount}",
+  "settleAll.netTheyPayYou": "{name} pays you {amount} in total",
+  "settleAll.netYouPay": "you pay {name} {amount} in total",
+  "settleAll.record": "Record all as paid",
+  "settleAll.recording": "Recording…",
+  "settleAll.note": "Settled up across all groups",
+  "settleAll.nothing": "Nothing to settle with {name}.",
 
   // profile
   "profile.title": "Profile",
@@ -618,9 +632,22 @@ const fr: Record<keyof typeof en, string> = {
   "overall.owesYou": "te doit {amount}",
   "overall.youOweShort": "tu dois {amount}",
   "overall.acrossNote":
-    "Cumulé sur les groupes où la personne a un compte — une suggestion pour se rembourser, pas un détail par groupe.",
+    "Cumulé sur les groupes où la personne a un compte — touche une ligne pour tout régler d'un coup.",
   "overall.fxNote":
     "Les soldes dans d'autres devises sont convertis en {currency} au taux du jour.",
+
+  "settleAll.back": "← Bilan",
+  "settleAll.title": "Régler avec {name}",
+  "settleAll.intro":
+    "Enregistre un remboursement dans chaque groupe pour être à jour avec {name} partout :",
+  "settleAll.lineIPay": "tu paies {amount}",
+  "settleAll.lineTheyPay": "{name} paie {amount}",
+  "settleAll.netTheyPayYou": "{name} te paie {amount} au total",
+  "settleAll.netYouPay": "tu paies {amount} à {name} au total",
+  "settleAll.record": "Tout enregistrer comme réglé",
+  "settleAll.recording": "Enregistrement…",
+  "settleAll.note": "Réglé sur tous les groupes",
+  "settleAll.nothing": "Rien à régler avec {name}.",
 
   "profile.title": "Profil",
   "profile.saved": "Enregistré.",

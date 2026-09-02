@@ -65,7 +65,10 @@ export default async function BalancesPage() {
   let overall = 0;
   let converted = false;
   // key by user_id (aggregates across groups) or a group-local fallback
-  const counterparties = new Map<string, { name: string; net: number }>();
+  const counterparties = new Map<
+    string,
+    { id: string; name: string; net: number }
+  >();
 
   for (const g of groups ?? []) {
     const myMember = (members ?? []).find(
@@ -107,6 +110,7 @@ export default async function BalancesPage() {
       if (!om?.user_id) continue;
       const amt = (await toPreferred(t.amount, g.default_currency)) * sign;
       const entry = counterparties.get(om.user_id) ?? {
+        id: om.user_id,
         name: om.display_name,
         net: 0,
       };
@@ -195,8 +199,12 @@ export default async function BalancesPage() {
               <h2 className="text-sm font-semibold text-muted">
                 {t("overall.acrossEveryone")}
               </h2>
-              {people.map((p, i) => (
-                <div key={i} className={row}>
+              {people.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/balances/settle/${p.id}`}
+                  className={`${row} transition-colors hover:bg-surface-2 active:bg-surface-2`}
+                >
                   <span>{p.name}</span>
                   <span
                     className={
@@ -211,7 +219,7 @@ export default async function BalancesPage() {
                           amount: formatMoney(-p.net, pc),
                         })}
                   </span>
-                </div>
+                </Link>
               ))}
               <p className="text-xs text-muted">{t("overall.acrossNote")}</p>
             </section>

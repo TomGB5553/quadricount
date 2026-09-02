@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getFxRate } from "@/lib/fx";
 import { getT } from "@/lib/i18n/server";
 import type { TFn } from "@/lib/i18n/core";
+import { buildSettlePlan } from "@/lib/settle-plan";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -208,6 +209,36 @@ export async function updateGroup(formData: FormData) {
   if (error) throw new Error(error.message);
 
   redirect(`/groups/${groupId}`);
+}
+
+// Record a payment in every shared group at once, clearing your position with
+// one person everywhere. Each group is settled in its own currency; the plan
+// is recomputed here so what gets recorded is always current.
+export async function settleUpEverywhere(formData: FormData) {
+  const user = await requireUser();
+  const otherUserId = String(formData.get("userId") ?? "");
+  if (!otherUserId) return;
+
+  const supabase = await createClient();
+  const t = await getT();
+  const plan = await buildSettlePlan(user.id, otherUserId);
+  const today = todayStr();
+
+  for (const line of plan) {
+    const { error } = await supabase.rpc("record_settlement", {
+      p_group_id: line.groupId,
+      p_from_member: line.fromMemberId,
+      p_to_member: line.toMemberId,
+      p_amount: line.amount,
+      p_currency: line.currency,
+      p_settled_at: today,
+      p_note: t("settleAll.note"),
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/balances");
 }
 
 export async function deleteGroup(formData: FormData) {
