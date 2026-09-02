@@ -18,31 +18,50 @@ export default async function Header() {
     .eq("id", user.id)
     .maybeSingle();
 
+  const navLink =
+    "whitespace-nowrap font-semibold text-muted transition-colors hover:text-ink";
+
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-lg items-center justify-between px-5 py-3">
-        <nav className="flex items-center gap-4 text-sm">
-          <Link href="/groups" className="font-semibold text-muted hover:text-ink">
+      <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-2.5 text-[13px]">
+        <nav className="flex items-center gap-3">
+          <Link href="/groups" className={navLink}>
             {t("nav.groups")}
           </Link>
-          <Link
-            href="/balances"
-            className="font-semibold text-muted hover:text-ink"
-          >
+          <Link href="/balances" className={navLink}>
             {t("nav.overall")}
           </Link>
         </nav>
-        <div className="flex items-center gap-3 text-sm">
+
+        <div className="ml-auto flex items-center gap-2.5">
           <Link
             href="/profile"
-            className="max-w-[7rem] truncate font-semibold text-muted hover:text-ink"
+            className="max-w-[6.5rem] truncate font-semibold text-muted transition-colors hover:text-ink"
           >
             {profile?.display_name ?? t("nav.profile")}
           </Link>
           <LangToggle />
-          <form action="/auth/signout" method="post">
-            <button className="text-muted hover:text-ink">
-              {t("nav.signOut")}
+          <form action="/auth/signout" method="post" className="flex">
+            <button
+              className="rounded-md p-1 text-muted transition-colors hover:text-ink"
+              aria-label={t("nav.signOut")}
+              title={t("nav.signOut")}
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </button>
           </form>
         </div>

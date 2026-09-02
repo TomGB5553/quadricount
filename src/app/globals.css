@@ -71,3 +71,28 @@ input[type="radio"] {
   width: 1rem;
   height: 1rem;
 }
+
+/* Kill the grey tap flash — we give our own feedback below. */
+a,
+button,
+[role="button"],
+label,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* On touch devices there's no hover, so pressable things dim on tap instead. */
+@media (hover: none) and (pointer: coarse) {
+  a,
+  button,
+  [role="button"],
+  label {
+    transition: opacity 0.12s ease;
+  }
+  a:active,
+  button:not(:disabled):active,
+  [role="button"]:active,
+  label:active {
+    opacity: 0.5;
+  }
+}

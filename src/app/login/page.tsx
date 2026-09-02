@@ -87,9 +87,11 @@ export default function LoginPage() {
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t("login.username")}
             <input
+              name="username"
               required
               autoCapitalize="none"
               autoCorrect="off"
+              autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={field}
@@ -99,10 +101,16 @@ export default function LoginPage() {
 
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t("login.password")}
+            {/* Any characters allowed — only a 6-char minimum (Supabase). */}
             <input
+              name="password"
               type="password"
               required
               minLength={6}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete={isSignup ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={field}

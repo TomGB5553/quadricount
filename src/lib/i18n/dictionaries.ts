@@ -37,7 +37,7 @@ const en = {
   "login.createYourAccount": "Create your account",
   "login.subtitle": "Split expenses with friends and groups. No email needed.",
   "login.username": "Username",
-  "login.usernamePlaceholder": "sam",
+  "login.usernamePlaceholder": "camille",
   "login.password": "Password",
   "login.passwordPlaceholder": "at least 6 characters",
   "login.noReset":
@@ -287,7 +287,7 @@ const en = {
   "profile.title": "Profile",
   "profile.saved": "Saved.",
   "profile.displayName": "Display name",
-  "profile.displayNamePlaceholder": "Sam",
+  "profile.displayNamePlaceholder": "Camille",
   "profile.displayNameHint":
     "The name suggested when you join a new group. You can set a different name per group from that group's Members tab.",
   "profile.username": "Username",
@@ -349,7 +349,7 @@ const fr: Record<keyof typeof en, string> = {
   "common.somebody": "Quelqu'un",
 
   "nav.groups": "Groupes",
-  "nav.overall": "Bilan global",
+  "nav.overall": "Bilan",
   "nav.profile": "Profil",
   "nav.signOut": "Se déconnecter",
   "nav.language": "Langue",
