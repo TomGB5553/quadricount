@@ -62,6 +62,23 @@ export default function ExpensesPanel({
 
   const visible = filter ? expenses.filter((e) => involves(e, filter)) : expenses;
 
+  // in the group currency, so a mixed-currency list still totals
+  const inGroupCurrency = (e: Expense, minor: number) =>
+    e.currency === groupCurrency
+      ? minor
+      : Math.round(minor * (e.fx_rate_to_group_currency || 1));
+
+  const personSummary =
+    filter && visible.length > 0
+      ? visible.reduce(
+          (acc, e) => ({
+            share: acc.share + inGroupCurrency(e, shareOf(e, filter)),
+            paid: acc.paid + inGroupCurrency(e, paidBy(e, filter)),
+          }),
+          { share: 0, paid: 0 },
+        )
+      : null;
+
   const chip = (active: boolean) =>
     `rounded-full border px-2.5 py-1 text-xs ${
       active
@@ -93,7 +110,27 @@ export default function ExpensesPanel({
         </div>
       )}
 
-      <ul className="flex flex-col gap-1.5">
+      {personSummary && filter && (
+        <p className="text-sm">
+          <span className="font-semibold">
+            {t("exp.personSummary", {
+              name: nameOf(filter),
+              share: formatMoney(personSummary.share, groupCurrency),
+              count: visible.length,
+            })}
+          </span>
+          {personSummary.paid > 0 && (
+            <span className="text-muted">
+              {" · "}
+              {t("exp.personPaid", {
+                amount: formatMoney(personSummary.paid, groupCurrency),
+              })}
+            </span>
+          )}
+        </p>
+      )}
+
+      <ul className="flex flex-col gap-2">
         {visible.length > 0 ? (
           visible.map((e) => {
             const payerNames = e.expense_payers.map((p) => nameOf(p.member_id));
@@ -122,7 +159,7 @@ export default function ExpensesPanel({
               <li key={e.id}>
                 <Link
                   href={`/groups/${groupId}/expenses/${e.id}`}
-                  className={`flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-3 hover:bg-surface-2 ${edge}`}
+                  className={`flex items-center justify-between gap-3 rounded-lg bg-surface px-3.5 py-3 shadow-sm ring-1 ring-line/60 hover:bg-surface-2 ${edge}`}
                 >
                   <div className="min-w-0">
                     <div className="truncate font-semibold">

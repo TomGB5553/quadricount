@@ -76,6 +76,7 @@ const en = {
   "group.settledUp": "You're settled up",
   "group.addExpense": "Add expense",
   "group.recordPayment": "Record payment",
+  "group.fabAdd": "Add an expense or a payment",
   "group.tabExpenses": "Expenses",
   "group.tabBalances": "Balances",
   "group.tabMembers": "Members",
@@ -132,8 +133,14 @@ const en = {
   "exp.of": "of {amount}",
   "exp.noneInvolving": "No expenses involving {name}.",
   "exp.noneYet": "No expenses yet — add the first one.",
+  "exp.personSummary": "{name}'s share: {share} over {count} expenses",
+  "exp.personPaid": "paid {amount}",
 
   // new / edit expense
+  "add.title": "Add",
+  "add.tabExpense": "Expense",
+  "add.tabPayment": "Payment",
+
   "expForm.newTitle": "New expense",
   "expForm.editTitle": "Edit expense",
   "expForm.whatFor": "What for?",
@@ -401,6 +408,7 @@ const fr: Record<keyof typeof en, string> = {
   "group.settledUp": "Tu es à jour",
   "group.addExpense": "Ajouter une dépense",
   "group.recordPayment": "Enregistrer un remboursement",
+  "group.fabAdd": "Ajouter une dépense ou un remboursement",
   "group.tabExpenses": "Dépenses",
   "group.tabBalances": "Soldes",
   "group.tabMembers": "Membres",
@@ -454,6 +462,12 @@ const fr: Record<keyof typeof en, string> = {
   "exp.of": "sur {amount}",
   "exp.noneInvolving": "Aucune dépense impliquant {name}.",
   "exp.noneYet": "Aucune dépense pour l'instant — ajoute la première.",
+  "exp.personSummary": "Part de {name} : {share} sur {count} dépenses",
+  "exp.personPaid": "a payé {amount}",
+
+  "add.title": "Ajouter",
+  "add.tabExpense": "Dépense",
+  "add.tabPayment": "Remboursement",
 
   "expForm.newTitle": "Nouvelle dépense",
   "expForm.editTitle": "Modifier la dépense",

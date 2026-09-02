@@ -136,7 +136,7 @@ export default async function GroupPage({
     "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
 
   const settleHref = (tr: { from: string; to: string; amount: number }) =>
-    `/groups/${group.id}/settle/new?from=${tr.from}&to=${tr.to}&amount=${(
+    `/groups/${group.id}/expenses/new?mode=payment&from=${tr.from}&to=${tr.to}&amount=${(
       tr.amount / 100
     ).toFixed(2)}`;
 
@@ -427,12 +427,15 @@ export default async function GroupPage({
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
-      <div className="flex flex-col gap-1">
-        <Link href="/groups" className="text-sm text-muted transition-colors hover:underline active:text-ink">
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5 pb-28">
+      <div className="flex flex-col gap-1.5">
+        <Link
+          href="/groups"
+          className="text-sm text-muted transition-colors hover:underline active:text-ink"
+        >
           {t("group.backAll")}
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-baseline gap-3">
           <h1 className="text-2xl font-extrabold tracking-tight">
             {group.name}
           </h1>
@@ -448,42 +451,24 @@ export default async function GroupPage({
         {group.description && (
           <p className="text-sm text-muted">{group.description}</p>
         )}
-      </div>
-
-      <div className={`${card} flex flex-col gap-1 p-4`}>
-        <span className="text-xs font-medium uppercase tracking-wide text-muted">
-          {t("group.yourBalance")}
-        </span>
-        <span
-          className={`text-2xl font-extrabold ${
-            myNet && myNet > 0
-              ? "text-pos"
+        <p className="mt-1">
+          <span className="text-sm text-muted">{t("group.yourBalance")} · </span>
+          <span
+            className={`text-sm font-bold ${
+              myNet && myNet > 0
+                ? "text-pos"
+                : myNet && myNet < 0
+                  ? "text-neg"
+                  : "text-muted"
+            }`}
+          >
+            {myNet && myNet > 0
+              ? t("group.youreOwed", { amount: formatMoney(myNet, gc) })
               : myNet && myNet < 0
-                ? "text-neg"
-                : "text-muted"
-          }`}
-        >
-          {myNet && myNet > 0
-            ? t("group.youreOwed", { amount: formatMoney(myNet, gc) })
-            : myNet && myNet < 0
-              ? t("group.youOwe", { amount: formatMoney(-myNet, gc) })
-              : t("group.settledUp")}
-        </span>
-      </div>
-
-      <div className="flex gap-2">
-        <Link
-          href={`/groups/${group.id}/expenses/new`}
-          className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-center text-sm font-semibold text-primary-ink hover:bg-primary-hover"
-        >
-          {t("group.addExpense")}
-        </Link>
-        <Link
-          href={`/groups/${group.id}/settle/new`}
-          className="flex-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-center text-sm font-semibold hover:bg-surface-2"
-        >
-          {t("group.recordPayment")}
-        </Link>
+                ? t("group.youOwe", { amount: formatMoney(-myNet, gc) })
+                : t("group.settledUp")}
+          </span>
+        </p>
       </div>
 
       <GroupTabs
@@ -508,6 +493,14 @@ export default async function GroupPage({
           membersPanel,
         ]}
       />
+
+      <Link
+        href={`/groups/${group.id}/expenses/new`}
+        aria-label={t("group.fabAdd")}
+        className="fixed bottom-6 left-1/2 z-20 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-3xl font-light text-primary-ink shadow-lg shadow-primary/30 transition-transform hover:bg-primary-hover active:scale-95"
+      >
+        <span className="-mt-0.5">+</span>
+      </Link>
     </main>
   );
 }
