@@ -281,6 +281,11 @@ const en = {
   "invite.acceptJoin": "Accept & join",
   "invite.somethingWrong": "Something went wrong",
 
+  "error.heading": "That didn't work",
+  "error.body": "The change couldn't be saved. It may already have been updated by someone else — go back and try again.",
+  "error.retry": "Try again",
+  "error.back": "Back to the group",
+
   // balances page
   "overall.title": "Overall balance",
   "overall.notInGroups": "You're not in any groups yet.",
@@ -626,6 +631,11 @@ const fr: Record<keyof typeof en, string> = {
   "invite.joinGroup": "Rejoindre le groupe",
   "invite.acceptJoin": "Accepter et rejoindre",
   "invite.somethingWrong": "Une erreur est survenue",
+
+  "error.heading": "Ça n'a pas marché",
+  "error.body": "La modification n'a pas pu être enregistrée. Quelqu'un l'a peut-être déjà changée — reviens en arrière et réessaie.",
+  "error.retry": "Réessayer",
+  "error.back": "Retour au groupe",
 
   "overall.title": "Bilan global",
   "overall.notInGroups": "Tu n'es dans aucun groupe pour l'instant.",

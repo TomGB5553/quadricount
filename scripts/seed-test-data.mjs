@@ -371,6 +371,30 @@ for (const g of GROUPS) {
       })),
     );
     if (ale) throw new Error(`alloc "${desc}": ${ale.message}`);
+
+    // an equal split component so the expense is editable in the app
+    const { data: comp, error: ce } = await db
+      .from("expense_split_components")
+      .insert({
+        expense_id: exp.id,
+        method: "equal",
+        basis: "remainder",
+        amount: null,
+        seq: 1,
+      })
+      .select("id")
+      .single();
+    if (ce) throw new Error(`component "${desc}": ${ce.message}`);
+    const { error: se } = await db.from("expense_split_entries").insert(
+      participants.map((member_id) => ({
+        component_id: comp.id,
+        member_id,
+        weight: null,
+        percent: null,
+        exact_amount: null,
+      })),
+    );
+    if (se) throw new Error(`split entries "${desc}": ${se.message}`);
   }
 
   // one or two part-payments already made back
