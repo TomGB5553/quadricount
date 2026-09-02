@@ -34,7 +34,7 @@ end;
 $$;
 
 -- Delete a group (owner only). Expenses, members and settlements cascade.
-create function public.delete_group(p_group_id uuid)
+create or replace function public.delete_group(p_group_id uuid)
 returns void
 language plpgsql
 security definer
