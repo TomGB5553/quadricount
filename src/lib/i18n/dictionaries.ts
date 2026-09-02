@@ -21,6 +21,7 @@ const en = {
 
   // nav / header
   "nav.groups": "Groups",
+  "nav.home": "Home",
   "nav.overall": "Overall",
   "nav.profile": "Profile",
   "nav.signOut": "Sign out",
@@ -384,6 +385,7 @@ const fr: Record<keyof typeof en, string> = {
   "common.somebody": "Quelqu'un",
 
   "nav.groups": "Groupes",
+  "nav.home": "Accueil",
   "nav.overall": "Bilan",
   "nav.profile": "Profil",
   "nav.signOut": "Se déconnecter",

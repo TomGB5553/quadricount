@@ -18,15 +18,31 @@ export default async function Header() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const navLink =
-    "-mx-1.5 whitespace-nowrap rounded-md px-1.5 py-1 font-semibold text-muted transition-colors hover:text-ink active:bg-surface-2";
-
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-2 text-[13px]">
         <nav className="flex items-center gap-1.5">
-          <Link href="/balances" data-tap className={navLink}>
-            {t("nav.groups")}
+          <Link
+            href="/balances"
+            data-tap
+            aria-label={t("nav.home")}
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2.5 py-1 font-semibold text-ink transition-colors hover:bg-surface-2 active:bg-surface-2"
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 9.5V21h14V9.5" />
+            </svg>
+            {t("nav.home")}
           </Link>
         </nav>
 
@@ -34,9 +50,26 @@ export default async function Header() {
           <Link
             href="/profile"
             data-tap
-            className="-mx-1.5 max-w-[6.5rem] truncate rounded-md px-1.5 py-1 font-semibold text-muted transition-colors hover:text-ink active:bg-surface-2"
+            className="-mx-1 flex max-w-[8rem] items-center gap-1 rounded-md px-1 py-1 font-semibold text-muted transition-colors hover:text-ink active:bg-surface-2"
           >
-            {profile?.display_name ?? t("nav.profile")}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className="shrink-0"
+            >
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+            </svg>
+            <span className="truncate">
+              {profile?.display_name ?? t("nav.profile")}
+            </span>
           </Link>
           <LangToggle />
           <form action="/auth/signout" method="post" className="flex">
