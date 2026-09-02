@@ -60,7 +60,7 @@ export default async function NewSettlementPage({
       <div>
         <Link
           href={`/groups/${id}`}
-          className="text-sm text-muted hover:underline"
+          className="text-sm text-muted transition-colors hover:underline active:text-ink"
         >
           ← {group.name}
         </Link>

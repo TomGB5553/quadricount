@@ -32,7 +32,7 @@ export default async function InviteMemberPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <Link
         href={`/groups/${id}`}
-        className="text-sm text-muted hover:underline"
+        className="text-sm text-muted transition-colors hover:underline active:text-ink"
       >
         {t("invite.memberBack")}
       </Link>

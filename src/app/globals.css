@@ -72,27 +72,27 @@ input[type="radio"] {
   height: 1rem;
 }
 
-/* Kill the grey tap flash — we give our own feedback below. */
+/* Touch feedback. On a phone there's no :hover, so:
+   - every tappable thing gets a visible native tap flash (instant, survives
+     navigation, unlike an :active style that vanishes when the page changes)
+   - buttons that stay on screen also dim briefly while held. */
 a,
 button,
 [role="button"],
 label,
 summary {
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
-/* On touch devices there's no hover, so pressable things dim on tap instead. */
 @media (hover: none) and (pointer: coarse) {
-  a,
-  button,
+  button:not(:disabled),
   [role="button"],
-  label {
-    transition: opacity 0.12s ease;
+  a[data-tap] {
+    transition: opacity 0.1s ease;
   }
-  a:active,
   button:not(:disabled):active,
   [role="button"]:active,
-  label:active {
-    opacity: 0.5;
+  a[data-tap]:active {
+    opacity: 0.55;
   }
 }

@@ -35,7 +35,7 @@ export default async function ProfilePage({
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 p-6">
       <div>
-        <Link href="/groups" className="text-sm text-muted hover:underline">
+        <Link href="/groups" className="text-sm text-muted transition-colors hover:underline active:text-ink">
           {t("groups.backToYours")}
         </Link>
         <h1 className="mt-1 text-2xl font-bold">{t("profile.title")}</h1>

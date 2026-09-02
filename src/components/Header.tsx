@@ -19,31 +19,32 @@ export default async function Header() {
     .maybeSingle();
 
   const navLink =
-    "whitespace-nowrap font-semibold text-muted transition-colors hover:text-ink";
+    "-mx-1.5 whitespace-nowrap rounded-md px-1.5 py-1 font-semibold text-muted transition-colors hover:text-ink active:bg-surface-2";
 
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-2.5 text-[13px]">
-        <nav className="flex items-center gap-3">
-          <Link href="/groups" className={navLink}>
+      <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-2 text-[13px]">
+        <nav className="flex items-center gap-1.5">
+          <Link href="/groups" data-tap className={navLink}>
             {t("nav.groups")}
           </Link>
-          <Link href="/balances" className={navLink}>
+          <Link href="/balances" data-tap className={navLink}>
             {t("nav.overall")}
           </Link>
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex items-center gap-1.5">
           <Link
             href="/profile"
-            className="max-w-[6.5rem] truncate font-semibold text-muted transition-colors hover:text-ink"
+            data-tap
+            className="-mx-1.5 max-w-[6.5rem] truncate rounded-md px-1.5 py-1 font-semibold text-muted transition-colors hover:text-ink active:bg-surface-2"
           >
             {profile?.display_name ?? t("nav.profile")}
           </Link>
           <LangToggle />
           <form action="/auth/signout" method="post" className="flex">
             <button
-              className="rounded-md p-1 text-muted transition-colors hover:text-ink"
+              className="rounded-md p-1.5 text-muted transition-colors hover:text-ink active:bg-surface-2"
               aria-label={t("nav.signOut")}
               title={t("nav.signOut")}
             >

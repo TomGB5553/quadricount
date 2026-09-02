@@ -12,7 +12,7 @@ export default async function NewGroupPage() {
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div>
-        <Link href="/groups" className="text-sm text-muted hover:underline">
+        <Link href="/groups" className="text-sm text-muted transition-colors hover:underline active:text-ink">
           {t("groups.backToYours")}
         </Link>
         <h1 className="mt-1 text-2xl font-extrabold tracking-tight">

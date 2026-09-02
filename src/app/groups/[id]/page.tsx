@@ -429,7 +429,7 @@ export default async function GroupPage({
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div className="flex flex-col gap-1">
-        <Link href="/groups" className="text-sm text-muted hover:underline">
+        <Link href="/groups" className="text-sm text-muted transition-colors hover:underline active:text-ink">
           {t("group.backAll")}
         </Link>
         <div className="flex items-center gap-3">
