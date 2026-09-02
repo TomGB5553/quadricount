@@ -126,74 +126,69 @@ export default async function BalancesPage() {
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
-      <div className="flex flex-col gap-1">
-        <Link href="/groups" className="text-sm text-muted transition-colors hover:underline active:text-ink">
-          {t("groups.backToYours")}
-        </Link>
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-extrabold tracking-tight">
-          {t("overall.title")}
+          {t("groups.title")}
         </h1>
+        <Link
+          href="/groups/new"
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink transition-colors hover:bg-primary-hover active:bg-primary-hover"
+        >
+          {t("groups.new")}
+        </Link>
       </div>
 
       {perGroup.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          {t("overall.notInGroups")}
+          {t("groups.empty")}
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted">
-              {t("overall.acrossAll")}
-            </span>
-            <span
-              className={`text-2xl font-extrabold ${
-                overall > 0
-                  ? "text-pos"
-                  : overall < 0
-                    ? "text-neg"
-                    : "text-muted"
-              }`}
-            >
-              {overall > 0
-                ? t("overall.youreOwed", { amount: formatMoney(overall, pc) })
-                : overall < 0
-                  ? t("overall.youOwe", { amount: formatMoney(-overall, pc) })
-                  : t("overall.settledUp")}
-            </span>
-          </div>
-
-          <section className="flex flex-col gap-1.5">
-            <h2 className="text-sm font-semibold text-muted">
-              {t("overall.byGroup")}
-            </h2>
-            {perGroup.map((r) => (
-              <Link
-                key={r.id}
-                href={`/groups/${r.id}`}
-                className={`${row} hover:bg-surface-2`}
+          {overall !== 0 && (
+            <p className="text-sm">
+              <span className="text-muted">{t("overall.acrossAll")} · </span>
+              <span
+                className={`font-bold ${
+                  overall > 0 ? "text-pos" : "text-neg"
+                }`}
               >
-                <span>{r.name}</span>
-                <span
-                  className={
-                    r.myNet > 0
-                      ? "font-semibold text-pos"
-                      : r.myNet < 0
-                        ? "font-semibold text-neg"
-                        : "text-muted"
-                  }
+                {overall > 0
+                  ? t("overall.youreOwed", { amount: formatMoney(overall, pc) })
+                  : t("overall.youOwe", { amount: formatMoney(-overall, pc) })}
+              </span>
+            </p>
+          )}
+
+          <ul className="flex flex-col gap-2">
+            {perGroup.map((r) => (
+              <li key={r.id}>
+                <Link
+                  href={`/groups/${r.id}`}
+                  className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:bg-surface-2 active:bg-surface-2"
                 >
-                  {r.myNet > 0
-                    ? `+${formatMoney(r.myNet, r.currency)}`
-                    : r.myNet < 0
-                      ? `−${formatMoney(-r.myNet, r.currency)}`
-                      : t("overall.settled")}
-                  {r.currency !== pc &&
-                    r.myNet !== 0 &&
-                    ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
-                </span>
-              </Link>
+                  <span className="font-semibold">{r.name}</span>
+                  <span
+                    className={
+                      r.myNet > 0
+                        ? "text-sm font-semibold text-pos"
+                        : r.myNet < 0
+                          ? "text-sm font-semibold text-neg"
+                          : "text-sm text-muted"
+                    }
+                  >
+                    {r.myNet > 0
+                      ? `+${formatMoney(r.myNet, r.currency)}`
+                      : r.myNet < 0
+                        ? `−${formatMoney(-r.myNet, r.currency)}`
+                        : t("overall.settled")}
+                    {r.currency !== pc &&
+                      r.myNet !== 0 &&
+                      ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
+                  </span>
+                </Link>
+              </li>
             ))}
-          </section>
+          </ul>
 
           {people.length > 0 && (
             <section className="flex flex-col gap-1.5">

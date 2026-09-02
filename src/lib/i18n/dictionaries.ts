@@ -64,6 +64,8 @@ const en = {
   "newGroup.title": "New group",
   "newGroup.name": "Name",
   "newGroup.namePlaceholder": "Trip to Lisbon",
+  "newGroup.myName": "Your name in this group",
+  "newGroup.myNameHint": "How you'll show up to the others.",
   "newGroup.defaultCurrency": "Default currency",
   "newGroup.creating": "Creating…",
   "newGroup.create": "Create group",
@@ -242,6 +244,9 @@ const en = {
   "editGroup.defaultCurrency": "Default currency",
   "editGroup.currencyLocked":
     "Locked — the group already has expenses or payments.",
+  "editGroup.delete": "Delete this group",
+  "editGroup.deleteConfirm":
+    "Delete \"{name}\" and all its expenses and payments? This can't be undone.",
 
   // invites
   "invite.groupTitle": "Invite people to {group}",
@@ -397,6 +402,8 @@ const fr: Record<keyof typeof en, string> = {
   "newGroup.title": "Nouveau groupe",
   "newGroup.name": "Nom",
   "newGroup.namePlaceholder": "Voyage à Lisbonne",
+  "newGroup.myName": "Ton nom dans ce groupe",
+  "newGroup.myNameHint": "Comment tu apparaîtras aux autres.",
   "newGroup.defaultCurrency": "Devise par défaut",
   "newGroup.creating": "Création…",
   "newGroup.create": "Créer le groupe",
@@ -566,6 +573,9 @@ const fr: Record<keyof typeof en, string> = {
   "editGroup.defaultCurrency": "Devise par défaut",
   "editGroup.currencyLocked":
     "Verrouillée — le groupe a déjà des dépenses ou des remboursements.",
+  "editGroup.delete": "Supprimer ce groupe",
+  "editGroup.deleteConfirm":
+    "Supprimer « {name} » et toutes ses dépenses et remboursements ? C'est irréversible.",
 
   "invite.groupTitle": "Inviter des personnes dans {group}",
   "invite.groupHint":

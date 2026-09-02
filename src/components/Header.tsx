@@ -25,11 +25,8 @@ export default async function Header() {
     <header className="sticky top-0 z-10 border-b border-line bg-bg/90 backdrop-blur">
       <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-4 py-2 text-[13px]">
         <nav className="flex items-center gap-1.5">
-          <Link href="/groups" data-tap className={navLink}>
-            {t("nav.groups")}
-          </Link>
           <Link href="/balances" data-tap className={navLink}>
-            {t("nav.overall")}
+            {t("nav.groups")}
           </Link>
         </nav>
 

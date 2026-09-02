@@ -430,7 +430,7 @@ export default async function GroupPage({
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5 pb-28">
       <div className="flex flex-col gap-1.5">
         <Link
-          href="/groups"
+          href="/balances"
           className="text-sm text-muted transition-colors hover:underline active:text-ink"
         >
           {t("group.backAll")}
@@ -451,23 +451,20 @@ export default async function GroupPage({
         {group.description && (
           <p className="text-sm text-muted">{group.description}</p>
         )}
-        <p className="mt-1">
-          <span className="text-sm text-muted">{t("group.yourBalance")} · </span>
-          <span
-            className={`text-sm font-bold ${
-              myNet && myNet > 0
-                ? "text-pos"
-                : myNet && myNet < 0
-                  ? "text-neg"
-                  : "text-muted"
-            }`}
-          >
-            {myNet && myNet > 0
-              ? t("group.youreOwed", { amount: formatMoney(myNet, gc) })
+        <p
+          className={`mt-1 text-base font-bold ${
+            myNet && myNet > 0
+              ? "text-pos"
               : myNet && myNet < 0
-                ? t("group.youOwe", { amount: formatMoney(-myNet, gc) })
-                : t("group.settledUp")}
-          </span>
+                ? "text-neg"
+                : "text-muted"
+          }`}
+        >
+          {myNet && myNet > 0
+            ? t("group.youreOwed", { amount: formatMoney(myNet, gc) })
+            : myNet && myNet < 0
+              ? t("group.youOwe", { amount: formatMoney(-myNet, gc) })
+              : t("group.settledUp")}
         </p>
       </div>
 

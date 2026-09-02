@@ -67,7 +67,7 @@ export default function TransferForm({
     return (
       <p className="text-sm text-muted">
         {t("transfer.needOther")}{" "}
-        <Link href="/groups" className="underline">
+        <Link href="/balances" className="underline">
           {t("transfer.createOne")}
         </Link>
         .

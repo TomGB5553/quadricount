@@ -55,7 +55,7 @@ export default async function InvitePage({
             group: preview.group_name,
           })}
         </p>
-        <Link href="/groups" className="text-sm underline">
+        <Link href="/balances" className="text-sm underline">
           {t("invite.goToGroups")}
         </Link>
       </Shell>

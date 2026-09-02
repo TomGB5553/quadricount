@@ -4,8 +4,9 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { getT } from "@/lib/i18n/server";
-import { updateGroup } from "../../actions";
+import { deleteGroup, updateGroup } from "../../actions";
 
 export default async function EditGroupPage({
   params,
@@ -122,6 +123,19 @@ export default async function EditGroupPage({
             {t("common.cancel")}
           </Link>
         </div>
+      </form>
+
+      <form
+        action={deleteGroup}
+        className="mt-4 border-t border-line pt-4"
+      >
+        <input type="hidden" name="groupId" value={group.id} />
+        <ConfirmSubmit
+          className="text-sm font-medium text-neg hover:underline disabled:opacity-50"
+          confirm={t("editGroup.deleteConfirm", { name: group.name })}
+        >
+          {t("editGroup.delete")}
+        </ConfirmSubmit>
       </form>
     </main>
   );

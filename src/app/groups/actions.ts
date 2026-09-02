@@ -16,6 +16,7 @@ export async function createGroup(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const currency = String(formData.get("currency") ?? "EUR").trim();
+  const myName = String(formData.get("myName") ?? "").trim();
 
   if (!name) return;
 
@@ -24,8 +25,15 @@ export async function createGroup(formData: FormData) {
     p_name: name,
     p_default_currency: currency || "EUR",
   });
-
   if (error) throw new Error(error.message);
+
+  // Set the owner's name for this group (defaults to the profile name otherwise).
+  if (myName) {
+    await supabase.rpc("update_my_group_name", {
+      p_group_id: groupId as string,
+      p_display_name: myName,
+    });
+  }
 
   redirect(`/groups/${groupId}`);
 }
@@ -200,6 +208,18 @@ export async function updateGroup(formData: FormData) {
   if (error) throw new Error(error.message);
 
   redirect(`/groups/${groupId}`);
+}
+
+export async function deleteGroup(formData: FormData) {
+  await requireUser();
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!groupId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delete_group", { p_group_id: groupId });
+  if (error) throw new Error(error.message);
+
+  redirect("/balances");
 }
 
 export async function transferBalance(formData: FormData) {
