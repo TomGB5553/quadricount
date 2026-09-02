@@ -168,26 +168,42 @@ export default async function BalancesPage() {
               <li key={r.id}>
                 <Link
                   href={`/groups/${r.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:bg-surface-2 active:bg-surface-2"
+                  className="group flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:bg-surface-2 active:bg-surface-2"
                 >
-                  <span className="font-semibold">{r.name}</span>
-                  <span
-                    className={
-                      r.myNet > 0
-                        ? "text-sm font-semibold text-pos"
+                  <span className="min-w-0 truncate font-semibold">
+                    {r.name}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <span
+                      className={
+                        r.myNet > 0
+                          ? "text-sm font-semibold text-pos"
+                          : r.myNet < 0
+                            ? "text-sm font-semibold text-neg"
+                            : "text-sm text-muted"
+                      }
+                    >
+                      {r.myNet > 0
+                        ? `+${formatMoney(r.myNet, r.currency)}`
                         : r.myNet < 0
-                          ? "text-sm font-semibold text-neg"
-                          : "text-sm text-muted"
-                    }
-                  >
-                    {r.myNet > 0
-                      ? `+${formatMoney(r.myNet, r.currency)}`
-                      : r.myNet < 0
-                        ? `−${formatMoney(-r.myNet, r.currency)}`
-                        : t("overall.settled")}
-                    {r.currency !== pc &&
-                      r.myNet !== 0 &&
-                      ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
+                          ? `−${formatMoney(-r.myNet, r.currency)}`
+                          : t("overall.settled")}
+                      {r.currency !== pc &&
+                        r.myNet !== 0 &&
+                        ` (≈ ${formatMoney(Math.abs(r.myNetPc), pc)})`}
+                    </span>
+                    <svg
+                      aria-hidden
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
                   </span>
                 </Link>
               </li>

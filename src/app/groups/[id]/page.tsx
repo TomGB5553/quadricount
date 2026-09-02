@@ -491,12 +491,19 @@ export default async function GroupPage({
         ]}
       />
 
+      {/* fade the page out under the floating button so it clearly sits on top */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-t from-bg via-bg/85 to-transparent"
+      />
+
       <Link
         href={`/groups/${group.id}/expenses/new`}
         aria-label={t("group.fabAdd")}
-        className="fixed bottom-6 left-1/2 z-20 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-primary text-3xl font-light text-primary-ink shadow-lg shadow-primary/30 transition-transform hover:bg-primary-hover active:scale-95"
+        className="fixed bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-primary py-3.5 pl-4 pr-5 text-base font-bold text-primary-ink shadow-xl shadow-primary/40 ring-4 ring-bg transition-transform hover:bg-primary-hover active:scale-95"
       >
-        <span className="-mt-0.5">+</span>
+        <span className="text-2xl font-light leading-none">+</span>
+        {t("group.fabAddShort")}
       </Link>
     </main>
   );

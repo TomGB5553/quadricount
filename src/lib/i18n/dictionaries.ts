@@ -79,6 +79,7 @@ const en = {
   "group.addExpense": "Add expense",
   "group.recordPayment": "Record payment",
   "group.fabAdd": "Add an expense or a payment",
+  "group.fabAddShort": "Add",
   "group.tabExpenses": "Expenses",
   "group.tabBalances": "Balances",
   "group.tabMembers": "Members",
@@ -130,6 +131,7 @@ const en = {
 
   // expenses panel
   "exp.filterEveryone": "Everyone",
+  "exp.filterYou": "You",
   "exp.paidBy": "paid by",
   "exp.for": "for",
   "exp.of": "of {amount}",
@@ -431,6 +433,7 @@ const fr: Record<keyof typeof en, string> = {
   "group.addExpense": "Ajouter une dépense",
   "group.recordPayment": "Enregistrer un remboursement",
   "group.fabAdd": "Ajouter une dépense ou un remboursement",
+  "group.fabAddShort": "Ajouter",
   "group.tabExpenses": "Dépenses",
   "group.tabBalances": "Soldes",
   "group.tabMembers": "Membres",
@@ -479,6 +482,7 @@ const fr: Record<keyof typeof en, string> = {
   "members.addMember": "Ajouter le membre",
 
   "exp.filterEveryone": "Tout le monde",
+  "exp.filterYou": "Toi",
   "exp.paidBy": "payé par",
   "exp.for": "pour",
   "exp.of": "sur {amount}",

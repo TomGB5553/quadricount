@@ -79,6 +79,14 @@ export default function ExpensesPanel({
         )
       : null;
 
+  // show the current user's own chip first, right after "Everyone"
+  const orderedMembers = myMemberId
+    ? [
+        ...members.filter((m) => m.id === myMemberId),
+        ...members.filter((m) => m.id !== myMemberId),
+      ]
+    : members;
+
   const chip = (active: boolean) =>
     `rounded-full border px-2.5 py-1 text-xs ${
       active
@@ -97,14 +105,14 @@ export default function ExpensesPanel({
           >
             {t("exp.filterEveryone")}
           </button>
-          {members.map((m) => (
+          {orderedMembers.map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => setFilter(m.id)}
               className={chip(filter === m.id)}
             >
-              {m.display_name}
+              {m.id === myMemberId ? t("exp.filterYou") : m.display_name}
             </button>
           ))}
         </div>
