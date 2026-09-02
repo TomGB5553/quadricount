@@ -291,12 +291,13 @@ const en = {
   "overall.owesYou": "owes you {amount}",
   "overall.youOweShort": "you owe {amount}",
   "overall.acrossNote":
-    "Combined across groups where the person has an account — tap a row to settle up everywhere at once.",
+    "Combined across groups where the person has an account. Settle up records a payment in each shared group at once.",
   "overall.fxNote":
     "Balances in other currencies converted to {currency} at today's rate.",
 
   // settle up across groups
   "settleAll.back": "← Overall",
+  "settleAll.button": "Settle up",
   "settleAll.title": "Settle up with {name}",
   "settleAll.intro":
     "Records a payment in each group so you're square with {name} everywhere:",
@@ -632,11 +633,12 @@ const fr: Record<keyof typeof en, string> = {
   "overall.owesYou": "te doit {amount}",
   "overall.youOweShort": "tu dois {amount}",
   "overall.acrossNote":
-    "Cumulé sur les groupes où la personne a un compte — touche une ligne pour tout régler d'un coup.",
+    "Cumulé sur les groupes où la personne a un compte. « Régler » enregistre un remboursement dans chaque groupe partagé d'un coup.",
   "overall.fxNote":
     "Les soldes dans d'autres devises sont convertis en {currency} au taux du jour.",
 
   "settleAll.back": "← Bilan",
+  "settleAll.button": "Régler",
   "settleAll.title": "Régler avec {name}",
   "settleAll.intro":
     "Enregistre un remboursement dans chaque groupe pour être à jour avec {name} partout :",

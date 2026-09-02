@@ -200,26 +200,32 @@ export default async function BalancesPage() {
                 {t("overall.acrossEveryone")}
               </h2>
               {people.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/balances/settle/${p.id}`}
-                  className={`${row} transition-colors hover:bg-surface-2 active:bg-surface-2`}
-                >
-                  <span>{p.name}</span>
-                  <span
-                    className={
-                      p.net > 0
-                        ? "font-semibold text-pos"
-                        : "font-semibold text-neg"
-                    }
-                  >
-                    {p.net > 0
-                      ? t("overall.owesYou", { amount: formatMoney(p.net, pc) })
-                      : t("overall.youOweShort", {
-                          amount: formatMoney(-p.net, pc),
-                        })}
+                <div key={p.id} className={row}>
+                  <span className="min-w-0 truncate">{p.name}</span>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={
+                        p.net > 0
+                          ? "font-semibold text-pos"
+                          : "font-semibold text-neg"
+                      }
+                    >
+                      {p.net > 0
+                        ? t("overall.owesYou", {
+                            amount: formatMoney(p.net, pc),
+                          })
+                        : t("overall.youOweShort", {
+                            amount: formatMoney(-p.net, pc),
+                          })}
+                    </span>
+                    <Link
+                      href={`/balances/settle/${p.id}`}
+                      className="rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-ink transition-colors hover:bg-primary-hover active:bg-primary-hover"
+                    >
+                      {t("settleAll.button")}
+                    </Link>
                   </span>
-                </Link>
+                </div>
               ))}
               <p className="text-xs text-muted">{t("overall.acrossNote")}</p>
             </section>
