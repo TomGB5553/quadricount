@@ -5,7 +5,7 @@ import { useState } from "react";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/date";
 import { PaidSplitAvatars } from "@/components/Avatar";
-import { useT } from "@/lib/i18n/client";
+import { useT, useLocale } from "@/lib/i18n/client";
 
 type Member = { id: string; display_name: string };
 type Expense = {
@@ -33,6 +33,7 @@ export default function ExpensesPanel({
   myMemberId: string | null;
 }) {
   const t = useT();
+  const locale = useLocale();
   const [filter, setFilter] = useState<string | null>(null);
   const nameOf = (id: string) =>
     members.find((m) => m.id === id)?.display_name ?? t("common.somebody");
@@ -150,8 +151,8 @@ export default function ExpensesPanel({
         <div className="flex flex-col gap-4">
           {byDate.map(({ date, items }) => (
             <div key={date} className="flex flex-col gap-1.5">
-              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">
-                {formatDate(date)}
+              <h3 className="px-1 pt-1 text-sm font-semibold text-muted">
+                {formatDate(date, locale)}
               </h3>
               <ul className="flex flex-col gap-1.5">
                 {items.map((e) => {

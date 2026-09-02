@@ -7,9 +7,12 @@ import { useState } from "react";
 export default function GroupTabs({
   labels,
   panels,
+  // rendered only while the first tab (Expenses) is active
+  firstTabAction,
 }: {
   labels: string[];
   panels: React.ReactNode[];
+  firstTabAction?: React.ReactNode;
 }) {
   const [active, setActive] = useState(0);
   return (
@@ -31,6 +34,7 @@ export default function GroupTabs({
         ))}
       </div>
       {panels[active]}
+      {active === 0 && firstTabAction}
     </>
   );
 }

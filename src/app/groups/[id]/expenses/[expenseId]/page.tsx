@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/date";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
 import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
-import { getT } from "@/lib/i18n/server";
+import { getT, getLocale } from "@/lib/i18n/server";
 import { deleteExpense } from "../../../actions";
 
 export default async function ExpenseDetailPage({
@@ -19,6 +19,7 @@ export default async function ExpenseDetailPage({
   const user = await requireUser();
   const supabase = await createClient();
   const t = await getT();
+  const locale = await getLocale();
 
   const methodLabel: Record<string, string> = {
     equal: t("expDetail.methodEqual"),
@@ -48,9 +49,14 @@ export default async function ExpenseDetailPage({
 
   const nameOf = (memberId: string) =>
     members?.find((m) => m.id === memberId)?.display_name ?? t("common.somebody");
-  const canEdit =
-    expense.created_by === user.id ||
-    !!members?.some((m) => m.user_id === user.id && m.role === "owner");
+  // Any member of the group can edit an expense (the ledger is shared);
+  // deleting stays with whoever added it, or the group owner.
+  const isMember = !!members?.some((m) => m.user_id === user.id);
+  const isOwner = !!members?.some(
+    (m) => m.user_id === user.id && m.role === "owner",
+  );
+  const canEdit = isMember;
+  const canDelete = expense.created_by === user.id || isOwner;
 
   const cur = expense.currency;
   const gc = group?.default_currency ?? cur;
@@ -129,7 +135,9 @@ export default async function ExpenseDetailPage({
           </>
         )}
 
-        <p className="text-sm text-muted">{formatDate(expense.spent_at)}</p>
+        <p className="text-sm text-muted">
+          {formatDate(expense.spent_at, locale)}
+        </p>
       </div>
 
       <section className="flex flex-col gap-1.5">
@@ -201,24 +209,28 @@ export default async function ExpenseDetailPage({
         ))}
       </section>
 
-      {canEdit && (
+      {(canEdit || canDelete) && (
         <div className="flex gap-3">
-          <Link
-            href={`/groups/${id}/expenses/${expenseId}/edit`}
-            className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
-          >
-            {t("common.edit")}
-          </Link>
-          <form action={deleteExpense}>
-            <input type="hidden" name="groupId" value={id} />
-            <input type="hidden" name="expenseId" value={expenseId} />
-            <SubmitButton
-              className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
-              pendingText={t("common.deleting")}
+          {canEdit && (
+            <Link
+              href={`/groups/${id}/expenses/${expenseId}/edit`}
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
             >
-              {t("common.delete")}
-            </SubmitButton>
-          </form>
+              {t("common.edit")}
+            </Link>
+          )}
+          {canDelete && (
+            <form action={deleteExpense}>
+              <input type="hidden" name="groupId" value={id} />
+              <input type="hidden" name="expenseId" value={expenseId} />
+              <SubmitButton
+                className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
+                pendingText={t("common.deleting")}
+              >
+                {t("common.delete")}
+              </SubmitButton>
+            </form>
+          )}
         </div>
       )}
     </main>
