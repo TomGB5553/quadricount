@@ -149,50 +149,47 @@ export default async function ExpenseDetailPage({
 
       <section className="flex flex-col gap-1.5">
         <h2 className="text-sm font-semibold text-muted">
-          {components.length > 1
-            ? t("expDetail.splitParts")
-            : t("expDetail.howSplit")}
+          {t("expDetail.split")}
         </h2>
-        {components.map((c, idx) => (
-          <div
-            key={c.id}
-            className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2 p-3 text-sm"
-          >
-            <div className="text-xs text-muted">
-              {components.length > 1 &&
-                `${t("expForm.part", { n: idx + 1 })} · `}
-              {methodLabel[c.method] ?? c.method}
-              {c.basis === "fixed_amount" &&
-                t("expDetail.covers", {
-                  amount: formatMoney(c.amount ?? 0, cur),
-                })}
-            </div>
-            <ul className="flex flex-col gap-0.5">
-              {c.expense_split_entries.map((en) => (
-                <li key={en.member_id} className="flex justify-between">
-                  <span>{nameOf(en.member_id)}</span>
-                  <span className="text-muted">
-                    {c.method === "exact" &&
-                      formatMoney(en.exact_amount ?? 0, cur)}
-                    {c.method === "percentage" && `${en.percent} %`}
-                    {c.method === "shares" &&
-                      `${en.weight} ${
-                        en.weight === 1
-                          ? t("expDetail.share")
-                          : t("expDetail.shares")
-                      }`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </section>
 
-      <section className="flex flex-col gap-1.5">
-        <h2 className="text-sm font-semibold text-muted">
-          {t("expDetail.eachShare")}
-        </h2>
+        {/* how it was entered — only shown when it adds something beyond the
+            plain per-person amounts below (parts, %, shares, exact) */}
+        {!(components.length === 1 && components[0].method === "equal") &&
+          components.map((c, idx) => (
+            <div
+              key={c.id}
+              className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2 p-3 text-sm"
+            >
+              <div className="text-xs text-muted">
+                {components.length > 1 &&
+                  `${t("expForm.part", { n: idx + 1 })} · `}
+                {methodLabel[c.method] ?? c.method}
+                {c.basis === "fixed_amount" &&
+                  t("expDetail.covers", {
+                    amount: formatMoney(c.amount ?? 0, cur),
+                  })}
+              </div>
+              <ul className="flex flex-col gap-0.5">
+                {c.expense_split_entries.map((en) => (
+                  <li key={en.member_id} className="flex justify-between">
+                    <span>{nameOf(en.member_id)}</span>
+                    <span className="text-muted">
+                      {c.method === "exact" &&
+                        formatMoney(en.exact_amount ?? 0, cur)}
+                      {c.method === "percentage" && `${en.percent} %`}
+                      {c.method === "shares" &&
+                        `${en.weight} ${
+                          en.weight === 1
+                            ? t("expDetail.share")
+                            : t("expDetail.shares")
+                        }`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+
         {expense.expense_allocations.map((a) => (
           <div key={a.member_id} className={row}>
             <span className="flex items-center gap-2.5">

@@ -79,6 +79,14 @@ export default function ExpensesPanel({
         )
       : null;
 
+  // group the (already date-sorted) list under one header per day
+  const byDate: { date: string; items: Expense[] }[] = [];
+  for (const e of visible) {
+    const last = byDate[byDate.length - 1];
+    if (last && last.date === e.spent_at) last.items.push(e);
+    else byDate.push({ date: e.spent_at, items: [e] });
+  }
+
   // show the current user's own chip first, right after "Everyone"
   const orderedMembers = myMemberId
     ? [
@@ -138,90 +146,101 @@ export default function ExpensesPanel({
         </p>
       )}
 
-      <ul className="flex flex-col gap-2">
-        {visible.length > 0 ? (
-          visible.map((e) => {
-            const payerNames = e.expense_payers.map((p) => nameOf(p.member_id));
-            const splitNames = e.expense_allocations.map((a) =>
-              nameOf(a.member_id),
-            );
-            const converted =
-              e.currency !== groupCurrency
-                ? formatMoney(
-                    Math.round(
-                      e.total_amount * (e.fx_rate_to_group_currency || 1),
-                    ),
-                    groupCurrency,
-                  )
-                : null;
-            // when a person is selected, show the list through their eyes
-            const lens = filter;
-            const net = netOn(e, lens ?? myMemberId);
-            const edge =
-              net && net > 0
-                ? "border-l-4 border-l-pos"
-                : net && net < 0
-                  ? "border-l-4 border-l-neg"
-                  : "";
-            return (
-              <li key={e.id}>
-                <Link
-                  href={`/groups/${groupId}/expenses/${e.id}`}
-                  className={`flex items-center justify-between gap-3 rounded-lg bg-surface px-3.5 py-3 shadow-sm ring-1 ring-line/60 hover:bg-surface-2 ${edge}`}
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold">
-                      {e.description}
-                    </div>
-                    <div className="text-xs text-muted">
-                      {formatDate(e.spent_at)}
-                    </div>
-                    <div className="mt-1.5">
-                      <PaidSplitAvatars
-                        payers={payerNames}
-                        participants={splitNames}
-                        paidLabel={t("exp.paidBy")}
-                        forLabel={t("exp.for")}
-                      />
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    {lens ? (
-                      <>
-                        <div className="font-bold">
-                          {formatMoney(shareOf(e, lens), e.currency)}
-                        </div>
-                        <div className="text-xs text-muted">
-                          {t("exp.of", {
-                            amount: formatMoney(e.total_amount, e.currency),
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="font-bold">
-                          {formatMoney(e.total_amount, e.currency)}
-                        </div>
-                        {converted && (
-                          <div className="text-xs text-muted">
-                            ≈ {converted}
+      {visible.length > 0 ? (
+        <div className="flex flex-col gap-4">
+          {byDate.map(({ date, items }) => (
+            <div key={date} className="flex flex-col gap-1.5">
+              <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">
+                {formatDate(date)}
+              </h3>
+              <ul className="flex flex-col gap-1.5">
+                {items.map((e) => {
+                  const payerNames = e.expense_payers.map((p) =>
+                    nameOf(p.member_id),
+                  );
+                  const splitNames = e.expense_allocations.map((a) =>
+                    nameOf(a.member_id),
+                  );
+                  const converted =
+                    e.currency !== groupCurrency
+                      ? formatMoney(
+                          Math.round(
+                            e.total_amount * (e.fx_rate_to_group_currency || 1),
+                          ),
+                          groupCurrency,
+                        )
+                      : null;
+                  // when a person is selected, show the list through their eyes
+                  const lens = filter;
+                  const net = netOn(e, lens ?? myMemberId);
+                  const edge =
+                    net && net > 0
+                      ? "border-l-4 border-l-pos"
+                      : net && net < 0
+                        ? "border-l-4 border-l-neg"
+                        : "";
+                  return (
+                    <li key={e.id}>
+                      <Link
+                        href={`/groups/${groupId}/expenses/${e.id}`}
+                        className={`flex items-center justify-between gap-3 rounded-lg bg-surface px-3.5 py-2.5 shadow-sm ring-1 ring-line/60 hover:bg-surface-2 ${edge}`}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">
+                            {e.description}
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </Link>
-              </li>
-            );
-          })
-        ) : (
-          <li className="rounded-xl border border-dashed border-line px-3.5 py-6 text-center text-sm text-muted">
-            {filter
-              ? t("exp.noneInvolving", { name: nameOf(filter) })
-              : t("exp.noneYet")}
-          </li>
-        )}
-      </ul>
+                          <div className="mt-1">
+                            <PaidSplitAvatars
+                              payers={payerNames}
+                              participants={splitNames}
+                              paidLabel={t("exp.paidBy")}
+                              forLabel={t("exp.for")}
+                            />
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          {lens ? (
+                            <>
+                              <div className="font-bold">
+                                {formatMoney(shareOf(e, lens), e.currency)}
+                              </div>
+                              <div className="text-xs text-muted">
+                                {t("exp.of", {
+                                  amount: formatMoney(
+                                    e.total_amount,
+                                    e.currency,
+                                  ),
+                                })}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="font-bold">
+                                {formatMoney(e.total_amount, e.currency)}
+                              </div>
+                              {converted && (
+                                <div className="text-xs text-muted">
+                                  ≈ {converted}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-line px-3.5 py-6 text-center text-sm text-muted">
+          {filter
+            ? t("exp.noneInvolving", { name: nameOf(filter) })
+            : t("exp.noneYet")}
+        </div>
+      )}
     </section>
   );
 }
