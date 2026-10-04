@@ -41,11 +41,16 @@ export default function MembersToolbar({ groupId }: { groupId: string }) {
     setLoading(false);
   }
 
-  const btn = (active: boolean) =>
-    `flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
-      active
-        ? "border-primary bg-surface-2 text-primary"
-        : "border-line bg-surface hover:bg-surface-2"
+  const base =
+    "flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all active:scale-[0.98]";
+  // add = solid accent, link = soft tint; both lift with a shadow
+  const addBtn = (active: boolean) =>
+    `${base} bg-primary text-primary-ink shadow-md shadow-primary/30 hover:bg-primary-hover ${
+      active ? "ring-2 ring-primary/40 ring-offset-2 ring-offset-bg" : ""
+    }`;
+  const linkBtn = (active: boolean) =>
+    `${base} bg-primary/10 text-primary shadow-sm ring-1 hover:bg-primary/15 ${
+      active ? "ring-primary/60 bg-primary/20" : "ring-primary/25"
     }`;
 
   return (
@@ -55,7 +60,7 @@ export default function MembersToolbar({ groupId }: { groupId: string }) {
           type="button"
           onClick={() => setOpen(open === "add" ? null : "add")}
           aria-expanded={open === "add"}
-          className={btn(open === "add")}
+          className={addBtn(open === "add")}
         >
           <svg {...iconProps}>
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -67,7 +72,7 @@ export default function MembersToolbar({ groupId }: { groupId: string }) {
           type="button"
           onClick={toggleLink}
           aria-expanded={open === "link"}
-          className={btn(open === "link")}
+          className={linkBtn(open === "link")}
         >
           <svg {...iconProps}>
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />

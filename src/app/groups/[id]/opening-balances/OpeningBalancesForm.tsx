@@ -44,17 +44,19 @@ export default function OpeningBalancesForm({
   const balanced = diff === 0 && getsBack > 0;
 
   const seg = (active: boolean, tone: "pos" | "neg") =>
-    `flex-1 rounded-lg px-2.5 py-1.5 text-xs transition-colors ${
+    `flex-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
       active
-        ? `bg-surface font-semibold shadow-sm ${tone === "pos" ? "text-pos" : "text-neg"}`
-        : "text-muted"
+        ? tone === "pos"
+          ? "bg-pos-bg text-pos shadow-sm ring-1 ring-pos/40"
+          : "bg-neg-bg text-neg shadow-sm ring-1 ring-neg/40"
+        : "text-muted hover:text-ink"
     }`;
 
   return (
     <form action={setOpeningBalances} className="flex flex-col gap-4">
       <input type="hidden" name="groupId" value={groupId} />
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
         {members.map((m) => {
           const row = rows[m.id];
           const minor = toMinor(row.amount);
@@ -62,9 +64,9 @@ export default function OpeningBalancesForm({
           return (
             <div
               key={m.id}
-              className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3"
+              className="flex flex-col gap-2 rounded-xl bg-surface p-3 shadow-sm ring-1 ring-line/60"
             >
-              <span className="text-sm font-medium">{m.display_name}</span>
+              <span className="text-sm font-semibold">{m.display_name}</span>
               <div className="flex items-center gap-2">
                 <div className="flex w-44 shrink-0 gap-1 rounded-xl bg-surface-2 p-1">
                   <button
@@ -88,7 +90,7 @@ export default function OpeningBalancesForm({
                   onChange={(e) => patch(m.id, { amount: e.target.value })}
                   placeholder="0.00"
                   aria-label={m.display_name}
-                  className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded-xl border border-line bg-bg px-3 py-2 text-sm shadow-inner"
                 />
               </div>
               <input
@@ -101,22 +103,33 @@ export default function OpeningBalancesForm({
         })}
       </div>
 
-      <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface-2 p-3 text-sm">
-        <div className="flex justify-between text-pos">
-          <span>{t("opening.totalGetsBack", { amount: formatMoney(getsBack, currency) })}</span>
+      <div
+        className={`flex flex-col gap-1.5 rounded-xl p-3 text-sm shadow-sm ring-1 ${
+          balanced ? "bg-pos-bg ring-pos/30" : "bg-surface ring-line/60"
+        }`}
+      >
+        <div className="flex items-center gap-2 font-semibold text-pos">
+          <span className="h-2 w-2 rounded-full bg-pos" aria-hidden />
+          {t("opening.totalGetsBack", { amount: formatMoney(getsBack, currency) })}
         </div>
-        <div className="flex justify-between text-neg">
-          <span>{t("opening.totalOwes", { amount: formatMoney(owes, currency) })}</span>
+        <div className="flex items-center gap-2 font-semibold text-neg">
+          <span className="h-2 w-2 rounded-full bg-neg" aria-hidden />
+          {t("opening.totalOwes", { amount: formatMoney(owes, currency) })}
         </div>
-        <p
-          className={`mt-1 font-semibold ${balanced ? "text-pos" : "text-muted"}`}
-        >
-          {balanced
-            ? t("opening.balanced")
-            : t("opening.difference", {
-                amount: formatMoney(Math.abs(diff), currency),
-              })}
-        </p>
+        {balanced ? (
+          <p className="mt-0.5 font-bold text-pos">{t("opening.balanced")}</p>
+        ) : (
+          diff !== 0 && (
+            <>
+              <p className="mt-0.5 font-bold">
+                {t(diff > 0 ? "opening.shortOwes" : "opening.shortGetsBack", {
+                  amount: formatMoney(Math.abs(diff), currency),
+                })}
+              </p>
+              <p className="text-xs text-muted">{t("opening.missingTip")}</p>
+            </>
+          )
+        )}
       </div>
 
       <SubmitButton disabled={!balanced} pendingText={t("opening.saving")}>

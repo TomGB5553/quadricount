@@ -133,9 +133,9 @@ export default async function GroupPage({
   }
   const nextPayerText = nextPayerMessage();
 
-  const card = "rounded-2xl border border-line bg-surface";
+  const card = "rounded-2xl bg-surface shadow-sm ring-1 ring-line/60";
   const row =
-    "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
+    "flex items-center justify-between rounded-xl bg-surface px-3.5 py-3 text-sm shadow-sm ring-1 ring-line/60";
 
   const settleHref = (tr: { from: string; to: string; amount: number }) =>
     `/groups/${group.id}/expenses/new?mode=payment&from=${tr.from}&to=${tr.to}&amount=${(
