@@ -11,8 +11,8 @@ import ConfirmSubmit from "@/components/ConfirmSubmit";
 import Avatar from "@/components/Avatar";
 import GroupTabs from "./GroupTabs";
 import ExpensesPanel from "./ExpensesPanel";
+import MembersToolbar from "./MembersToolbar";
 import {
-  addMember,
   deleteSettlement,
   setMemberStatus,
   updateMyGroupName,
@@ -349,12 +349,7 @@ export default async function GroupPage({
         </form>
       )}
 
-      <Link
-        href={`/groups/${group.id}/invite`}
-        className="self-start rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover"
-      >
-        {t("members.invite")}
-      </Link>
+      <MembersToolbar groupId={group.id} />
       <div className="flex flex-col gap-1.5">
         {members?.map((m) => (
           <div
@@ -407,24 +402,6 @@ export default async function GroupPage({
         ))}
       </div>
 
-      <form
-        action={addMember}
-        className="mt-2 flex flex-col gap-2 border-t border-line pt-4"
-      >
-        <h3 className="text-sm font-semibold">{t("members.addPlaceholder")}</h3>
-        <p className="text-xs text-muted">{t("members.addPlaceholderHint")}</p>
-        <input type="hidden" name="groupId" value={group.id} />
-        <input
-          name="name"
-          required
-          maxLength={100}
-          placeholder={t("members.namePlaceholder")}
-          className="rounded-xl border border-line bg-surface px-3 py-2.5"
-        />
-        <SubmitButton pendingText={t("common.adding")}>
-          {t("members.addMember")}
-        </SubmitButton>
-      </form>
     </section>
   );
 

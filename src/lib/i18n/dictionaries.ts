@@ -119,6 +119,9 @@ const en = {
   "members.yourNameHint":
     "Only affects this group. Your default name is set in your profile.",
   "members.invite": "+ Invite someone",
+  "members.addNew": "Add member",
+  "members.inviteLink": "Invite link",
+  "members.linkLoading": "Generating link…",
   "members.owner": "owner",
   "members.notJoined": "not joined",
   "members.inactive": "inactive",
@@ -498,6 +501,9 @@ const fr: Record<keyof typeof en, string> = {
   "members.yourNameHint":
     "N'affecte que ce groupe. Ton nom par défaut se règle dans ton profil.",
   "members.invite": "+ Inviter quelqu'un",
+  "members.addNew": "Ajouter un membre",
+  "members.inviteLink": "Lien d'invitation",
+  "members.linkLoading": "Génération du lien…",
   "members.owner": "admin",
   "members.notJoined": "pas encore inscrit",
   "members.inactive": "inactif",

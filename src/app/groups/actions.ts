@@ -481,3 +481,18 @@ export async function setOpeningBalances(formData: FormData) {
   revalidatePath("/", "layout");
   redirect(`/groups/${groupId}`);
 }
+
+// The group's reusable invite token, created on first use. Called when the
+// Members tab expands the invite link; returns the error instead of throwing
+// so the message survives the server-action boundary in production.
+export async function getGroupInviteToken(
+  groupId: string,
+): Promise<{ token?: string; error?: string }> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_group_invite", {
+    p_group_id: groupId,
+  });
+  if (error) return { error: error.message };
+  return { token: data as string };
+}
