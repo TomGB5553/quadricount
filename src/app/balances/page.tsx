@@ -64,10 +64,17 @@ export default async function BalancesPage() {
   const perGroup: GroupRow[] = [];
   let overall = 0;
   let converted = false;
-  // key by user_id (aggregates across groups) or a group-local fallback
+  // key by user_id (aggregates across groups); people who haven't joined yet
+  // (placeholders) are group-local, so they get their own per-group row
   const counterparties = new Map<
     string,
-    { id: string; name: string; net: number }
+    {
+      id: string;
+      name: string;
+      net: number;
+      groupName: string | null; // set for placeholders only
+      href: string; // where "Régler" goes
+    }
   >();
 
   for (const g of groups ?? []) {
@@ -105,18 +112,25 @@ export default async function BalancesPage() {
       if (!otherId) continue;
 
       const om = (members ?? []).find((m) => m.id === otherId);
-      // Only aggregate people with an account — a group-local placeholder can't
-      // be reconciled "overall"; that debt stays in the per-group view above.
-      if (!om?.user_id) continue;
+      if (!om) continue;
       const amt = (await toPreferred(t.amount, g.default_currency)) * sign;
-      const entry = counterparties.get(om.user_id) ?? {
-        id: om.user_id,
+      // People with an account aggregate across groups. A placeholder can't
+      // be matched across groups, so it stays its own row, settled in-group.
+      const key = om.user_id ?? `m:${om.id}`;
+      const entry = counterparties.get(key) ?? {
+        id: key,
         name: om.display_name,
         net: 0,
+        groupName: om.user_id ? null : g.name,
+        href: om.user_id
+          ? `/balances/settle/${om.user_id}`
+          : `/groups/${g.id}/expenses/new?mode=payment&from=${t.from}&to=${t.to}&amount=${(
+              t.amount / 100
+            ).toFixed(2)}`,
       };
       entry.net += amt;
       entry.name = om.display_name;
-      counterparties.set(om.user_id, entry);
+      counterparties.set(key, entry);
     }
   }
   perGroup.sort((a, b) => Math.abs(b.myNet) - Math.abs(a.myNet));
@@ -126,7 +140,7 @@ export default async function BalancesPage() {
     .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
 
   const row =
-    "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
+    "flex items-center justify-between gap-3 rounded-xl bg-surface px-3.5 py-3 text-sm shadow-sm ring-1 ring-line/60";
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
@@ -217,7 +231,15 @@ export default async function BalancesPage() {
               </h2>
               {people.map((p) => (
                 <div key={p.id} className={row}>
-                  <span className="min-w-0 truncate">{p.name}</span>
+                  <span className="min-w-0 truncate">
+                    {p.name}
+                    {p.groupName && (
+                      <span className="text-xs text-muted">
+                        {" "}
+                        · {p.groupName}
+                      </span>
+                    )}
+                  </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span
                       className={
@@ -235,7 +257,7 @@ export default async function BalancesPage() {
                           })}
                     </span>
                     <Link
-                      href={`/balances/settle/${p.id}`}
+                      href={p.href}
                       className="rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-ink transition-colors hover:bg-primary-hover active:bg-primary-hover"
                     >
                       {t("settleAll.button")}

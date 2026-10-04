@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "@/components/SubmitButton";
+import IbanField from "./IbanField";
 import { getT } from "@/lib/i18n/server";
 import { updateDisplayName, updatePayoutDetails } from "./actions";
 
@@ -85,16 +86,7 @@ export default async function ProfilePage({
           <p className="text-xs text-muted">{t("profile.paymentInfoHint")}</p>
         </div>
 
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          {t("profile.iban")}
-          <input
-            name="iban"
-            defaultValue={payout?.iban ?? ""}
-            placeholder="FR76 3000 6000 0112 3456 7890 189"
-            autoCapitalize="characters"
-            className={`${field} font-mono`}
-          />
-        </label>
+        <IbanField defaultValue={payout?.iban ?? ""} />
 
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t("profile.otherDetails")}

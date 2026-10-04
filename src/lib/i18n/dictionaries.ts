@@ -326,7 +326,7 @@ const en = {
   "overall.owesYou": "owes you {amount}",
   "overall.youOweShort": "you owe {amount}",
   "overall.acrossNote":
-    "Combined across groups where the person has an account. Settle up records a payment in each shared group at once.",
+    "People with an account are combined across groups (Settle up records a payment in each shared group at once). People who haven't joined yet are listed per group.",
   "overall.fxNote":
     "Balances in other currencies converted to {currency} at today's rate.",
 
@@ -358,6 +358,8 @@ const en = {
   "profile.paymentInfoHint":
     "Optional. Shown to people in your groups when they go to pay you back.",
   "profile.iban": "IBAN",
+  "profile.ibanShow": "Show",
+  "profile.ibanHide": "Hide",
   "profile.otherDetails": "Other details",
   "profile.otherDetailsPlaceholder": "Account name, or Revolut / PayPal / Lydia…",
 
@@ -703,7 +705,7 @@ const fr: Record<keyof typeof en, string> = {
   "overall.owesYou": "te doit {amount}",
   "overall.youOweShort": "tu dois {amount}",
   "overall.acrossNote":
-    "Cumulé sur les groupes où la personne a un compte. « Régler » enregistre un remboursement dans chaque groupe partagé d'un coup.",
+    "Les personnes avec un compte sont cumulées sur tous les groupes (« Régler » enregistre un remboursement dans chaque groupe partagé d'un coup). Celles qui n'ont pas encore rejoint sont listées par groupe.",
   "overall.fxNote":
     "Les soldes dans d'autres devises sont convertis en {currency} au taux du jour.",
 
@@ -733,6 +735,8 @@ const fr: Record<keyof typeof en, string> = {
   "profile.paymentInfoHint":
     "Facultatif. Visible par les membres de tes groupes quand ils veulent te rembourser.",
   "profile.iban": "IBAN",
+  "profile.ibanShow": "Afficher",
+  "profile.ibanHide": "Masquer",
   "profile.otherDetails": "Autres précisions",
   "profile.otherDetailsPlaceholder":
     "Nom du compte, ou Revolut / PayPal / Lydia…",
