@@ -90,10 +90,10 @@ const en = {
   "bal.owesYou": "{name} owes you",
   "bal.to": "to {name}",
   "bal.settleUp": "Settle up",
-  "bal.everyone": "Everyone's balance",
+  "bal.everyone": "Balances",
   "bal.inactive": "inactive",
   "bal.settled": "settled",
-  "bal.betweenOthers": "Between others",
+  "bal.betweenOthers": "Suggested payments",
   "bal.owesWord": "owes",
   "bal.toWord": "to",
   "bal.nextPayerYou":
@@ -134,6 +134,7 @@ const en = {
   // expenses panel
   "exp.filterEveryone": "Everyone",
   "exp.filterYou": "You",
+  "exp.filterOthers": "Others",
   "exp.paidBy": "paid by",
   "exp.for": "for",
   "exp.of": "of {amount}",
@@ -476,10 +477,10 @@ const fr: Record<keyof typeof en, string> = {
   "bal.owesYou": "{name} te doit",
   "bal.to": "à {name}",
   "bal.settleUp": "Rembourser",
-  "bal.everyone": "Le solde de chacun",
+  "bal.everyone": "Soldes",
   "bal.inactive": "inactif",
   "bal.settled": "à jour",
-  "bal.betweenOthers": "Entre les autres",
+  "bal.betweenOthers": "Remboursements suggérés",
   "bal.owesWord": "doit",
   "bal.toWord": "à",
   "bal.nextPayerYou":
@@ -518,6 +519,7 @@ const fr: Record<keyof typeof en, string> = {
 
   "exp.filterEveryone": "Tout le monde",
   "exp.filterYou": "Toi",
+  "exp.filterOthers": "Autres",
   "exp.paidBy": "payé par",
   "exp.for": "pour",
   "exp.of": "sur {amount}",
