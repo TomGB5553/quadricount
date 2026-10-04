@@ -414,3 +414,70 @@ export async function addMember(formData: FormData) {
 
   revalidatePath(`/groups/${groupId}`);
 }
+
+// Opening balances for a brand-new group (e.g. carried over from another
+// app). Balances are always derived from the ledger, so this records ONE
+// entry: people who get money back are the "payers", people who owe are the
+// exact-split participants. Only allowed while the group is still empty.
+export async function setOpeningBalances(formData: FormData) {
+  await requireUser();
+  const t = await getT();
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!groupId) throw new Error(t("err.invalidRequest"));
+
+  const supabase = await createClient();
+  const [{ count: nExpenses }, { count: nSettlements }, { data: members }] =
+    await Promise.all([
+      supabase
+        .from("expenses")
+        .select("id", { count: "exact", head: true })
+        .eq("group_id", groupId),
+      supabase
+        .from("settlements")
+        .select("id", { count: "exact", head: true })
+        .eq("group_id", groupId),
+      supabase.from("group_members").select("id").eq("group_id", groupId),
+    ]);
+  if ((nExpenses ?? 0) > 0 || (nSettlements ?? 0) > 0) {
+    throw new Error(t("opening.errNotEmpty"));
+  }
+
+  const payers: { member_id: string; amount: number }[] = [];
+  const entries: { member_id: string; exact_amount: number }[] = [];
+  for (const m of members ?? []) {
+    const raw = String(formData.get(`bal_${m.id}`) ?? "")
+      .replace(",", ".")
+      .trim();
+    if (!raw) continue;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) throw new Error(t("err.validAmount"));
+    const minor = Math.round(n * 100);
+    if (minor > 0) payers.push({ member_id: m.id, amount: minor });
+    else if (minor < 0) entries.push({ member_id: m.id, exact_amount: -minor });
+  }
+
+  const owed = payers.reduce((s, p) => s + p.amount, 0);
+  const owes = entries.reduce((s, e) => s + e.exact_amount, 0);
+  if (owed === 0 && owes === 0) throw new Error(t("opening.errNone"));
+  if (owed !== owes) {
+    throw new Error(
+      t("opening.errUnbalanced", {
+        diff: (Math.abs(owed - owes) / 100).toFixed(2),
+      }),
+    );
+  }
+
+  const { error } = await supabase.rpc("create_expense_with_splits", {
+    p_group_id: groupId,
+    p_description: t("opening.expenseTitle"),
+    p_total_amount: owed,
+    p_currency: null,
+    p_spent_at: todayStr(),
+    p_payers: payers,
+    p_components: [{ method: "exact", basis: "remainder", entries }],
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  redirect(`/groups/${groupId}`);
+}

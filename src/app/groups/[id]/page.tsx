@@ -68,6 +68,8 @@ export default async function GroupPage({
   const nameOf = (memberId: string) =>
     members?.find((m) => m.id === memberId)?.display_name ?? t("common.somebody");
 
+  const isEmptyGroup =
+    (expenses?.length ?? 0) === 0 && (settlements?.length ?? 0) === 0;
   const gc = group.default_currency;
   const { net: balances, currencies } = computeGroupBalances(
     expenses ?? [],
@@ -469,17 +471,30 @@ export default async function GroupPage({
           t("group.tabMembers"),
         ]}
         panels={[
-          <ExpensesPanel
-            key="expenses"
-            groupId={group.id}
-            groupCurrency={gc}
-            members={(members ?? []).map((m) => ({
-              id: m.id,
-              display_name: m.display_name,
-            }))}
-            expenses={expenses ?? []}
-            myMemberId={myMemberId}
-          />,
+          <div key="expenses" className="flex flex-col gap-3">
+            {isEmptyGroup && (
+              <Link
+                href={`/groups/${group.id}/opening-balances`}
+                className="flex flex-col gap-0.5 rounded-xl border border-dashed border-line bg-surface-2 px-3.5 py-3 text-sm hover:bg-surface"
+              >
+                <span className="font-semibold">{t("opening.cardTitle")}</span>
+                <span className="text-muted">{t("opening.cardBody")}</span>
+                <span className="font-semibold text-primary">
+                  {t("opening.cardLink")}
+                </span>
+              </Link>
+            )}
+            <ExpensesPanel
+              groupId={group.id}
+              groupCurrency={gc}
+              members={(members ?? []).map((m) => ({
+                id: m.id,
+                display_name: m.display_name,
+              }))}
+              expenses={expenses ?? []}
+              myMemberId={myMemberId}
+            />
+          </div>,
           balancesPanel,
           membersPanel,
         ]}
