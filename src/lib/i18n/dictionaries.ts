@@ -322,11 +322,11 @@ const en = {
   "overall.settledUp": "You're settled up",
   "overall.byGroup": "By group",
   "overall.settled": "settled",
-  "overall.acrossEveryone": "Across everyone",
+  "overall.acrossEveryone": "To settle",
+  "home.owe": "You owe",
+  "home.owed": "You're owed",
   "overall.owesYou": "owes you {amount}",
   "overall.youOweShort": "you owe {amount}",
-  "overall.acrossNote":
-    "People with an account are combined across groups (Settle up records a payment in each shared group at once). People who haven't joined yet are listed per group.",
   "overall.fxNote":
     "Balances in other currencies converted to {currency} at today's rate.",
 
@@ -701,11 +701,11 @@ const fr: Record<keyof typeof en, string> = {
   "overall.settledUp": "Tu es à jour",
   "overall.byGroup": "Par groupe",
   "overall.settled": "à jour",
-  "overall.acrossEveryone": "Avec tout le monde",
+  "overall.acrossEveryone": "À régler",
+  "home.owe": "Tu dois",
+  "home.owed": "On te doit",
   "overall.owesYou": "te doit {amount}",
   "overall.youOweShort": "tu dois {amount}",
-  "overall.acrossNote":
-    "Les personnes avec un compte sont cumulées sur tous les groupes (« Régler » enregistre un remboursement dans chaque groupe partagé d'un coup). Celles qui n'ont pas encore rejoint sont listées par groupe.",
   "overall.fxNote":
     "Les soldes dans d'autres devises sont convertis en {currency} au taux du jour.",
 

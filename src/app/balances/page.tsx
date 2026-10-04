@@ -5,6 +5,7 @@ import { computeGroupBalances, settleUp } from "@/lib/balances";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
 import { getT } from "@/lib/i18n/server";
+import Avatar from "@/components/Avatar";
 
 // "Overall" balance across every group the user belongs to, converted to their
 // preferred currency. Members are matched across groups by account (user_id),
@@ -139,63 +140,77 @@ export default async function BalancesPage() {
     .filter((p) => p.net !== 0)
     .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
 
-  const row =
-    "flex items-center justify-between gap-3 rounded-xl bg-surface px-3.5 py-3 text-sm shadow-sm ring-1 ring-line/60";
+  const tone = (n: number) =>
+    n > 0 ? "text-pos" : n < 0 ? "text-neg" : "text-muted";
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          {t("groups.title")}
-        </h1>
-        <Link
-          href="/groups/new"
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink transition-colors hover:bg-primary-hover active:bg-primary-hover"
+    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-5">
+      {perGroup.length > 0 && (
+        <section
+          className={`flex flex-col gap-0.5 rounded-2xl p-5 shadow-sm ring-1 ${
+            overall > 0
+              ? "bg-pos-bg ring-pos/25"
+              : overall < 0
+                ? "bg-neg-bg ring-neg/25"
+                : "bg-surface ring-line/60"
+          }`}
         >
-          {t("groups.new")}
-        </Link>
-      </div>
-
-      {perGroup.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          {t("groups.empty")}
-        </div>
-      ) : (
-        <>
+          <span className={`text-sm font-semibold ${tone(overall)}`}>
+            {overall > 0
+              ? t("home.owed")
+              : overall < 0
+                ? t("home.owe")
+                : t("overall.settledUp")}
+          </span>
           {overall !== 0 && (
-            <p className="text-sm">
-              <span className="text-muted">{t("overall.acrossAll")} · </span>
-              <span
-                className={`font-bold ${
-                  overall > 0 ? "text-pos" : "text-neg"
-                }`}
-              >
-                {overall > 0
-                  ? t("overall.youreOwed", { amount: formatMoney(overall, pc) })
-                  : t("overall.youOwe", { amount: formatMoney(-overall, pc) })}
-              </span>
-            </p>
+            <span
+              className={`text-3xl font-extrabold tracking-tight ${tone(overall)}`}
+            >
+              {formatMoney(Math.abs(overall), pc)}
+            </span>
           )}
+        </section>
+      )}
 
-          <ul className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-extrabold tracking-tight">
+            {t("groups.title")}
+          </h2>
+          <Link
+            href="/groups/new"
+            className="rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-primary-ink shadow-md shadow-primary/25 transition-all hover:bg-primary-hover active:scale-[0.98]"
+          >
+            {t("groups.new")}
+          </Link>
+        </div>
+
+        {perGroup.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
+            {t("groups.empty")}
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
             {perGroup.map((r) => (
               <li key={r.id}>
                 <Link
                   href={`/groups/${r.id}`}
-                  className="group flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5 transition-colors hover:bg-surface-2 active:bg-surface-2"
+                  className={`group flex items-center justify-between gap-3 rounded-xl border-l-4 bg-surface px-4 py-3.5 shadow-sm ring-1 ring-line/60 transition-colors hover:bg-surface-2 active:bg-surface-2 ${
+                    r.myNet > 0
+                      ? "border-l-pos"
+                      : r.myNet < 0
+                        ? "border-l-neg"
+                        : "border-l-line"
+                  }`}
                 >
                   <span className="min-w-0 truncate font-semibold">
                     {r.name}
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
                     <span
-                      className={
-                        r.myNet > 0
-                          ? "text-sm font-semibold text-pos"
-                          : r.myNet < 0
-                            ? "text-sm font-semibold text-neg"
-                            : "text-sm text-muted"
-                      }
+                      className={`text-sm ${tone(r.myNet)} ${
+                        r.myNet !== 0 ? "font-bold" : ""
+                      }`}
                     >
                       {r.myNet > 0
                         ? `+${formatMoney(r.myNet, r.currency)}`
@@ -223,31 +238,27 @@ export default async function BalancesPage() {
               </li>
             ))}
           </ul>
+        )}
+      </section>
 
-          {people.length > 0 && (
-            <section className="flex flex-col gap-1.5">
-              <h2 className="text-sm font-semibold text-muted">
-                {t("overall.acrossEveryone")}
-              </h2>
-              {people.map((p) => (
-                <div key={p.id} className={row}>
-                  <span className="min-w-0 truncate">
+      {people.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-lg font-extrabold tracking-tight">
+            {t("overall.acrossEveryone")}
+          </h2>
+          <ul className="flex flex-col gap-2.5">
+            {people.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-3 rounded-xl bg-surface px-3.5 py-3 shadow-sm ring-1 ring-line/60"
+              >
+                <Avatar name={p.name} size={38} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">
                     {p.name}
-                    {p.groupName && (
-                      <span className="text-xs text-muted">
-                        {" "}
-                        · {p.groupName}
-                      </span>
-                    )}
-                  </span>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span
-                      className={
-                        p.net > 0
-                          ? "font-semibold text-pos"
-                          : "font-semibold text-neg"
-                      }
-                    >
+                  </div>
+                  <div className="truncate text-sm">
+                    <span className={`font-bold ${tone(p.net)}`}>
                       {p.net > 0
                         ? t("overall.owesYou", {
                             amount: formatMoney(p.net, pc),
@@ -256,25 +267,30 @@ export default async function BalancesPage() {
                             amount: formatMoney(-p.net, pc),
                           })}
                     </span>
-                    <Link
-                      href={p.href}
-                      className="rounded-lg bg-primary px-2.5 py-1 text-xs font-semibold text-primary-ink transition-colors hover:bg-primary-hover active:bg-primary-hover"
-                    >
-                      {t("settleAll.button")}
-                    </Link>
-                  </span>
+                    {p.groupName && (
+                      <span className="text-xs text-muted">
+                        {" "}
+                        · {p.groupName}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              ))}
-              <p className="text-xs text-muted">{t("overall.acrossNote")}</p>
-            </section>
-          )}
+                <Link
+                  href={p.href}
+                  className="shrink-0 rounded-lg bg-primary/10 px-3.5 py-2 text-sm font-bold text-primary ring-1 ring-primary/25 transition-all hover:bg-primary/15 active:scale-[0.97]"
+                >
+                  {t("settleAll.button")}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-          {converted && (
-            <p className="text-xs text-muted">
-              {t("overall.fxNote", { currency: pc })}
-            </p>
-          )}
-        </>
+      {converted && (
+        <p className="text-xs text-muted">
+          {t("overall.fxNote", { currency: pc })}
+        </p>
       )}
     </main>
   );
