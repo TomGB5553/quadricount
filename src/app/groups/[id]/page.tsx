@@ -87,6 +87,10 @@ export default async function GroupPage({
       .sort(byNetDesc),
     ...inactiveMembers.filter((m) => (balances.get(m.id) ?? 0) === 0),
   ];
+  const maxAbsNet = Math.max(
+    0,
+    ...orderedForBalances.map((m) => Math.abs(balances.get(m.id) ?? 0)),
+  );
   const transfers = settleUp(balances);
   const mine = transfers.filter(
     (tr) => tr.from === myMemberId || tr.to === myMemberId,
@@ -191,38 +195,55 @@ export default async function GroupPage({
 
       <div className="flex flex-col gap-1.5">
         <h3 className="text-sm font-semibold text-muted">{t("bal.everyone")}</h3>
-        {orderedForBalances.map((m) => {
-          const net = balances.get(m.id) ?? 0;
-          return (
-            <div
-              key={m.id}
-              className={`${row} ${m.status === "inactive" ? "opacity-50" : ""}`}
-            >
-              <span className="flex items-center gap-2.5">
-                <Avatar name={m.display_name} />
-                {m.display_name}
-                {m.status === "inactive" && (
-                  <span className="text-xs">{t("bal.inactive")}</span>
-                )}
-              </span>
-              <span
-                className={
-                  net > 0
-                    ? "font-semibold text-pos"
-                    : net < 0
-                      ? "font-semibold text-neg"
-                      : "text-muted"
-                }
+        <div className="grid grid-cols-2 gap-2.5">
+          {orderedForBalances.map((m) => {
+            const net = balances.get(m.id) ?? 0;
+            const pct =
+              net !== 0 && maxAbsNet > 0
+                ? Math.max(6, Math.round((Math.abs(net) / maxAbsNet) * 100))
+                : 0;
+            return (
+              <div
+                key={m.id}
+                className={`flex min-w-0 flex-col gap-1.5 rounded-xl bg-surface px-3 py-2.5 shadow-sm ring-1 ring-line/60 ${
+                  m.status === "inactive" ? "opacity-50" : ""
+                }`}
               >
-                {net > 0
-                  ? t("bal.getsBack", { amount: formatMoney(net, gc) })
-                  : net < 0
-                    ? t("bal.owes", { amount: formatMoney(-net, gc) })
-                    : t("bal.settled")}
-              </span>
-            </div>
-          );
-        })}
+                <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+                  <Avatar name={m.display_name} size={24} />
+                  <span className="truncate">{m.display_name}</span>
+                  {m.status === "inactive" && (
+                    <span className="shrink-0 text-xs text-muted">
+                      ({t("bal.inactive")})
+                    </span>
+                  )}
+                </span>
+                {net === 0 ? (
+                  <span className="text-sm text-muted">{t("bal.settled")}</span>
+                ) : (
+                  <span
+                    className={`flex items-baseline gap-0.5 ${
+                      net > 0 ? "text-pos" : "text-neg"
+                    }`}
+                  >
+                    <span className="text-base font-medium opacity-70">
+                      {net > 0 ? "+" : "−"}
+                    </span>
+                    <span className="truncate text-lg font-extrabold tracking-tight">
+                      {formatMoney(Math.abs(net), gc)}
+                    </span>
+                  </span>
+                )}
+                <div className="h-1 rounded-full bg-surface-2">
+                  <div
+                    className={`h-1 rounded-full ${net > 0 ? "bg-pos" : "bg-neg"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {others.length > 0 && (
