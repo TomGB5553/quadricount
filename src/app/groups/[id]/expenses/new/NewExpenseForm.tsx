@@ -656,6 +656,25 @@ export default function NewExpenseForm({
                 </div>
               )}
 
+              {p.method === "equal" && members.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const all = members.every((m) => p.included[m.id]);
+                    patchPart(p.key, {
+                      included: Object.fromEntries(
+                        members.map((m) => [m.id, !all]),
+                      ),
+                    });
+                  }}
+                  className="self-start rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/25 transition-all hover:bg-primary/15 active:scale-[0.97]"
+                >
+                  {members.every((m) => p.included[m.id])
+                    ? t("expForm.selectNone")
+                    : t("expForm.selectAll")}
+                </button>
+              )}
+
               <div className="flex flex-col gap-2">
                 {members.map((m) => (
                   <div key={m.id} className="flex items-center gap-2">
