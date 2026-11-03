@@ -68,7 +68,9 @@ export default function LoginPage() {
     }
 
     const next = new URLSearchParams(window.location.search).get("next");
-    router.push(next && next.startsWith("/") ? next : "/");
+    // brand-new accounts go through the welcome flow first, then where they were headed
+    const dest = next && next.startsWith("/") ? next : "/";
+    router.push(mode === "signup" && dest === "/" ? "/welcome" : dest);
     router.refresh();
   }
 
