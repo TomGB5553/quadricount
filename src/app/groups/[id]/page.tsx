@@ -32,7 +32,7 @@ export default async function GroupPage({
     await Promise.all([
       supabase
         .from("groups")
-        .select("id, name, description, default_currency")
+        .select("id, name, description, default_currency, group_type, categories")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -43,7 +43,7 @@ export default async function GroupPage({
       supabase
         .from("expenses")
         .select(
-          "id, description, total_amount, currency, fx_rate_to_group_currency, spent_at, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
+          "id, description, category, total_amount, currency, fx_rate_to_group_currency, spent_at, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
         )
         .eq("group_id", id)
         .order("spent_at", { ascending: false })
@@ -491,6 +491,8 @@ export default async function GroupPage({
               }))}
               expenses={expenses ?? []}
               myMemberId={myMemberId}
+              categories={group.categories}
+              groupType={group.group_type}
             />
           </div>,
           balancesPanel,

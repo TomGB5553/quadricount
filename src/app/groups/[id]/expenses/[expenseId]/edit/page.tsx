@@ -25,7 +25,7 @@ export default async function EditExpensePage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, default_currency")
+    .select("id, name, default_currency, categories")
     .eq("id", id)
     .single();
 
@@ -62,6 +62,7 @@ export default async function EditExpensePage({
         members={formMembers}
         expenseId={expenseId}
         initial={toExpenseInitial(expense)}
+        categories={group?.categories}
       />
     </main>
   );

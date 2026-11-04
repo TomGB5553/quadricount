@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
+import { GroupTypeField } from "@/components/GroupTypePicker";
 import { getT } from "@/lib/i18n/server";
 import { createGroup } from "../actions";
 
@@ -67,6 +68,14 @@ export default async function NewGroupPage() {
             ))}
           </select>
         </label>
+
+        <div className="flex flex-col gap-1.5 text-sm font-medium">
+          <span>
+            {t("gtype.label")}{" "}
+            <span className="font-normal text-muted">· {t("gtype.optional")}</span>
+          </span>
+          <GroupTypeField name="groupType" />
+        </div>
 
         <SubmitButton
           className="rounded-xl bg-primary px-4 py-2.5 font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"

@@ -8,6 +8,7 @@ import { getFxRate } from "@/lib/fx";
 import { getT } from "@/lib/i18n/server";
 import type { TFn } from "@/lib/i18n/core";
 import { buildSettlePlan } from "@/lib/settle-plan";
+import { GROUP_TYPES, isCategory, isGroupType } from "@/lib/categories";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -18,6 +19,7 @@ export async function createGroup(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const currency = String(formData.get("currency") ?? "EUR").trim();
   const myName = String(formData.get("myName") ?? "").trim();
+  const groupType = formData.get("groupType");
 
   if (!name) return;
 
@@ -36,7 +38,30 @@ export async function createGroup(formData: FormData) {
     });
   }
 
+  // Optional: picking a group type turns categories on with its preset list.
+  if (isGroupType(groupType)) {
+    await supabase.rpc("set_group_categories", {
+      p_group_id: groupId as string,
+      p_group_type: groupType,
+      p_categories: [...GROUP_TYPES[groupType].categories],
+    });
+  }
+
   redirect(`/groups/${groupId}`);
+}
+
+// Turn categories on later (from the Expenses tab's category filter).
+export async function enableGroupCategories(groupId: string, groupType: string) {
+  await requireUser();
+  if (!isGroupType(groupType)) return;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_group_categories", {
+    p_group_id: groupId,
+    p_group_type: groupType,
+    p_categories: [...GROUP_TYPES[groupType].categories],
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/groups/${groupId}`);
 }
 
 // Parse a user-typed amount like "12.34" or "12,34" into integer minor units.
@@ -54,6 +79,10 @@ function readExpenseForm(formData: FormData, t: TFn) {
   const amount = toMinorUnits(String(formData.get("amount") ?? ""), t);
   const spentAt = String(formData.get("spentAt") ?? "") || null;
   const currency = String(formData.get("currency") ?? "").trim().toUpperCase();
+  const rawCategory = formData.get("category");
+  // undefined = the form had no category field (leave the stored value alone)
+  const category =
+    rawCategory === null ? undefined : isCategory(rawCategory) ? rawCategory : null;
 
   let payers: { member_id: string; amount: number }[];
   let components: unknown;
@@ -81,7 +110,7 @@ function readExpenseForm(formData: FormData, t: TFn) {
     );
   }
 
-  return { groupId, expenseId, description, amount, spentAt, currency, payers, components };
+  return { groupId, expenseId, description, amount, spentAt, currency, category, payers, components };
 }
 
 export async function createExpense(formData: FormData) {
@@ -103,6 +132,13 @@ export async function createExpense(formData: FormData) {
   );
 
   if (error) throw new Error(error.message);
+
+  if (f.category) {
+    await supabase.rpc("set_expense_category", {
+      p_expense_id: expenseId as string,
+      p_category: f.category,
+    });
+  }
 
   await lockFxRate(
     supabase,
@@ -134,6 +170,13 @@ export async function updateExpense(formData: FormData) {
   });
 
   if (error) throw new Error(error.message);
+
+  if (f.category !== undefined) {
+    await supabase.rpc("set_expense_category", {
+      p_expense_id: f.expenseId,
+      p_category: f.category,
+    });
+  }
 
   await lockFxRate(
     supabase,

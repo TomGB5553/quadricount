@@ -1,7 +1,7 @@
 import type { ExpenseInitial } from "@/app/groups/[id]/expenses/new/NewExpenseForm";
 
 const EXPENSE_SELECT =
-  "id, group_id, description, total_amount, currency, fx_rate_to_group_currency, spent_at, created_by, created_at, expense_payers(member_id, amount), expense_allocations(member_id, amount), expense_split_components(id, method, basis, amount, seq, expense_split_entries(member_id, weight, percent, exact_amount))";
+  "id, group_id, description, category, total_amount, currency, fx_rate_to_group_currency, spent_at, created_by, created_at, expense_payers(member_id, amount), expense_allocations(member_id, amount), expense_split_components(id, method, basis, amount, seq, expense_split_entries(member_id, weight, percent, exact_amount))";
 
 export { EXPENSE_SELECT };
 
@@ -23,6 +23,7 @@ export type FullExpense = {
   id: string;
   group_id: string;
   description: string;
+  category: string | null;
   total_amount: number;
   currency: string;
   fx_rate_to_group_currency: number;
@@ -74,6 +75,7 @@ export function toExpenseInitial(e: FullExpense): ExpenseInitial {
 
   return {
     description: e.description,
+    category: e.category,
     amount: dec(e.total_amount),
     currency: e.currency,
     spentAt: e.spent_at,

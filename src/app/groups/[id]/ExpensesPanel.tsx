@@ -1,16 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/date";
 import { PaidSplitAvatars } from "@/components/Avatar";
 import { useT, useLocale } from "@/lib/i18n/client";
+import GroupTypePicker from "@/components/GroupTypePicker";
+import {
+  CATEGORIES,
+  categoryOf,
+  isGroupType,
+  type CategoryKey,
+  type GroupType,
+} from "@/lib/categories";
+import { enableGroupCategories } from "../actions";
 
 type Member = { id: string; display_name: string };
 type Expense = {
   id: string;
   description: string;
+  category: string | null;
   total_amount: number;
   currency: string;
   fx_rate_to_group_currency: number;
@@ -25,29 +36,41 @@ export default function ExpensesPanel({
   members,
   expenses,
   myMemberId,
+  categories,
+  groupType,
 }: {
   groupId: string;
   groupCurrency: string;
   members: Member[];
   expenses: Expense[];
   myMemberId: string | null;
+  categories: string[] | null; // null = categories asleep for this group
+  groupType: string | null;
 }) {
   const t = useT();
   const locale = useLocale();
   const [filter, setFilter] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [catFilter, setCatFilter] = useState<CategoryKey | null>(null);
+  const [menuOpen, setMenuOpen] = useState<"others" | "category" | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupType, setPopupType] = useState<GroupType | null>(
+    isGroupType(groupType) ? groupType : null,
+  );
+  const [enabling, startEnabling] = useTransition();
+  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
+  const catOn = !!categories?.length;
 
   // close the "Others" menu on outside tap or Escape
   useEffect(() => {
     if (!menuOpen) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
+        setMenuOpen(null);
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") setMenuOpen(null);
     };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("touchstart", onDown);
@@ -84,7 +107,29 @@ export default function ExpensesPanel({
     e.expense_payers.some((p) => p.member_id === id) ||
     e.expense_allocations.some((a) => a.member_id === id);
 
-  const visible = filter ? expenses.filter((e) => involves(e, filter)) : expenses;
+  const catOfE = (e: Expense) => categoryOf(e, categories);
+  const visible = expenses.filter(
+    (e) =>
+      (!filter || involves(e, filter)) && (!catFilter || catOfE(e) === catFilter),
+  );
+
+  // categories present in this group's list, most-used first
+  const catCounts = new Map<CategoryKey, number>();
+  if (catOn) for (const e of expenses) {
+    const c = catOfE(e);
+    catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+  }
+  const usedCats = [...catCounts.entries()].sort((a, b) => b[1] - a[1]);
+
+  function enableCategories() {
+    if (!popupType) return;
+    startEnabling(async () => {
+      await enableGroupCategories(groupId, popupType);
+      setPopupOpen(false);
+      router.refresh();
+      setMenuOpen("category");
+    });
+  }
 
   // in the group currency, so a mixed-currency list still totals
   const inGroupCurrency = (e: Expense, minor: number) =>
@@ -133,7 +178,7 @@ export default function ExpensesPanel({
   return (
     <section className="flex flex-col gap-3">
       {members.length > 0 && (
-        <div className="relative flex flex-wrap items-center gap-1.5">
+        <div ref={menuRef} className="relative flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setFilter(null)}
@@ -151,11 +196,11 @@ export default function ExpensesPanel({
             </button>
           )}
           {others.length > 0 && (
-            <div ref={menuRef}>
+            <div>
               <button
                 type="button"
-                onClick={() => setMenuOpen((o) => !o)}
-                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((o) => (o === "others" ? null : "others"))}
+                aria-expanded={menuOpen === "others"}
                 className={`${chip(othersActive)} flex items-center gap-1`}
               >
                 {othersActive && filter ? nameOf(filter) : t("exp.filterOthers")}
@@ -173,7 +218,7 @@ export default function ExpensesPanel({
                   <path d="m6 9 6 6 6-6" />
                 </svg>
               </button>
-              {menuOpen && (
+              {menuOpen === "others" && (
                 <ul className="absolute left-0 top-full z-30 mt-1.5 max-h-64 w-56 max-w-full overflow-auto rounded-xl bg-surface p-1 shadow-lg ring-1 ring-line">
                   {others.map((m) => (
                     <li key={m.id}>
@@ -181,7 +226,7 @@ export default function ExpensesPanel({
                         type="button"
                         onClick={() => {
                           setFilter(m.id);
-                          setMenuOpen(false);
+                          setMenuOpen(null);
                         }}
                         className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-2 ${
                           filter === m.id ? "font-bold text-primary" : ""
@@ -210,7 +255,113 @@ export default function ExpensesPanel({
               )}
             </div>
           )}
+          {expenses.length > 0 && (
+            <div className="ml-auto">
+              <button
+                type="button"
+                onClick={() =>
+                  catOn
+                    ? setMenuOpen((o) => (o === "category" ? null : "category"))
+                    : setPopupOpen(true)
+                }
+                aria-expanded={menuOpen === "category"}
+                className={`${chip(!!catFilter)} flex items-center gap-1`}
+              >
+                {catFilter
+                  ? `${CATEGORIES[catFilter]} ${t(`cat.${catFilter}`)}`
+                  : t("exp.filterCategory")}
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              {menuOpen === "category" && (
+                <ul className="absolute right-0 top-full z-30 mt-1.5 max-h-72 w-56 max-w-full overflow-auto rounded-xl bg-surface p-1 shadow-lg ring-1 ring-line">
+                  {[null, ...usedCats.map(([c]) => c)].map((c) => (
+                    <li key={c ?? "all"}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatFilter(c);
+                          setMenuOpen(null);
+                        }}
+                        className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-surface-2 ${
+                          catFilter === c ? "font-bold text-primary" : ""
+                        }`}
+                      >
+                        <span>
+                          {c ? `${CATEGORIES[c]} ${t(`cat.${c}`)}` : t("exp.allCategories")}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {c ? catCounts.get(c) : expenses.length}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
+      )}
+
+      {popupOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center"
+          onClick={() => setPopupOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cat-popup-title"
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-sm flex-col gap-3 rounded-2xl bg-surface p-5 shadow-xl"
+          >
+            <h2 id="cat-popup-title" className="text-lg font-extrabold">
+              {t("catPopup.title")}
+            </h2>
+            <p className="text-sm text-muted">{t("catPopup.body")}</p>
+            <GroupTypePicker value={popupType} onChange={setPopupType} />
+            <div className="mt-1 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPopupOpen(false)}
+                className="rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:text-ink"
+              >
+                {t("catPopup.later")}
+              </button>
+              <button
+                type="button"
+                disabled={!popupType || enabling}
+                onClick={enableCategories}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-ink hover:bg-primary-hover disabled:opacity-50"
+              >
+                {enabling ? "…" : t("catPopup.enable")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {catFilter && !filter && visible.length > 0 && (
+        <p className="text-sm font-semibold">
+          {t("exp.categoryTotal", {
+            total: formatMoney(
+              visible.reduce((s, e) => s + inGroupCurrency(e, e.total_amount), 0),
+              groupCurrency,
+            ),
+            count: visible.length,
+          })}
+        </p>
       )}
 
       {personSummary && filter && (
@@ -274,6 +425,11 @@ export default function ExpensesPanel({
                       >
                         <div className="min-w-0">
                           <div className="truncate font-semibold">
+                            {catOn && (
+                              <span aria-hidden className="mr-1.5">
+                                {CATEGORIES[catOfE(e)]}
+                              </span>
+                            )}
                             {e.description}
                           </div>
                           <div className="mt-1">

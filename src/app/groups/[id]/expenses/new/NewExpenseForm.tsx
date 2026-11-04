@@ -16,6 +16,7 @@ import type { ParsedReceipt } from "@/lib/receipt/types";
 import { useT } from "@/lib/i18n/client";
 import type { TFn } from "@/lib/i18n/core";
 import { createExpense, updateExpense } from "../../../actions";
+import { CATEGORIES, guessCategory, isCategory, type CategoryKey } from "@/lib/categories";
 
 type Member = { id: string; display_name: string };
 type Method = "equal" | "exact" | "percentage" | "shares";
@@ -30,6 +31,7 @@ type Part = {
 
 export type ExpenseInitial = {
   description: string;
+  category?: string | null;
   amount: string;
   currency: string;
   spentAt: string;
@@ -67,6 +69,7 @@ export default function NewExpenseForm({
   initial,
   defaultPayer,
   canScan,
+  categories,
 }: {
   groupId: string;
   currency: string;
@@ -75,6 +78,7 @@ export default function NewExpenseForm({
   initial?: ExpenseInitial;
   defaultPayer?: string;
   canScan?: boolean;
+  categories?: string[] | null; // null/empty = categories off for this group
 }) {
   const t = useT();
   const isEdit = !!expenseId;
@@ -84,6 +88,20 @@ export default function NewExpenseForm({
   const [spentAt, setSpentAt] = useState(initial?.spentAt ?? today);
   const [amount, setAmount] = useState(initial?.amount ?? "");
   const [currencyCode, setCurrencyCode] = useState(initial?.currency ?? currency);
+
+  // Category: a manual pick wins; otherwise follow the keyword guess as you type.
+  const catList = (categories ?? []).filter(isCategory);
+  const [pickedCategory, setPickedCategory] = useState<CategoryKey | null>(
+    isCategory(initial?.category) && catList.includes(initial.category)
+      ? initial.category
+      : null,
+  );
+  const guessedCategory = useMemo(
+    () => guessCategory(description, catList),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [description, categories],
+  );
+  const category = pickedCategory ?? guessedCategory;
 
   // Items read off a scanned receipt, and who shares each one (by item index).
   const [receiptItems, setReceiptItems] = useState<ReconciledItem[] | null>(null);
@@ -354,6 +372,38 @@ export default function NewExpenseForm({
             className={field}
           />
         </label>
+
+        {catList.length > 0 && (
+          <div
+            role="radiogroup"
+            aria-label={t("expForm.category")}
+            className="-mx-1 -mt-1 flex gap-1 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none]"
+          >
+            <input type="hidden" name="category" value={category ?? ""} />
+            {catList.map((c) => {
+              const on = category === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setPickedCategory(pickedCategory === c ? null : c)}
+                  className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors ${
+                    on
+                      ? pickedCategory
+                        ? "bg-primary text-primary-ink"
+                        : "bg-primary/15 text-ink ring-1 ring-primary/40"
+                      : "bg-surface-2 text-muted hover:text-ink"
+                  }`}
+                >
+                  <span aria-hidden>{CATEGORIES[c]}</span>
+                  {t(`cat.${c}`)}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <label className="flex flex-1 flex-col gap-1 text-sm font-medium">

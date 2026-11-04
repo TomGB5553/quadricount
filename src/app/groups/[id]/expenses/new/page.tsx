@@ -25,7 +25,7 @@ export default async function AddEntryPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, default_currency")
+    .select("id, name, default_currency, categories")
     .eq("id", id)
     .maybeSingle();
   if (!group) notFound();
@@ -85,6 +85,7 @@ export default async function AddEntryPage({
         allMembers={all}
         defaultPayer={myMemberId}
         canScan={!!(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY)}
+        categories={group.categories}
         payoutByMember={payoutByMember}
         initialMode={sp.mode === "payment" ? "payment" : "expense"}
         prefill={{ from: sp.from, to: sp.to, amount: sp.amount }}
