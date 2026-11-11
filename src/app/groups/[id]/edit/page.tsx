@@ -6,6 +6,7 @@ import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { getT } from "@/lib/i18n/server";
+import { computeGroupBalances, settleUp } from "@/lib/balances";
 import { deleteGroup, updateGroup } from "../../actions";
 
 export default async function EditGroupPage({
@@ -33,15 +34,23 @@ export default async function EditGroupPage({
     .maybeSingle();
   if (membership?.role !== "owner") notFound();
 
-  const { count: expenseCount } = await supabase
-    .from("expenses")
-    .select("id", { count: "exact", head: true })
-    .eq("group_id", id);
-  const { count: settlementCount } = await supabase
-    .from("settlements")
-    .select("id", { count: "exact", head: true })
-    .eq("group_id", id);
-  const currencyLocked = (expenseCount ?? 0) + (settlementCount ?? 0) > 0;
+  const [{ data: expenses }, { data: settlements }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select(
+        "total_amount, currency, fx_rate_to_group_currency, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
+      )
+      .eq("group_id", id),
+    supabase
+      .from("settlements")
+      .select("from_member, to_member, amount, currency, fx_rate_to_group_currency")
+      .eq("group_id", id),
+  ]);
+  const currencyLocked =
+    (expenses?.length ?? 0) + (settlements?.length ?? 0) > 0;
+  const hasOpenBalances =
+    settleUp(computeGroupBalances(expenses ?? [], settlements ?? []).net)
+      .length > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-6">
@@ -52,7 +61,7 @@ export default async function EditGroupPage({
         >
           ← {group.name}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{t("editGroup.title")}</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("group.settings")}</h1>
       </div>
 
       <form action={updateGroup} className="flex flex-col gap-4">
@@ -125,18 +134,35 @@ export default async function EditGroupPage({
         </div>
       </form>
 
-      <form
-        action={deleteGroup}
-        className="mt-4 border-t border-line pt-4"
-      >
-        <input type="hidden" name="groupId" value={group.id} />
-        <ConfirmSubmit
-          className="text-sm font-medium text-neg hover:underline disabled:opacity-50"
-          confirm={t("editGroup.deleteConfirm", { name: group.name })}
-        >
-          {t("editGroup.delete")}
-        </ConfirmSubmit>
-      </form>
+      <div className="mt-4 flex flex-col gap-3 border-t border-line pt-5">
+        {hasOpenBalances && (
+          <>
+            <Link
+              href={`/groups/${group.id}/close`}
+              className="w-full rounded-2xl bg-primary py-3.5 text-center text-base font-bold text-primary-ink shadow-sm hover:bg-primary-hover"
+            >
+              {t("close.button")}
+            </Link>
+            <p className="text-xs text-muted">{t("close.hint")}</p>
+          </>
+        )}
+        <form action={deleteGroup}>
+          <input type="hidden" name="groupId" value={group.id} />
+          <ConfirmSubmit
+            className="text-sm font-medium text-neg hover:underline disabled:opacity-50"
+            confirm={t(
+              hasOpenBalances
+                ? "editGroup.deleteConfirmUnsettled"
+                : "editGroup.deleteConfirm",
+              { name: group.name },
+            )}
+          >
+            {hasOpenBalances
+              ? t("editGroup.deleteAnyway")
+              : t("editGroup.delete")}
+          </ConfirmSubmit>
+        </form>
+      </div>
     </main>
   );
 }

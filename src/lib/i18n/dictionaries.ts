@@ -303,6 +303,21 @@ const en = {
   "transfer.move": "Move balance",
 
   // edit group
+  "group.settings": "Settings",
+  "members.me": "me",
+  "close.title": "Close and transfer balances",
+  "close.button": "Close and transfer balances",
+  "close.hint": "Moves every outstanding debt into another group, then deletes this one.",
+  "close.explain":
+    "Every debt below will be moved into the group you pick, then \"{group}\" will be deleted.",
+  "close.debts": "Debts to move",
+  "close.matchPeople": "Who is who in {group}?",
+  "close.pickPerson": "Choose…",
+  "close.confirm":
+    "Move all balances into \"{target}\" and delete \"{group}\"? This can't be undone.",
+  "editGroup.deleteAnyway": "Delete without transferring balances",
+  "editGroup.deleteConfirmUnsettled":
+    "\"{name}\" still has unsettled balances. Delete it anyway and lose them? This can't be undone.",
   "editGroup.title": "Edit group",
   "editGroup.name": "Name",
   "editGroup.description": "Description (optional)",
@@ -742,6 +757,21 @@ const fr: Record<keyof typeof en, string> = {
   "transfer.moving": "Transfert…",
   "transfer.move": "Transférer le solde",
 
+  "group.settings": "Paramètres",
+  "members.me": "moi",
+  "close.title": "Clôturer et transférer les soldes",
+  "close.button": "Clôturer et transférer les soldes",
+  "close.hint": "Transfère toutes les dettes en cours vers un autre groupe, puis supprime celui-ci.",
+  "close.explain":
+    "Chaque dette ci-dessous sera transférée vers le groupe choisi, puis « {group} » sera supprimé.",
+  "close.debts": "Dettes à transférer",
+  "close.matchPeople": "Qui est qui dans {group} ?",
+  "close.pickPerson": "Choisir…",
+  "close.confirm":
+    "Transférer tous les soldes vers « {target} » et supprimer « {group} » ? C'est irréversible.",
+  "editGroup.deleteAnyway": "Supprimer sans transférer les soldes",
+  "editGroup.deleteConfirmUnsettled":
+    "« {name} » a encore des soldes non réglés. Le supprimer quand même et les perdre ? C'est irréversible.",
   "editGroup.title": "Modifier le groupe",
   "editGroup.name": "Nom",
   "editGroup.description": "Description (facultatif)",

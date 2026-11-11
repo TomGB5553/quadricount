@@ -9,6 +9,7 @@ import { getT } from "@/lib/i18n/server";
 import type { TFn } from "@/lib/i18n/core";
 import { buildSettlePlan } from "@/lib/settle-plan";
 import { GROUP_TYPES, isCategory, isGroupType } from "@/lib/categories";
+import { computeGroupBalances, settleUp } from "@/lib/balances";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -294,6 +295,60 @@ export async function deleteGroup(formData: FormData) {
   if (error) throw new Error(error.message);
 
   redirect("/balances");
+}
+
+// Close a group: move every outstanding debt into another group, then delete
+// this one. Debts are recomputed here (never trusted from the form); the form
+// only says which member of the target group each person is (map_<memberId>).
+// Not one transaction: if a step fails, the debts already moved stay moved and
+// the group is kept, so submitting again just moves what is left.
+export async function closeAndTransferGroup(formData: FormData) {
+  await requireUser();
+  const t = await getT();
+  const sourceGroup = String(formData.get("sourceGroup") ?? "");
+  const targetGroup = String(formData.get("targetGroup") ?? "");
+  if (!sourceGroup || !targetGroup) throw new Error(t("err.pickTargetGroup"));
+  if (sourceGroup === targetGroup) throw new Error(t("err.pickDifferentGroup"));
+
+  const supabase = await createClient();
+  const [{ data: expenses }, { data: settlements }] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select(
+        "total_amount, currency, fx_rate_to_group_currency, expense_payers(member_id, amount), expense_allocations(member_id, amount)",
+      )
+      .eq("group_id", sourceGroup),
+    supabase
+      .from("settlements")
+      .select("from_member, to_member, amount, currency, fx_rate_to_group_currency")
+      .eq("group_id", sourceGroup),
+  ]);
+  const debts = settleUp(computeGroupBalances(expenses ?? [], settlements ?? []).net);
+
+  const target = (id: string) => String(formData.get(`map_${id}`) ?? "");
+  for (const d of debts) {
+    if (!target(d.from) || !target(d.to)) throw new Error(t("err.chooseOwesWhom"));
+    if (target(d.from) === target(d.to)) throw new Error(t("err.transferTwoPeople"));
+  }
+  for (const d of debts) {
+    const { error } = await supabase.rpc("transfer_balance", {
+      p_source_group: sourceGroup,
+      p_target_group: targetGroup,
+      p_src_from: d.from,
+      p_src_to: d.to,
+      p_tgt_from: target(d.from),
+      p_tgt_to: target(d.to),
+      p_amount: Math.round(d.amount),
+      p_note: null,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  const { error } = await supabase.rpc("delete_group", { p_group_id: sourceGroup });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/", "layout");
+  redirect(`/groups/${targetGroup}`);
 }
 
 export async function transferBalance(formData: FormData) {
