@@ -32,7 +32,7 @@ export default async function AddEntryPage({
 
   const { data: members } = await supabase
     .from("group_members")
-    .select("id, display_name, user_id, status")
+    .select("id, display_name, user_id, status, no_alcohol")
     .eq("group_id", id)
     .order("joined_at", { ascending: true });
 
@@ -86,6 +86,9 @@ export default async function AddEntryPage({
         defaultPayer={myMemberId}
         canScan={!!(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY)}
         categories={group.categories}
+        noAlcoholIds={(members ?? [])
+          .filter((m) => m.status === "active" && m.no_alcohol)
+          .map((m) => m.id)}
         payoutByMember={payoutByMember}
         initialMode={sp.mode === "payment" ? "payment" : "expense"}
         prefill={{ from: sp.from, to: sp.to, amount: sp.amount }}

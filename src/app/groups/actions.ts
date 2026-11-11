@@ -396,6 +396,24 @@ export async function updateMyGroupName(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export async function setMemberNoAlcohol(formData: FormData) {
+  await requireUser();
+
+  const groupId = String(formData.get("groupId") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const noAlcohol = formData.get("noAlcohol") === "on";
+  if (!groupId || !memberId) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_no_alcohol", {
+    p_member_id: memberId,
+    p_no_alcohol: noAlcohol,
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/groups/${groupId}`);
+}
+
 export async function recordSettlement(formData: FormData) {
   await requireUser();
   const t = await getT();

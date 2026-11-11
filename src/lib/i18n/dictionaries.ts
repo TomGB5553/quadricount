@@ -168,6 +168,11 @@ const en = {
   "members.yourName": "Your name in this group",
   "members.yourNameHint":
     "Only affects this group. Your default name is set in your profile.",
+  "members.noAlcohol": "I don't drink alcohol",
+  "members.noAlcoholHint":
+    "You'll be unticked by default when an expense looks like alcohol (beer, wine, Ricard, Kronenbourg…). Anyone can still tick you back in.",
+  "members.noAlcoholShort": "no alcohol",
+  "expForm.alcoholExcluded": "🚱 Looks like alcohol: {names} unticked (they don't drink).",
   "members.invite": "+ Invite someone",
   "members.addNew": "Add member",
   "members.inviteLink": "Invite link",
@@ -608,6 +613,11 @@ const fr: Record<keyof typeof en, string> = {
   "members.yourName": "Ton nom dans ce groupe",
   "members.yourNameHint":
     "N'affecte que ce groupe. Ton nom par défaut se règle dans ton profil.",
+  "members.noAlcohol": "Je ne bois pas d'alcool",
+  "members.noAlcoholHint":
+    "Tu seras décoché par défaut quand une dépense ressemble à de l'alcool (bière, vin, Ricard, Kronenbourg…). On peut toujours te recocher.",
+  "members.noAlcoholShort": "sans alcool",
+  "expForm.alcoholExcluded": "🚱 Ça ressemble à de l'alcool : {names} décoché(s) (ne boit pas).",
   "members.invite": "+ Inviter quelqu'un",
   "members.addNew": "Ajouter un membre",
   "members.inviteLink": "Lien d'invitation",

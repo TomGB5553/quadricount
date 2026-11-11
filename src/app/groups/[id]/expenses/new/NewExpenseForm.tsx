@@ -16,6 +16,7 @@ import type { ParsedReceipt } from "@/lib/receipt/types";
 import { useT } from "@/lib/i18n/client";
 import type { TFn } from "@/lib/i18n/core";
 import { createExpense, updateExpense } from "../../../actions";
+import { isAlcohol } from "@/lib/alcohol";
 import { CATEGORIES, guessCategory, isCategory, type CategoryKey } from "@/lib/categories";
 
 type Member = { id: string; display_name: string };
@@ -70,6 +71,7 @@ export default function NewExpenseForm({
   defaultPayer,
   canScan,
   categories,
+  noAlcoholIds,
 }: {
   groupId: string;
   currency: string;
@@ -79,6 +81,7 @@ export default function NewExpenseForm({
   defaultPayer?: string;
   canScan?: boolean;
   categories?: string[] | null; // null/empty = categories off for this group
+  noAlcoholIds?: string[]; // members who don't drink: unticked on alcohol (new expenses only)
 }) {
   const t = useT();
   const isEdit = !!expenseId;
@@ -128,18 +131,56 @@ export default function NewExpenseForm({
 
   const allMemberIds = useMemo(() => members.map((m) => m.id), [members]);
 
+  // Non-drinkers in this form (new expenses only — editing never changes who's in).
+  const soberIds = useMemo(
+    () => (isEdit ? [] : (noAlcoholIds ?? []).filter((id) => allMemberIds.includes(id))),
+    [isEdit, noAlcoholIds, allMemberIds],
+  );
+  const [alcoholAuto, setAlcoholAuto] = useState(false);
+
+  // When the description starts/stops looking like alcohol, untick/re-tick the
+  // non-drinkers in every equal split. Manual ticks in between are kept until
+  // the next flip.
+  function onDescriptionChange(next: string) {
+    setDescription(next);
+    if (!soberIds.length) return;
+    const alc = isAlcohol(next);
+    if (alc === alcoholAuto) return;
+    setAlcoholAuto(alc);
+    setParts((prev) =>
+      prev.map((p) =>
+        p.method !== "equal"
+          ? p
+          : {
+              ...p,
+              included: {
+                ...p.included,
+                ...Object.fromEntries(soberIds.map((id) => [id, !alc])),
+              },
+            },
+      ),
+    );
+  }
+
   function applyReceipt(r: ParsedReceipt) {
     const rec = reconcile(r);
     setAmount((rec.total / 100).toFixed(2));
     if ((CURRENCIES as readonly string[]).includes(r.currency)) {
       setCurrencyCode(r.currency);
     }
-    if (!description.trim() && r.merchant) setDescription(r.merchant);
+    if (!description.trim() && r.merchant) onDescriptionChange(r.merchant);
     if (r.date) setSpentAt(r.date);
     setReceiptItems(rec.items);
     setReceiptNote(rec.note);
     // start with every item shared by everyone; the user narrows it down
-    setAssign(Object.fromEntries(rec.items.map((_, i) => [i, allMemberIds])));
+    setAssign(
+      Object.fromEntries(
+        rec.items.map((it, i) => [
+          i,
+          isAlcohol(it.name) ? allMemberIds.filter((id) => !soberIds.includes(id)) : allMemberIds,
+        ]),
+      ),
+    );
   }
 
   function clearReceipt() {
@@ -221,7 +262,9 @@ export default function NewExpenseForm({
       key: crypto.randomUUID(),
       method: "equal",
       amount: "",
-      included: Object.fromEntries(members.map((m) => [m.id, true])),
+      included: Object.fromEntries(
+        members.map((m) => [m.id, !(alcoholAuto && soberIds.includes(m.id))]),
+      ),
       values: {},
     };
   }
@@ -367,7 +410,7 @@ export default function NewExpenseForm({
             required
             maxLength={200}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder={t("expForm.whatForPlaceholder")}
             className={field}
           />
@@ -724,6 +767,19 @@ export default function NewExpenseForm({
                     : t("expForm.selectAll")}
                 </button>
               )}
+
+              {p.method === "equal" &&
+                alcoholAuto &&
+                soberIds.some((id) => !p.included[id]) && (
+                  <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted">
+                    {t("expForm.alcoholExcluded", {
+                      names: members
+                        .filter((m) => soberIds.includes(m.id) && !p.included[m.id])
+                        .map((m) => m.display_name)
+                        .join(", "),
+                    })}
+                  </p>
+                )}
 
               <div className="flex flex-col gap-2">
                 {members.map((m) => (

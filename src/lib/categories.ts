@@ -115,7 +115,7 @@ const KEYWORDS: Record<Exclude<CategoryKey, "other">, string[]> = {
   gifts: ["cadeau", "gift", "present", "anniversaire", "birthday", "fleur", "flower"],
 };
 
-const normalize = (s: string) =>
+export const normalize = (s: string) =>
   s
     .toLowerCase()
     .normalize("NFD")

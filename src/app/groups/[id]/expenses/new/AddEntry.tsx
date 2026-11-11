@@ -18,6 +18,7 @@ export default function AddEntry({
   defaultPayer,
   canScan,
   categories,
+  noAlcoholIds,
   payoutByMember,
   initialMode = "expense",
   prefill = {},
@@ -29,6 +30,7 @@ export default function AddEntry({
   defaultPayer?: string;
   canScan?: boolean;
   categories?: string[] | null;
+  noAlcoholIds?: string[];
   payoutByMember: Record<string, Payout>;
   initialMode?: "expense" | "payment";
   prefill?: { from?: string; to?: string; amount?: string };
@@ -63,6 +65,7 @@ export default function AddEntry({
           defaultPayer={defaultPayer}
           canScan={canScan}
           categories={categories}
+          noAlcoholIds={noAlcoholIds}
         />
       ) : (
         <SettleForm

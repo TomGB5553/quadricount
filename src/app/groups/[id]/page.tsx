@@ -12,6 +12,7 @@ import Avatar from "@/components/Avatar";
 import GroupTabs from "./GroupTabs";
 import ExpensesPanel from "./ExpensesPanel";
 import MembersToolbar from "./MembersToolbar";
+import NoAlcoholToggle from "./NoAlcoholToggle";
 import {
   deleteSettlement,
   setMemberStatus,
@@ -37,7 +38,7 @@ export default async function GroupPage({
         .maybeSingle(),
       supabase
         .from("group_members")
-        .select("id, display_name, role, status, user_id")
+        .select("id, display_name, role, status, user_id, no_alcohol")
         .eq("group_id", id)
         .order("joined_at", { ascending: true }),
       supabase
@@ -369,6 +370,13 @@ export default async function GroupPage({
           <p className="text-xs text-muted">{t("members.yourNameHint")}</p>
         </form>
       )}
+      {myMember && (
+        <NoAlcoholToggle
+          groupId={group.id}
+          memberId={myMember.id}
+          checked={!!myMember.no_alcohol}
+        />
+      )}
 
       <MembersToolbar groupId={group.id} />
       <div className="flex flex-col gap-1.5">
@@ -382,6 +390,18 @@ export default async function GroupPage({
               {m.display_name}
             </span>
             <div className="flex items-center gap-3 text-xs">
+              {!m.user_id && m.status === "active" ? (
+                <NoAlcoholToggle
+                  groupId={group.id}
+                  memberId={m.id}
+                  checked={!!m.no_alcohol}
+                  variant="chip"
+                />
+              ) : (
+                m.no_alcohol && (
+                  <span title={t("members.noAlcohol")}>🚱</span>
+                )
+              )}
               {m.role === "owner" && (
                 <span className="text-muted">{t("members.owner")}</span>
               )}
