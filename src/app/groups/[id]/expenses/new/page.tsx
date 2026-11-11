@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
@@ -25,10 +25,11 @@ export default async function AddEntryPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, default_currency, categories")
+    .select("id, name, default_currency, categories, archived_at")
     .eq("id", id)
     .maybeSingle();
   if (!group) notFound();
+  if (group.archived_at) redirect(`/groups/${id}`);
 
   const { data: members } = await supabase
     .from("group_members")

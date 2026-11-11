@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
-import CloseForm from "./CloseForm";
+import ArchiveForm from "./ArchiveForm";
 
-export default async function CloseGroupPage({
+export default async function ArchiveGroupPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -18,7 +18,7 @@ export default async function CloseGroupPage({
 
   const [{ data: group }, { data: members }, { data: expenses }, { data: settlements }, { data: allGroups }] =
     await Promise.all([
-      supabase.from("groups").select("id, name, default_currency").eq("id", id).maybeSingle(),
+      supabase.from("groups").select("id, name, default_currency, archived_at").eq("id", id).maybeSingle(),
       supabase
         .from("group_members")
         .select("id, display_name, user_id, role")
@@ -35,19 +35,22 @@ export default async function CloseGroupPage({
         .eq("group_id", id),
       supabase
         .from("groups")
-        .select("id, name, group_members(id, display_name, user_id, status)")
+        .select("id, name, archived_at, group_members(id, display_name, user_id, status)")
         .order("created_at", { ascending: false }),
     ]);
   if (!group) notFound();
+  if (group.archived_at) redirect(`/groups/${id}`);
   const me = members?.find((m) => m.user_id === user.id);
   if (me?.role !== "owner") notFound();
 
   const debts = settleUp(
     computeGroupBalances(expenses ?? [], settlements ?? []).net,
-  ).map((d) => ({ ...d, amount: Math.round(d.amount) }));
+  )
+    .map((d) => ({ ...d, amount: Math.round(d.amount) }))
+    .filter((d) => d.amount > 0);
 
   const otherGroups = (allGroups ?? [])
-    .filter((g) => g.id !== id)
+    .filter((g) => g.id !== id && !g.archived_at)
     .map((g) => ({
       id: g.id,
       name: g.name,
@@ -66,9 +69,9 @@ export default async function CloseGroupPage({
         >
           ← {t("group.settings")}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold">{t("close.title")}</h1>
+        <h1 className="mt-1 text-2xl font-bold">{t("archive.title")}</h1>
       </div>
-      <CloseForm
+      <ArchiveForm
         group={{ id: group.id, name: group.name, currency: group.default_currency }}
         members={(members ?? []).map((m) => ({
           id: m.id,

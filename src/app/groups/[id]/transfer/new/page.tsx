@@ -36,12 +36,12 @@ export default async function NewTransferPage({
   const { data: allGroups } = await supabase
     .from("groups")
     .select(
-      "id, name, group_members(id, display_name, user_id, status)",
+      "id, name, archived_at, group_members(id, display_name, user_id, status)",
     )
     .order("created_at", { ascending: false });
 
   const otherGroups = (allGroups ?? [])
-    .filter((g) => g.id !== id)
+    .filter((g) => g.id !== id && !g.archived_at)
     .map((g) => ({
       id: g.id,
       name: g.name,

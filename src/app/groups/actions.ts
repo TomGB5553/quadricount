@@ -285,30 +285,12 @@ export async function settleUpEverywhere(formData: FormData) {
   redirect("/balances");
 }
 
-export async function deleteGroup(formData: FormData) {
-  await requireUser();
-  const groupId = String(formData.get("groupId") ?? "");
-  if (!groupId) return;
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("delete_group", { p_group_id: groupId });
-  if (error) throw new Error(error.message);
-
-  redirect("/balances");
-}
-
-// Close a group: move every outstanding debt into another group, then delete
-// this one. Debts are recomputed here (never trusted from the form); the form
-// only says which member of the target group each person is (map_<memberId>).
-// Not one transaction: if a step fails, the debts already moved stay moved and
-// the group is kept, so submitting again just moves what is left.
-export async function closeAndTransferGroup(formData: FormData) {
+export async function archiveGroup(formData: FormData) {
   await requireUser();
   const t = await getT();
   const sourceGroup = String(formData.get("sourceGroup") ?? "");
   const targetGroup = String(formData.get("targetGroup") ?? "");
-  if (!sourceGroup || !targetGroup) throw new Error(t("err.pickTargetGroup"));
-  if (sourceGroup === targetGroup) throw new Error(t("err.pickDifferentGroup"));
+  if (!sourceGroup) return;
 
   const supabase = await createClient();
   const [{ data: expenses }, { data: settlements }] = await Promise.all([
@@ -323,32 +305,55 @@ export async function closeAndTransferGroup(formData: FormData) {
       .select("from_member, to_member, amount, currency, fx_rate_to_group_currency")
       .eq("group_id", sourceGroup),
   ]);
-  const debts = settleUp(computeGroupBalances(expenses ?? [], settlements ?? []).net);
+  const debts = settleUp(computeGroupBalances(expenses ?? [], settlements ?? []).net)
+    .map((d) => ({ ...d, amount: Math.round(d.amount) }))
+    .filter((d) => d.amount > 0);
 
-  const target = (id: string) => String(formData.get(`map_${id}`) ?? "");
-  for (const d of debts) {
-    if (!target(d.from) || !target(d.to)) throw new Error(t("err.chooseOwesWhom"));
-    if (target(d.from) === target(d.to)) throw new Error(t("err.transferTwoPeople"));
-  }
-  for (const d of debts) {
-    const { error } = await supabase.rpc("transfer_balance", {
-      p_source_group: sourceGroup,
-      p_target_group: targetGroup,
-      p_src_from: d.from,
-      p_src_to: d.to,
-      p_tgt_from: target(d.from),
-      p_tgt_to: target(d.to),
-      p_amount: Math.round(d.amount),
-      p_note: null,
-    });
-    if (error) throw new Error(error.message);
+  if (debts.length > 0) {
+    if (!targetGroup) throw new Error(t("err.pickTargetGroup"));
+    if (targetGroup === sourceGroup) throw new Error(t("err.pickDifferentGroup"));
+    const target = (id: string) => String(formData.get(`map_${id}`) ?? "");
+    for (const d of debts) {
+      if (!target(d.from) || !target(d.to)) throw new Error(t("err.chooseOwesWhom"));
+      if (target(d.from) === target(d.to)) throw new Error(t("err.transferTwoPeople"));
+    }
+    for (const d of debts) {
+      const { error } = await supabase.rpc("transfer_balance", {
+        p_source_group: sourceGroup,
+        p_target_group: targetGroup,
+        p_src_from: d.from,
+        p_src_to: d.to,
+        p_tgt_from: target(d.from),
+        p_tgt_to: target(d.to),
+        p_amount: d.amount,
+        p_note: null,
+      });
+      if (error) throw new Error(error.message);
+    }
   }
 
-  const { error } = await supabase.rpc("delete_group", { p_group_id: sourceGroup });
+  const { error } = await supabase.rpc("set_group_archived", {
+    p_group_id: sourceGroup,
+    p_archived: true,
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath("/", "layout");
-  redirect(`/groups/${targetGroup}`);
+  redirect("/balances");
+}
+
+export async function unarchiveGroup(formData: FormData) {
+  await requireUser();
+  const groupId = String(formData.get("groupId") ?? "");
+  if (!groupId) return;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_group_archived", {
+    p_group_id: groupId,
+    p_archived: false,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/", "layout");
+  redirect(`/groups/${groupId}`);
 }
 
 export async function transferBalance(formData: FormData) {

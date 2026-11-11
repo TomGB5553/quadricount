@@ -5,13 +5,13 @@ import { useState } from "react";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { useT } from "@/lib/i18n/client";
 import { formatMoney } from "@/lib/money";
-import { closeAndTransferGroup } from "../../actions";
+import { archiveGroup } from "../../actions";
 
 type Member = { id: string; display_name: string; user_id: string | null };
 type Group = { id: string; name: string; members: Member[] };
 type Debt = { from: string; to: string; amount: number };
 
-export default function CloseForm({
+export default function ArchiveForm({
   group,
   members,
   debts,
@@ -51,10 +51,27 @@ export default function CloseForm({
       (d) => mapped(d.from) && mapped(d.to) && mapped(d.from) !== mapped(d.to),
     );
 
+  // Nothing owed: archive straight away.
+  if (debts.length === 0) {
+    return (
+      <form action={archiveGroup} className="flex flex-col gap-5">
+        <input type="hidden" name="sourceGroup" value={group.id} />
+        <p className="text-sm text-muted">{t("archive.settledExplain")}</p>
+        <ConfirmSubmit
+          className="w-full rounded-2xl bg-primary py-3.5 text-base font-bold text-primary-ink shadow-sm hover:bg-primary-hover disabled:opacity-50"
+          pendingText="…"
+          confirm={t("archive.confirmSettled", { group: group.name })}
+        >
+          {t("archive.button")}
+        </ConfirmSubmit>
+      </form>
+    );
+  }
+
   if (otherGroups.length === 0) {
     return (
       <p className="text-sm text-muted">
-        {t("transfer.needOther")}{" "}
+        {t("archive.needOther")}{" "}
         <Link href="/groups/new" className="underline">
           {t("transfer.createOne")}
         </Link>
@@ -64,14 +81,14 @@ export default function CloseForm({
   }
 
   return (
-    <form action={closeAndTransferGroup} className="flex flex-col gap-5">
+    <form action={archiveGroup} className="flex flex-col gap-5">
       <input type="hidden" name="sourceGroup" value={group.id} />
       <p className="text-sm text-muted">
-        {t("close.explain", { group: group.name })}
+        {t("archive.explain", { group: group.name })}
       </p>
 
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-sm font-semibold text-muted">{t("close.debts")}</h3>
+        <h3 className="text-sm font-semibold text-muted">{t("archive.debts")}</h3>
         {debts.map((d, i) => (
           <div
             key={i}
@@ -110,7 +127,7 @@ export default function CloseForm({
       {target && (
         <div className="flex flex-col gap-2 rounded-xl border border-line p-3 text-sm">
           <p className="text-xs text-muted">
-            {t("close.matchPeople", { group: target.name })}
+            {t("archive.matchPeople", { group: target.name })}
           </p>
           {people.map((id) => (
             <label key={id} className="flex items-center justify-between gap-2">
@@ -125,7 +142,7 @@ export default function CloseForm({
                 }
                 className="rounded-xl border border-line px-2 py-1"
               >
-                <option value="">{t("close.pickPerson")}</option>
+                <option value="">{t("archive.pickPerson")}</option>
                 {target.members.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.display_name}
@@ -141,12 +158,12 @@ export default function CloseForm({
         <ConfirmSubmit
           className="w-full rounded-2xl bg-primary py-3.5 text-base font-bold text-primary-ink shadow-sm hover:bg-primary-hover disabled:opacity-50"
           pendingText={t("transfer.moving")}
-          confirm={t("close.confirm", {
+          confirm={t("archive.confirm", {
             group: group.name,
             target: target?.name ?? "",
           })}
         >
-          {t("close.button")}
+          {t("archive.transferButton")}
         </ConfirmSubmit>
       ) : (
         <button
@@ -154,7 +171,7 @@ export default function CloseForm({
           disabled
           className="w-full rounded-2xl bg-primary py-3.5 text-base font-bold text-primary-ink opacity-50"
         >
-          {t("close.button")}
+          {t("archive.transferButton")}
         </button>
       )}
     </form>

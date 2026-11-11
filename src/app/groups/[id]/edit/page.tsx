@@ -4,10 +4,9 @@ import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { CURRENCIES } from "@/lib/currencies";
 import SubmitButton from "@/components/SubmitButton";
-import ConfirmSubmit from "@/components/ConfirmSubmit";
 import { getT } from "@/lib/i18n/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
-import { deleteGroup, updateGroup } from "../../actions";
+import { unarchiveGroup, updateGroup } from "../../actions";
 
 export default async function EditGroupPage({
   params,
@@ -21,7 +20,7 @@ export default async function EditGroupPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, description, default_currency")
+    .select("id, name, description, default_currency, archived_at")
     .eq("id", id)
     .maybeSingle();
   if (!group) notFound();
@@ -135,33 +134,29 @@ export default async function EditGroupPage({
       </form>
 
       <div className="mt-4 flex flex-col gap-3 border-t border-line pt-5">
-        {hasOpenBalances && (
+        {group.archived_at ? (
+          <form action={unarchiveGroup}>
+            <input type="hidden" name="groupId" value={group.id} />
+            <SubmitButton
+              className="w-full rounded-2xl border border-line bg-surface py-3.5 text-base font-bold hover:bg-surface-2 disabled:opacity-50"
+              pendingText="…"
+            >
+              {t("archive.unarchive")}
+            </SubmitButton>
+          </form>
+        ) : (
           <>
             <Link
-              href={`/groups/${group.id}/close`}
+              href={`/groups/${group.id}/archive`}
               className="w-full rounded-2xl bg-primary py-3.5 text-center text-base font-bold text-primary-ink shadow-sm hover:bg-primary-hover"
             >
-              {t("close.button")}
+              {t("archive.button")}
             </Link>
-            <p className="text-xs text-muted">{t("close.hint")}</p>
+            <p className="text-xs text-muted">
+              {hasOpenBalances ? t("archive.hintUnsettled") : t("archive.hint")}
+            </p>
           </>
         )}
-        <form action={deleteGroup}>
-          <input type="hidden" name="groupId" value={group.id} />
-          <ConfirmSubmit
-            className="text-sm font-medium text-neg hover:underline disabled:opacity-50"
-            confirm={t(
-              hasOpenBalances
-                ? "editGroup.deleteConfirmUnsettled"
-                : "editGroup.deleteConfirm",
-              { name: group.name },
-            )}
-          >
-            {hasOpenBalances
-              ? t("editGroup.deleteAnyway")
-              : t("editGroup.delete")}
-          </ConfirmSubmit>
-        </form>
       </div>
     </main>
   );

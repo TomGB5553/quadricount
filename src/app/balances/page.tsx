@@ -24,8 +24,10 @@ export default async function BalancesPage() {
 
   const { data: groups } = await supabase
     .from("groups")
-    .select("id, name, default_currency")
+    .select("id, name, default_currency, archived_at")
     .order("name", { ascending: true });
+
+  const archivedGroups = (groups ?? []).filter((g) => g.archived_at);
 
   const { data: members } = await supabase
     .from("group_members")
@@ -78,7 +80,7 @@ export default async function BalancesPage() {
     }
   >();
 
-  for (const g of groups ?? []) {
+  for (const g of (groups ?? []).filter((g) => !g.archived_at)) {
     const myMember = (members ?? []).find(
       (m) => m.group_id === g.id && m.user_id === user.id,
     );
@@ -240,6 +242,28 @@ export default async function BalancesPage() {
           </ul>
         )}
       </section>
+
+      {archivedGroups.length > 0 && (
+        <details className="group/arch flex flex-col gap-2">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-muted hover:text-ink">
+            <span className="inline-block transition-transform group-open/arch:rotate-90">›</span>{" "}
+            {t("groups.archived", { count: String(archivedGroups.length) })}
+          </summary>
+          <ul className="mt-2 flex flex-col gap-2">
+            {archivedGroups.map((g) => (
+              <li key={g.id}>
+                <Link
+                  href={`/groups/${g.id}`}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-4 py-3 text-sm text-muted ring-1 ring-line/60 hover:text-ink"
+                >
+                  <span className="truncate font-semibold">{g.name}</span>
+                  <span className="shrink-0 text-xs">{t("groups.archivedTag")}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
 
       {people.length > 0 && (
         <section className="flex flex-col gap-3">

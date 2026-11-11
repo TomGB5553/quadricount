@@ -33,7 +33,7 @@ export default async function GroupPage({
     await Promise.all([
       supabase
         .from("groups")
-        .select("id, name, description, default_currency, group_type, categories")
+        .select("id, name, description, default_currency, group_type, categories, archived_at")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -457,6 +457,11 @@ export default async function GroupPage({
         <h1 className="text-2xl font-extrabold tracking-tight">
           {group.name}
         </h1>
+        {group.archived_at && (
+          <p className="rounded-xl bg-surface-2 px-3.5 py-2.5 text-sm text-muted ring-1 ring-line/60">
+            🗄️ {t("archive.banner")}
+          </p>
+        )}
         {group.description && (
           <p className="text-sm text-muted">{group.description}</p>
         )}
@@ -539,6 +544,7 @@ export default async function GroupPage({
           )
         }
         firstTabAction={
+          !group.archived_at && (
           <>
             {/* fade the list out under the floating button so it sits on top */}
             <div
@@ -554,6 +560,7 @@ export default async function GroupPage({
               {t("group.fabAddShort")}
             </Link>
           </>
+          )
         }
       />
     </main>
