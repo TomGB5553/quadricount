@@ -12,6 +12,7 @@ import Avatar from "@/components/Avatar";
 import GroupTabs from "./GroupTabs";
 import ExpensesPanel from "./ExpensesPanel";
 import MembersToolbar from "./MembersToolbar";
+import MergeMembers from "./MergeMembers";
 import NoAlcoholToggle from "./NoAlcoholToggle";
 import {
   deleteSettlement,
@@ -395,17 +396,8 @@ export default async function GroupPage({
               )}
             </span>
             <div className="flex items-center gap-3 text-xs">
-              {!m.user_id && m.status === "active" ? (
-                <NoAlcoholToggle
-                  groupId={group.id}
-                  memberId={m.id}
-                  checked={!!m.no_alcohol}
-                  variant="chip"
-                />
-              ) : (
-                m.no_alcohol && (
-                  <span title={t("members.noAlcohol")}>🚱</span>
-                )
+              {m.no_alcohol && m.user_id && (
+                <span title={t("members.noAlcohol")}>🚱</span>
               )}
               {m.role === "owner" && (
                 <span className="text-muted">{t("members.owner")}</span>
@@ -447,6 +439,17 @@ export default async function GroupPage({
           </div>
         ))}
       </div>
+      {isOwner && (members?.length ?? 0) > 1 && (
+        <MergeMembers
+          groupId={group.id}
+          members={(members ?? []).map((m) => ({
+            id: m.id,
+            display_name: m.display_name,
+            role: m.role,
+            user_id: m.user_id,
+          }))}
+        />
+      )}
 
     </section>
   );

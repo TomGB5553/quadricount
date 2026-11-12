@@ -2,37 +2,117 @@
 
 import { useActionState, useState } from "react";
 import { useT } from "@/lib/i18n/client";
+import { isLikelySamePerson } from "@/lib/sameName";
 import { acceptInvitationState } from "./actions";
-import { findSameName } from "@/lib/sameName";
 
-type Claimable = { id: string; display_name: string };
+export type InviteMember = {
+  id: string;
+  display_name: string;
+  username: string | null;
+  claimed: boolean;
+};
 
+// Group-invite join flow:
+//   1. "Is that you?" — members whose name looks like the signed-in user's.
+//   2. "It's not me" (or no match) → open spots to claim, or join as new.
 export default function JoinForm({
   token,
-  claimable,
-  takenNames,
-  defaultName,
+  members,
+  myName,
+  myUsername,
 }: {
   token: string;
-  claimable: Claimable[];
-  takenNames: string[];
-  defaultName: string;
+  members: InviteMember[];
+  myName: string;
+  myUsername: string | null;
 }) {
   const t = useT();
   const [state, formAction, pending] = useActionState(acceptInvitationState, {
     error: "",
   });
-  const [choice, setChoice] = useState("new");
-  const [name, setName] = useState(defaultName);
-  const [confirmed, setConfirmed] = useState(false);
 
-  // Guard against one person ending up twice in the group.
-  const takenMatch = findSameName(name, takenNames);
-  const placeholderMatch = takenMatch
-    ? null
-    : findSameName(name, claimable.map((m) => m.display_name));
-  const dupName = takenMatch ?? placeholderMatch;
-  const blocked = choice === "new" && !!dupName && !confirmed;
+  const matches = members.filter((m) =>
+    isLikelySamePerson([myName, myUsername], [m.display_name, m.username]),
+  );
+  const claimable = members.filter((m) => !m.claimed);
+
+  const [step, setStep] = useState<"suggest" | "choose">(
+    matches.length ? "suggest" : "choose",
+  );
+  const [choice, setChoice] = useState("new");
+  // member linked to another account that the user said is them
+  const [otherAccount, setOtherAccount] = useState<InviteMember | null>(null);
+
+  const primaryBtn =
+    "rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50";
+  const softBtn =
+    "rounded-xl border border-line bg-surface px-4 py-2 text-sm disabled:opacity-50";
+
+  if (step === "suggest") {
+    return (
+      <form action={formAction} className="flex w-full flex-col gap-3 text-left">
+        <input type="hidden" name="token" value={token} />
+        <p className="text-center text-sm text-muted">
+          {matches.length > 1 ? t("invite.isThisYouMany") : t("invite.isThisYou")}
+        </p>
+
+        {matches.map((m) => (
+          <div
+            key={m.id}
+            className="flex items-center justify-between gap-3 rounded-xl bg-surface-2 px-3.5 py-3"
+          >
+            <div className="flex flex-col">
+              <span className="font-semibold">{m.display_name}</span>
+              {m.username && (
+                <span className="text-xs text-muted">@{m.username}</span>
+              )}
+            </div>
+            {m.claimed ? (
+              <button
+                type="button"
+                onClick={() => setOtherAccount(m)}
+                className={primaryBtn}
+              >
+                {t("invite.yesMe")}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                name="choice"
+                value={m.id}
+                disabled={pending}
+                className={primaryBtn}
+              >
+                {pending ? t("invite.joining") : t("invite.yesMe")}
+              </button>
+            )}
+          </div>
+        ))}
+
+        {otherAccount && (
+          <p className="rounded-xl bg-surface-2 p-3 text-sm">
+            {t("invite.linkedToOther", {
+              name: otherAccount.display_name,
+              username: otherAccount.username ?? "",
+            })}
+          </p>
+        )}
+
+        {state.error && <p className="text-sm text-neg">{state.error}</p>}
+
+        <button
+          type="button"
+          onClick={() => {
+            setOtherAccount(null);
+            setStep("choose");
+          }}
+          className={softBtn}
+        >
+          {matches.length > 1 ? t("invite.notMeMany") : t("invite.notMe")}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form action={formAction} className="flex w-full flex-col gap-3 text-left">
@@ -74,43 +154,16 @@ export default function JoinForm({
           <input
             name="displayName"
             required
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              setConfirmed(false);
-            }}
+            defaultValue={myName}
             maxLength={100}
             className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
       )}
 
-      {choice === "new" && dupName && (
-        <div className="flex flex-col gap-2 rounded-xl bg-surface-2 p-3 text-sm">
-          <p>
-            {takenMatch
-              ? t("invite.dupTaken", { name: dupName })
-              : t("invite.dupPlaceholder", { name: dupName })}
-          </p>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="confirmDuplicate"
-              checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
-            {t("invite.dupConfirm")}
-          </label>
-        </div>
-      )}
-
       {state.error && <p className="text-sm text-neg">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending || blocked}
-        className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
-      >
+      <button type="submit" disabled={pending} className={primaryBtn}>
         {pending ? t("invite.joining") : t("invite.joinGroup")}
       </button>
     </form>

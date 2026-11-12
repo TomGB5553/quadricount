@@ -419,6 +419,30 @@ export async function setMemberStatus(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export async function mergeMembers(
+  _prev: { error: string },
+  formData: FormData,
+): Promise<{ error: string }> {
+  await requireUser();
+  const groupId = String(formData.get("groupId") ?? "");
+  const keep = String(formData.get("keep") ?? "");
+  const remove = String(formData.get("remove") ?? "");
+  if (!groupId || !keep || !remove) {
+    return { error: (await getT())("err.invalidRequest") };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("merge_members", {
+    p_group_id: groupId,
+    p_keep: keep,
+    p_remove: remove,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/groups/${groupId}`);
+  return { error: "" };
+}
+
 export async function deleteSettlement(formData: FormData) {
   await requireUser();
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import AcceptButton from "./AcceptButton";
-import JoinForm from "./JoinForm";
+import JoinForm, { type InviteMember } from "./JoinForm";
 
 type Preview = {
   group_name: string;
@@ -11,7 +11,7 @@ type Preview = {
   accepted: boolean;
   claimed: boolean;
   claimable_members: { id: string; display_name: string }[];
-  taken_names?: string[];
+  members?: InviteMember[];
 };
 
 export default async function InvitePage({
@@ -105,7 +105,7 @@ export default async function InvitePage({
   // Group invite: choose to claim a slot or join as a new member.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, username")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -116,9 +116,17 @@ export default async function InvitePage({
       </h1>
       <JoinForm
         token={token}
-        claimable={preview.claimable_members}
-        takenNames={preview.taken_names ?? []}
-        defaultName={profile?.display_name ?? ""}
+        members={
+          preview.members ??
+          // before the join-suggestions migration: open spots only
+          preview.claimable_members.map((m) => ({
+            ...m,
+            username: null,
+            claimed: false,
+          }))
+        }
+        myName={profile?.display_name ?? ""}
+        myUsername={profile?.username ?? null}
       />
     </Shell>
   );

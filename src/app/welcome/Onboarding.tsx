@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/client";
 import Avatar from "@/components/Avatar";
 
-const STEPS = ["hello", "how", "name", "iban", "done"] as const;
+const STEPS = ["hello", "how", "name", "iban", "drinks", "done"] as const;
 
 // same rule as the DB check on payout_details.iban
 const IBAN_RE = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/;
@@ -60,6 +60,17 @@ export default function Onboarding({ initialName }: { initialName: string }) {
     });
     setBusy(false);
     if (error) return setError(error.message);
+    next();
+  }
+
+  // Optional: only a "no" is saved; skipping or "yes" leaves the default.
+  async function saveDrinks(noAlcohol: boolean) {
+    if (noAlcohol) {
+      setBusy(true);
+      const { error } = await createClient().rpc("set_my_no_alcohol", { p_no_alcohol: true });
+      setBusy(false);
+      if (error) return setError(error.message);
+    }
     next();
   }
 
@@ -217,6 +228,34 @@ export default function Onboarding({ initialName }: { initialName: string }) {
               </button>
             </Screen>
           </form>
+        )}
+
+        {current === "drinks" && (
+          <Screen
+            art={<div className="ob-pop grid h-24 w-24 place-items-center rounded-full bg-surface-2 text-5xl">🍻</div>}
+            title={t("welcome.drinksTitle")}
+            text={t("welcome.drinksText")}
+          >
+            {error && <p className="mb-3 text-center text-sm text-neg">{error}</p>}
+            <button type="button" disabled={busy} onClick={() => saveDrinks(false)} className={primaryBtn}>
+              {t("welcome.drinksYes")}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => saveDrinks(true)}
+              className="mt-2 w-full rounded-2xl border border-line py-3 font-semibold hover:bg-surface-2 disabled:opacity-50"
+            >
+              {busy ? "…" : t("welcome.drinksNo")}
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              className="mt-2 w-full py-2 text-sm font-semibold text-muted hover:text-ink"
+            >
+              {t("welcome.skip")}
+            </button>
+          </Screen>
         )}
 
         {current === "done" && (

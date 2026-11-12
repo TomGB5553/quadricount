@@ -52,6 +52,19 @@ async function query(sql) {
 
 const lit = (s) => `'${s.replace(/'/g, "''")}'`;
 
+// Two files with the same version: only one would ever run. Refuse.
+{
+  const seen = new Map();
+  for (const f of readdirSync(DIR).filter((f) => /^\d+_.*\.sql$/.test(f))) {
+    const v = f.split("_")[0];
+    if (seen.has(v)) {
+      console.error(`Duplicate migration version ${v}:\n  ${seen.get(v)}\n  ${f}\nRename one of them.`);
+      process.exit(1);
+    }
+    seen.set(v, f);
+  }
+}
+
 const applied = new Set(
   (await query("select version from supabase_migrations.schema_migrations")).map((r) => r.version),
 );
