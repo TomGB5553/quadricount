@@ -11,6 +11,7 @@ type Preview = {
   accepted: boolean;
   claimed: boolean;
   claimable_members: { id: string; display_name: string }[];
+  taken_names?: string[];
 };
 
 export default async function InvitePage({
@@ -116,6 +117,7 @@ export default async function InvitePage({
       <JoinForm
         token={token}
         claimable={preview.claimable_members}
+        takenNames={preview.taken_names ?? []}
         defaultName={profile?.display_name ?? ""}
       />
     </Shell>

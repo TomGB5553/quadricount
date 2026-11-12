@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
+import { findSameName } from "@/lib/sameName";
 
 async function accept(
   token: string,
@@ -44,6 +45,25 @@ export async function acceptInvitationState(
 
   const memberId = choice && choice !== "new" ? choice : null;
   const name = choice === "new" ? displayName : null;
+
+  // Server-side duplicate guard (mirrors the warning in JoinForm).
+  if (name !== null && formData.get("confirmDuplicate") !== "on") {
+    const supabase = await createClient();
+    const { data } = await supabase.rpc("invitation_preview", {
+      p_token: token,
+    });
+    const preview = data as {
+      taken_names?: string[];
+      claimable_members?: { display_name: string }[];
+    } | null;
+    const existing = [
+      ...(preview?.taken_names ?? []),
+      ...(preview?.claimable_members ?? []).map((m) => m.display_name),
+    ];
+    if (findSameName(name, existing)) {
+      return { error: (await getT())("invite.dupBlocked") };
+    }
+  }
 
   let groupId: string;
   try {

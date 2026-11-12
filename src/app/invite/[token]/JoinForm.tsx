@@ -3,16 +3,19 @@
 import { useActionState, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { acceptInvitationState } from "./actions";
+import { findSameName } from "@/lib/sameName";
 
 type Claimable = { id: string; display_name: string };
 
 export default function JoinForm({
   token,
   claimable,
+  takenNames,
   defaultName,
 }: {
   token: string;
   claimable: Claimable[];
+  takenNames: string[];
   defaultName: string;
 }) {
   const t = useT();
@@ -20,6 +23,16 @@ export default function JoinForm({
     error: "",
   });
   const [choice, setChoice] = useState("new");
+  const [name, setName] = useState(defaultName);
+  const [confirmed, setConfirmed] = useState(false);
+
+  // Guard against one person ending up twice in the group.
+  const takenMatch = findSameName(name, takenNames);
+  const placeholderMatch = takenMatch
+    ? null
+    : findSameName(name, claimable.map((m) => m.display_name));
+  const dupName = takenMatch ?? placeholderMatch;
+  const blocked = choice === "new" && !!dupName && !confirmed;
 
   return (
     <form action={formAction} className="flex w-full flex-col gap-3 text-left">
@@ -61,18 +74,41 @@ export default function JoinForm({
           <input
             name="displayName"
             required
-            defaultValue={defaultName}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setConfirmed(false);
+            }}
             maxLength={100}
             className="rounded-xl border border-line bg-surface px-3 py-2.5"
           />
         </label>
       )}
 
+      {choice === "new" && dupName && (
+        <div className="flex flex-col gap-2 rounded-xl bg-surface-2 p-3 text-sm">
+          <p>
+            {takenMatch
+              ? t("invite.dupTaken", { name: dupName })
+              : t("invite.dupPlaceholder", { name: dupName })}
+          </p>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="confirmDuplicate"
+              checked={confirmed}
+              onChange={(e) => setConfirmed(e.target.checked)}
+            />
+            {t("invite.dupConfirm")}
+          </label>
+        </div>
+      )}
+
       {state.error && <p className="text-sm text-neg">{state.error}</p>}
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || blocked}
         className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink disabled:opacity-50"
       >
         {pending ? t("invite.joining") : t("invite.joinGroup")}

@@ -361,6 +361,12 @@ const en = {
   "invite.joinGroup": "Join group",
   "invite.acceptJoin": "Accept & join",
   "invite.somethingWrong": "Something went wrong",
+  "invite.dupTaken":
+    "{name} is already in this group with another account. If that's you, sign in with that account instead of joining twice.",
+  "invite.dupPlaceholder":
+    "{name} is already listed in this group. If that's you, pick \"Yes, I'm {name}\" above so you keep your share.",
+  "invite.dupConfirm": "It's a different person, add me anyway",
+  "invite.dupBlocked": "This name is already used in the group. Confirm it's a different person, or pick another name.",
 
   "error.heading": "That didn't work",
   "error.body": "The change couldn't be saved. It may already have been updated by someone else — go back and try again.",
@@ -818,6 +824,12 @@ const fr: Record<keyof typeof en, string> = {
   "invite.joinGroup": "Rejoindre le groupe",
   "invite.acceptJoin": "Accepter et rejoindre",
   "invite.somethingWrong": "Une erreur est survenue",
+  "invite.dupTaken":
+    "{name} est déjà dans ce groupe avec un autre compte. Si c'est toi, connecte-toi avec ce compte plutôt que de rejoindre deux fois.",
+  "invite.dupPlaceholder":
+    "{name} est déjà dans ce groupe. Si c'est toi, choisis « Oui, je suis {name} » ci-dessus pour garder ta part.",
+  "invite.dupConfirm": "C'est une autre personne, ajoute-moi quand même",
+  "invite.dupBlocked": "Ce nom est déjà utilisé dans le groupe. Confirme que c'est une autre personne, ou choisis un autre nom.",
 
   "error.heading": "Ça n'a pas marché",
   "error.body": "La modification n'a pas pu être enregistrée. Quelqu'un l'a peut-être déjà changée — reviens en arrière et réessaie.",
