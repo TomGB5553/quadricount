@@ -379,7 +379,12 @@ export default async function GroupPage({
         />
       )}
 
-      <MembersToolbar groupId={group.id} />
+      <MembersToolbar
+        groupId={group.id}
+        openSpots={(members ?? [])
+          .filter((m) => !m.user_id && m.status === "active")
+          .map((m) => ({ id: m.id, display_name: m.display_name }))}
+      />
       <div className="flex flex-col gap-1.5">
         {members?.map((m) => (
           <div

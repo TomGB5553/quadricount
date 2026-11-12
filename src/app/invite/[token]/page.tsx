@@ -109,6 +109,26 @@ export default async function InvitePage({
     .eq("id", user.id)
     .maybeSingle();
 
+  // Signed in with an account that's already in the group: nothing to do.
+  if (
+    profile?.username &&
+    preview.members?.some((m) => m.username === profile.username)
+  ) {
+    return (
+      <Shell>
+        <h1 className="text-xl font-bold">
+          {t("invite.alreadyIn", { group: preview.group_name })}
+        </h1>
+        <Link
+          href="/balances"
+          className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-ink"
+        >
+          {t("invite.goToGroups")}
+        </Link>
+      </Shell>
+    );
+  }
+
   return (
     <Shell>
       <h1 className="text-xl font-bold">

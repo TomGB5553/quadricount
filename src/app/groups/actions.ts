@@ -560,6 +560,42 @@ export async function addMember(formData: FormData) {
   revalidatePath(`/groups/${groupId}`);
 }
 
+export type Contact = {
+  user_id: string;
+  display_name: string;
+  username: string | null;
+  shared_groups: number;
+};
+
+// People from the caller's other groups who aren't in this one yet.
+export async function getContacts(groupId: string): Promise<Contact[]> {
+  await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_contacts", {
+    p_group_id: groupId,
+  });
+  if (error) return [];
+  return (data ?? []) as Contact[];
+}
+
+// Add a contact (linked to their account), optionally onto an open spot.
+export async function addContact(
+  groupId: string,
+  userId: string,
+  memberId: string | null,
+): Promise<{ error: string }> {
+  await requireUser();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_contact_to_group", {
+    p_group_id: groupId,
+    p_user_id: userId,
+    p_member_id: memberId ?? undefined,
+  });
+  if (error) return { error: error.message };
+  revalidatePath(`/groups/${groupId}`);
+  return { error: "" };
+}
+
 // Opening balances for a brand-new group (e.g. carried over from another
 // app). Balances are always derived from the ledger, so this records ONE
 // entry: people who get money back are the "payers", people who owe are the

@@ -5,6 +5,7 @@ import CopyLink from "@/components/CopyLink";
 import SubmitButton from "@/components/SubmitButton";
 import { useT } from "@/lib/i18n/client";
 import { addMember, getGroupInviteToken } from "../actions";
+import ContactPicker from "./ContactPicker";
 
 type Open = null | "add" | "link";
 
@@ -22,12 +23,19 @@ const iconProps = {
 
 // Two actions at the top of the Members tab: add a member (name only), or
 // reveal the shareable invite link in place — no page change either way.
-export default function MembersToolbar({ groupId }: { groupId: string }) {
+export default function MembersToolbar({
+  groupId,
+  openSpots,
+}: {
+  groupId: string;
+  openSpots: { id: string; display_name: string }[];
+}) {
   const t = useT();
   const [open, setOpen] = useState<Open>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
 
   async function toggleLink() {
     if (open === "link") return setOpen(null);
@@ -85,16 +93,28 @@ export default function MembersToolbar({ groupId }: { groupId: string }) {
         <form
           action={async (fd) => {
             await addMember(fd);
+            setName("");
             setOpen(null);
           }}
           className="flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3"
         >
+          <ContactPicker
+            groupId={groupId}
+            openSpots={openSpots}
+            query={name}
+            onAdded={() => {
+              setName("");
+              setOpen(null);
+            }}
+          />
           <p className="text-xs text-muted">{t("members.addPlaceholderHint")}</p>
           <input type="hidden" name="groupId" value={groupId} />
           <input
             name="name"
             required
             autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             maxLength={100}
             placeholder={t("members.namePlaceholder")}
             className="rounded-xl border border-line bg-surface px-3 py-2.5"
