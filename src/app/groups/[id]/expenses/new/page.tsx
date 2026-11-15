@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildPayouts, type Payout } from "@/lib/payout";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -50,21 +51,22 @@ export default async function AddEntryPage({
   const userIds = (members ?? [])
     .map((m) => m.user_id)
     .filter((u): u is string => !!u);
-  const { data: payouts } = userIds.length
-    ? await supabase
-        .from("payout_details")
-        .select("user_id, iban, payment_note")
-        .in("user_id", userIds)
-    : { data: [] };
-  const payoutByMember: Record<
-    string,
-    { iban: string | null; payment_note: string | null }
-  > = {};
+  const [{ data: methodRows }, { data: noteRows }] = userIds.length
+    ? await Promise.all([
+        supabase
+          .from("payout_methods")
+          .select("user_id, kind, value, label, position")
+          .in("user_id", userIds),
+        supabase
+          .from("payout_details")
+          .select("user_id, payment_note")
+          .in("user_id", userIds),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const byUser = buildPayouts(methodRows, noteRows);
+  const payoutByMember: Record<string, Payout> = {};
   for (const m of members ?? []) {
-    const p = payouts?.find((x) => x.user_id === m.user_id);
-    if (p && (p.iban || p.payment_note)) {
-      payoutByMember[m.id] = { iban: p.iban, payment_note: p.payment_note };
-    }
+    if (m.user_id && byUser[m.user_id]) payoutByMember[m.id] = byUser[m.user_id];
   }
 
   return (

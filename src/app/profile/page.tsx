@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "@/components/SubmitButton";
-import IbanField from "./IbanField";
+import PayoutMethodsEditor from "./PayoutMethodsEditor";
+import type { PayoutMethod } from "@/lib/payout";
 import { getT } from "@/lib/i18n/server";
 import { updateDisplayName, updatePayoutDetails } from "./actions";
 
@@ -16,7 +17,7 @@ export default async function ProfilePage({
   const supabase = await createClient();
   const t = await getT();
 
-  const [{ data: profile }, { data: payout }] = await Promise.all([
+  const [{ data: profile }, { data: payout }, { data: methods }] = await Promise.all([
     supabase
       .from("profiles")
       .select("display_name, username")
@@ -24,9 +25,14 @@ export default async function ProfilePage({
       .maybeSingle(),
     supabase
       .from("payout_details")
-      .select("iban, payment_note")
+      .select("payment_note")
       .eq("user_id", user.id)
       .maybeSingle(),
+    supabase
+      .from("payout_methods")
+      .select("kind, value, label")
+      .eq("user_id", user.id)
+      .order("position"),
   ]);
 
   const field = "rounded-xl border border-line bg-surface px-3 py-2.5 w-full";
@@ -86,7 +92,7 @@ export default async function ProfilePage({
           <p className="text-xs text-muted">{t("profile.paymentInfoHint")}</p>
         </div>
 
-        <IbanField defaultValue={payout?.iban ?? ""} />
+        <PayoutMethodsEditor initial={(methods ?? []) as PayoutMethod[]} />
 
         <label className="flex flex-col gap-1 text-sm font-medium">
           {t("profile.otherDetails")}

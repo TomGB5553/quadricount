@@ -6,7 +6,7 @@ import NewExpenseForm from "./NewExpenseForm";
 import SettleForm from "../../settle/new/SettleForm";
 
 type Member = { id: string; display_name: string };
-type Payout = { iban: string | null; payment_note: string | null };
+import type { Payout } from "@/lib/payout";
 
 // One entry point for "add an expense" and "record a payment", chosen with a
 // toggle at the top so there's a single place to go from the group's + button.

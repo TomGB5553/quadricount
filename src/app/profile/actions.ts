@@ -25,12 +25,15 @@ export async function updateDisplayName(formData: FormData) {
 export async function updatePayoutDetails(formData: FormData) {
   await requireUser();
 
-  const iban = String(formData.get("iban") ?? "").trim();
+  let methods: unknown = [];
+  try {
+    methods = JSON.parse(String(formData.get("methods") ?? "[]"));
+  } catch {}
   const note = String(formData.get("paymentNote") ?? "").trim();
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("set_my_payout_details", {
-    p_iban: iban || null,
+  const { error } = await supabase.rpc("set_my_payout_methods", {
+    p_methods: Array.isArray(methods) ? methods : [],
     p_payment_note: note || null,
   });
   if (error) {

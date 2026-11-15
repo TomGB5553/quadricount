@@ -235,8 +235,13 @@ async function ensureUser(p) {
   // payout details (IBAN + note)
   const { error: oe } = await db
     .from("payout_details")
-    .upsert({ user_id: user.id, iban: p.iban, payment_note: p.note });
+    .upsert({ user_id: user.id, payment_note: p.note });
   if (oe) throw new Error(`payout ${p.username}: ${oe.message}`);
+  await db.from("payout_methods").delete().eq("user_id", user.id);
+  const { error: me } = await db
+    .from("payout_methods")
+    .insert({ user_id: user.id, kind: "iban", value: p.iban, position: 0 });
+  if (me) throw new Error(`payout method ${p.username}: ${me.message}`);
 
   return user.id;
 }

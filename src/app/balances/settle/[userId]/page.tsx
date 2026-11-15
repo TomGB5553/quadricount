@@ -7,6 +7,7 @@ import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
 import SubmitButton from "@/components/SubmitButton";
 import PayoutInfo from "@/components/PayoutInfo";
+import { buildPayouts } from "@/lib/payout";
 import { buildSettlePlan } from "@/lib/settle-plan";
 import { settleUpEverywhere } from "@/app/groups/actions";
 
@@ -22,7 +23,7 @@ export default async function SettleEverywherePage({
 
   if (userId === user.id) notFound();
 
-  const [{ data: me }, { data: other }, { data: payout }, plan] =
+  const [{ data: me }, { data: other }, { data: payoutNote }, { data: payoutMethods }, plan] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -36,9 +37,12 @@ export default async function SettleEverywherePage({
         .maybeSingle(),
       supabase
         .from("payout_details")
-        .select("iban, payment_note")
-        .eq("user_id", userId)
-        .maybeSingle(),
+        .select("user_id, payment_note")
+        .eq("user_id", userId),
+      supabase
+        .from("payout_methods")
+        .select("user_id, kind, value, label, position")
+        .eq("user_id", userId),
       buildSettlePlan(user.id, userId),
     ]);
 
@@ -85,13 +89,10 @@ export default async function SettleEverywherePage({
             {t("settleAll.intro", { name: otherName })}
           </p>
 
-          {payout && (payout.iban || payout.payment_note) && (
-            <PayoutInfo
-              name={otherName}
-              iban={payout.iban}
-              note={payout.payment_note}
-            />
-          )}
+          <PayoutInfo
+            name={otherName}
+            payout={buildPayouts(payoutMethods, payoutNote)[userId]}
+          />
 
           <div className="flex flex-col gap-1.5">
             {plan.map((l) => (

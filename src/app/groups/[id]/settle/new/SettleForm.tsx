@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n/client";
 import { recordSettlement } from "../../../actions";
 
 type Member = { id: string; display_name: string };
-type Payout = { iban: string | null; payment_note: string | null };
+import type { Payout } from "@/lib/payout";
 
 export default function SettleForm({
   groupId,
@@ -76,8 +76,7 @@ export default function SettleForm({
       {from !== to && payout && (
         <PayoutInfo
           name={payeeName}
-          iban={payout.iban}
-          note={payout.payment_note}
+          payout={payout}
         />
       )}
 
