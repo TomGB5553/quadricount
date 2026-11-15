@@ -160,7 +160,7 @@ export default async function BalancesPage() {
         // transparent background, so it sits on the themed card in both modes.
         <section className="flex flex-col items-center gap-1 rounded-2xl bg-pos-bg px-5 pb-5 pt-3 text-center shadow-sm ring-1 ring-pos/25">
           <Image
-            src="/jean-claude-settled.png"
+            src="/jean-claude-all-settled.png"
             alt="Jean Claude"
             width={800}
             height={780}
@@ -175,7 +175,7 @@ export default async function BalancesPage() {
 
       {perGroup.length > 0 && !allSettled && (
         <section
-          className={`flex flex-col gap-0.5 rounded-2xl p-5 shadow-sm ring-1 ${
+          className={`flex items-center justify-between gap-3 rounded-2xl p-5 shadow-sm ring-1 ${
             overall > 0
               ? "bg-pos-bg ring-pos/25"
               : overall < 0
@@ -183,19 +183,32 @@ export default async function BalancesPage() {
                 : "bg-surface ring-line/60"
           }`}
         >
-          <span className={`text-sm font-semibold ${tone(overall)}`}>
-            {overall > 0
-              ? t("home.owed")
-              : overall < 0
-                ? t("home.owe")
-                : t("overall.settledUp")}
-          </span>
-          {overall !== 0 && (
-            <span
-              className={`text-3xl font-extrabold tracking-tight ${tone(overall)}`}
-            >
-              {formatMoney(Math.abs(overall), pc)}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className={`text-sm font-semibold ${tone(overall)}`}>
+              {overall > 0
+                ? t("home.owed")
+                : overall < 0
+                  ? t("home.owe")
+                  : t("overall.settledUp")}
             </span>
+            {overall !== 0 && (
+              <span
+                className={`text-3xl font-extrabold tracking-tight ${tone(overall)}`}
+              >
+                {formatMoney(Math.abs(overall), pc)}
+              </span>
+            )}
+          </div>
+          {overall !== 0 && (
+            // Jean Claude, smaller here: happy when you're owed, sweating when you owe
+            <Image
+              src={overall > 0 ? "/jean-claude-owed.png" : "/jean-claude-owe.png"}
+              alt=""
+              width={820}
+              height={720}
+              priority
+              className="-my-3 h-auto w-28 shrink-0"
+            />
           )}
         </section>
       )}
