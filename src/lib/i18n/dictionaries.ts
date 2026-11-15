@@ -83,6 +83,8 @@ const en = {
   // groups list
   "groups.title": "Your groups",
   "groups.new": "+ New group",
+  "groups.addMenu": "Add a group",
+  "groups.createGroup": "Create a group",
   "groups.settled": "settled",
   "groups.empty": "No groups yet. Create one to start splitting expenses.",
   "groups.seeOverall": "See your overall balance across all groups →",
@@ -609,6 +611,8 @@ const fr: Record<keyof typeof en, string> = {
 
   "groups.title": "Tes groupes",
   "groups.new": "+ Nouveau groupe",
+  "groups.addMenu": "Ajouter un groupe",
+  "groups.createGroup": "Créer un groupe",
   "groups.settled": "à jour",
   "groups.empty":
     "Aucun groupe pour l'instant. Crées-en un pour commencer à partager les dépenses.",

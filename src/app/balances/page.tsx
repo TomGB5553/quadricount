@@ -1,5 +1,5 @@
 import Link from "next/link";
-import JoinWithLink from "./JoinWithLink";
+import GroupsHeader from "./GroupsHeader";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
@@ -176,19 +176,7 @@ export default async function BalancesPage() {
       )}
 
       <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-extrabold tracking-tight">
-            {t("groups.title")}
-          </h2>
-          <Link
-            href="/groups/new"
-            className="rounded-xl bg-primary px-3.5 py-2 text-sm font-semibold text-primary-ink shadow-md shadow-primary/25 transition-all hover:bg-primary-hover active:scale-[0.98]"
-          >
-            {t("groups.new")}
-          </Link>
-        </div>
-
-        <JoinWithLink />
+        <GroupsHeader title={t("groups.title")} />
 
         {perGroup.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
