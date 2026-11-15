@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import AcceptButton from "./AcceptButton";
 import JoinForm, { type InviteMember } from "./JoinForm";
-import OpenInAppHint from "./OpenInAppHint";
+import OpenInAppHint from "@/components/OpenInAppHint";
 
 type Preview = {
   group_name: string;

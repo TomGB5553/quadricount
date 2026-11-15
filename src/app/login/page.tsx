@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import OpenInAppHint from "@/components/OpenInAppHint";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/client";
@@ -9,7 +10,14 @@ import { useT } from "@/lib/i18n/client";
 // sees. Existing accounts created with a real email still sign in with it.
 const USER_DOMAIN = "quadricount.app";
 const toLoginEmail = (handle: string) =>
-  handle.includes("@") ? handle.trim() : `${handle.trim().toLowerCase()}@${USER_DOMAIN}`;
+  handle.includes("@")
+    ? handle.trim()
+    : `${handle.trim().toLowerCase()}@${USER_DOMAIN}`;
+
+// only same-site paths ("/groups/…"), never "//other-site.com"
+function safeNext(next: string | null): string | null {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,7 +39,10 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg("");
 
-    if (mode === "signup" && !/^[a-z0-9_]{3,20}$/.test(username.toLowerCase())) {
+    if (
+      mode === "signup" &&
+      !/^[a-z0-9_]{3,20}$/.test(username.toLowerCase())
+    ) {
       return setErrorMsg(t("login.errUsernameFormat"));
     }
 
@@ -69,12 +80,18 @@ export default function LoginPage() {
 
     const next = new URLSearchParams(window.location.search).get("next");
     // brand-new accounts go through the welcome flow first, then where they were headed
-    const dest = next && next.startsWith("/") ? next : "/";
+    const dest = safeNext(next) ?? "/";
     router.push(mode === "signup" && dest === "/" ? "/welcome" : dest);
     router.refresh();
   }
 
   const isSignup = mode === "signup";
+  const [nextPath, setNextPath] = useState<string | null>(null);
+  useEffect(() => {
+    setNextPath(
+      safeNext(new URLSearchParams(window.location.search).get("next")),
+    );
+  }, []);
   const field = "rounded-xl border border-line bg-surface px-3 py-2.5";
 
   return (
@@ -150,6 +167,11 @@ export default function LoginPage() {
           {isSignup ? t("login.toSignIn") : t("login.toSignUp")}
         </button>
       </div>
+      {nextPath && (
+        <div className="w-full max-w-sm">
+          <OpenInAppHint path={nextPath} />
+        </div>
+      )}
     </main>
   );
 }

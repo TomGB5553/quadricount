@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -9,6 +10,13 @@ export async function requireUser() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) {
+    const path = (await headers()).get("x-pathname");
+    redirect(
+      path && path.startsWith("/") && !path.startsWith("//") && path !== "/"
+        ? `/login?next=${encodeURIComponent(path)}`
+        : "/login",
+    );
+  }
   return user;
 }

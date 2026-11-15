@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/client";
 
-// Shown on the invite page to signed-out visitors browsing in Safari (not the
+// Shown on the invite and login pages to signed-out visitors browsing in Safari (not the
 // home-screen app). iOS can't route links into a home-screen web app, and the
 // two have separate logins, so we let people copy the link and paste it in the app.
-export default function OpenInAppHint() {
+export default function OpenInAppHint({ path }: { path?: string }) {
   const t = useT();
   const [show, setShow] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -28,7 +28,9 @@ export default function OpenInAppHint() {
         type="button"
         onClick={async () => {
           try {
-            await navigator.clipboard.writeText(window.location.href);
+            await navigator.clipboard.writeText(
+              path ? window.location.origin + path : window.location.href,
+            );
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           } catch {
@@ -37,7 +39,7 @@ export default function OpenInAppHint() {
         }}
         className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm font-semibold"
       >
-        {copied ? t("invite.linkCopied") : t("invite.copyInvite")}
+        {copied ? t("invite.linkCopied") : t("invite.copyLink")}
       </button>
     </div>
   );

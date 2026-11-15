@@ -6,6 +6,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // response, so Server Components always see a valid session.
 // (In Next.js 16 this file replaces the old `middleware.ts`.)
 export async function proxy(request: NextRequest) {
+  // Let requireUser() know where the visitor was headed, so /login can send
+  // them back there (and offer the "open in the home-screen app" hint).
+  request.headers.set(
+    "x-pathname",
+    request.nextUrl.pathname + request.nextUrl.search,
+  );
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

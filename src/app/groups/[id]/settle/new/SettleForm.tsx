@@ -165,7 +165,7 @@ export default function SettleForm({
           </label>
 
           {from !== to && payout && (
-            <details className="rounded-xl border border-line px-3 py-2 text-sm">
+            <details open className="rounded-xl border border-line px-3 py-2 text-sm">
               <summary className="cursor-pointer font-semibold">
                 {t("settle.howToPay", { name: nameOf(to) })}
               </summary>

@@ -5,12 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 
-// Pull the invite token out of a pasted link (".../invite/<token>") or a bare token.
-function extractToken(input: string): string | null {
+// Turn a pasted link into an in-app path: an invite (".../invite/<token>"),
+// a group page (".../groups/<id>..."), or a bare invite token.
+function toPath(input: string): string | null {
   const s = input.trim();
-  const m = s.match(/\/invite\/([^/?#\s]+)/);
-  if (m) return m[1];
-  if (/^[A-Za-z0-9_-]{6,}$/.test(s)) return s;
+  const invite = s.match(/\/invite\/([^/?#\s]+)/);
+  if (invite) return `/invite/${encodeURIComponent(invite[1])}`;
+  const group = s.match(/\/groups\/([0-9a-f-]{36})(\/[^?#\s]*)?/i);
+  if (group) return `/groups/${group[1]}${group[2] ?? ""}`;
+  if (/^[A-Za-z0-9_-]{6,}$/.test(s)) return `/invite/${encodeURIComponent(s)}`;
   return null;
 }
 
@@ -34,12 +37,12 @@ export default function GroupsHeader({ title }: { title: string }) {
   }, [menuOpen]);
 
   function go(text: string) {
-    const token = extractToken(text);
-    if (!token) {
+    const path = toPath(text);
+    if (!path) {
       setError(true);
       return;
     }
-    router.push(`/invite/${encodeURIComponent(token)}`);
+    router.push(path);
   }
 
   const header = (
@@ -115,7 +118,7 @@ export default function GroupsHeader({ title }: { title: string }) {
               setValue(e.target.value);
               setError(false);
             }}
-            placeholder="https://…/invite/…"
+            placeholder="https://quadricount…"
             className="min-w-0 flex-1 rounded-xl border border-line px-3 py-2 text-sm"
           />
           <button
