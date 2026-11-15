@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import GroupsHeader from "./GroupsHeader";
 import { requireUser } from "@/lib/supabase/auth";
@@ -143,12 +144,36 @@ export default async function BalancesPage() {
     .filter((p) => p.net !== 0)
     .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
 
+  // Truly settled: in at least one group, and no balance left anywhere
+  const allSettled =
+    perGroup.length > 0 &&
+    people.length === 0 &&
+    perGroup.every((r) => r.myNet === 0);
+
   const tone = (n: number) =>
     n > 0 ? "text-pos" : n < 0 ? "text-neg" : "text-muted";
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-5">
-      {perGroup.length > 0 && (
+      {allSettled && (
+        // Jean Claude celebrates when nobody owes anybody. The picture has a
+        // transparent background, so it sits on the themed card in both modes.
+        <section className="flex flex-col items-center gap-1 rounded-2xl bg-pos-bg px-5 pb-5 pt-3 text-center shadow-sm ring-1 ring-pos/25">
+          <Image
+            src="/jean-claude-settled.png"
+            alt="Jean Claude"
+            width={800}
+            height={780}
+            priority
+            className="h-auto w-56 max-w-full"
+          />
+          <span className="text-2xl font-extrabold tracking-tight text-pos">
+            {t("overall.settledUp")}
+          </span>
+        </section>
+      )}
+
+      {perGroup.length > 0 && !allSettled && (
         <section
           className={`flex flex-col gap-0.5 rounded-2xl p-5 shadow-sm ring-1 ${
             overall > 0
