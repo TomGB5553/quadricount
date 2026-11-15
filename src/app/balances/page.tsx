@@ -1,4 +1,5 @@
 import Link from "next/link";
+import JoinWithLink from "./JoinWithLink";
 import { requireUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
@@ -186,6 +187,8 @@ export default async function BalancesPage() {
             {t("groups.new")}
           </Link>
         </div>
+
+        <JoinWithLink />
 
         {perGroup.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">

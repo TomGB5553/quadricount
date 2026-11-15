@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import AcceptButton from "./AcceptButton";
 import JoinForm, { type InviteMember } from "./JoinForm";
+import OpenInAppHint from "./OpenInAppHint";
 
 type Preview = {
   group_name: string;
@@ -83,6 +84,7 @@ export default async function InvitePage({
         >
           {t("invite.continue")}
         </Link>
+        <OpenInAppHint />
       </Shell>
     );
   }

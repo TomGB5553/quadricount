@@ -5,11 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
-import SubmitButton from "@/components/SubmitButton";
-import PayoutInfo from "@/components/PayoutInfo";
+import SettleAllForm from "./SettleAllForm";
 import { buildPayouts } from "@/lib/payout";
 import { buildSettlePlan } from "@/lib/settle-plan";
-import { settleUpEverywhere } from "@/app/groups/actions";
 
 export default async function SettleEverywherePage({
   params,
@@ -62,9 +60,6 @@ export default async function SettleEverywherePage({
     netToMe += Math.round(l.amount * r) * (l.iOwe ? -1 : 1);
   }
 
-  const row =
-    "flex items-center justify-between rounded-xl border border-line bg-surface px-3.5 py-3 text-sm";
-
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-5 p-5">
       <div>
@@ -85,61 +80,27 @@ export default async function SettleEverywherePage({
         </p>
       ) : (
         <>
-          <p className="text-sm text-muted">
-            {t("settleAll.intro", { name: otherName })}
-          </p>
-
-          <PayoutInfo
-            name={otherName}
+          <SettleAllForm
+            userId={userId}
+            otherName={otherName}
+            iPay={netToMe < 0}
+            total={formatMoney(Math.abs(netToMe), pc)}
+            multiCurrency={plan.some((l) => l.currency !== pc)}
             payout={buildPayouts(payoutMethods, payoutNote)[userId]}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            {plan.map((l) => (
-              <div key={l.groupId} className={row}>
-                <span className="font-medium">{l.groupName}</span>
-                <span
-                  className={l.iOwe ? "text-neg" : "text-pos"}
-                >
-                  {l.iOwe
-                    ? t("settleAll.lineIPay", {
-                        amount: formatMoney(l.amount, l.currency),
-                      })
-                    : t("settleAll.lineTheyPay", {
-                        name: otherName,
-                        amount: formatMoney(l.amount, l.currency),
-                      })}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {netToMe !== 0 && (
-            <p className="text-sm font-semibold">
-              {netToMe > 0
-                ? t("settleAll.netTheyPayYou", {
-                    name: otherName,
-                    amount: formatMoney(netToMe, pc),
+            lines={plan.map((l) => ({
+              groupId: l.groupId,
+              groupName: l.groupName,
+              iOwe: l.iOwe,
+              text: l.iOwe
+                ? t("settleAll.lineIPay", {
+                    amount: formatMoney(l.amount, l.currency),
                   })
-                : t("settleAll.netYouPay", {
+                : t("settleAll.lineTheyPay", {
                     name: otherName,
-                    amount: formatMoney(-netToMe, pc),
-                  })}
-            </p>
-          )}
-
-          <form action={settleUpEverywhere} className="flex gap-3">
-            <input type="hidden" name="userId" value={userId} />
-            <SubmitButton pendingText={t("settleAll.recording")}>
-              {t("settleAll.record")}
-            </SubmitButton>
-            <Link
-              href="/balances"
-              className="rounded-xl border border-line px-3 py-2 text-sm"
-            >
-              {t("common.cancel")}
-            </Link>
-          </form>
+                    amount: formatMoney(l.amount, l.currency),
+                  }),
+            }))}
+          />
         </>
       )}
     </main>
