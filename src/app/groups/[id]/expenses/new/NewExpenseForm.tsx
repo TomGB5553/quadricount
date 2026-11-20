@@ -184,7 +184,31 @@ export default function NewExpenseForm({
     );
   }
 
+  // Hand-correcting one item's price (the model sometimes misreads a single line).
+  // Text being typed lives in priceDrafts; it's applied on blur / Enter.
+  const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({});
+  function commitItemPrice(i: number) {
+    const raw = priceDrafts[i];
+    setPriceDrafts((p) => {
+      const rest = { ...p };
+      delete rest[i];
+      return rest;
+    });
+    if (raw === undefined || !receiptItems) return;
+    const minor = parseMinor(raw);
+    if (!Number.isFinite(minor) || minor <= 0 || minor === receiptItems[i].share) return;
+    const next = receiptItems.map((it, j) =>
+      j === i ? { ...it, total: minor, share: minor } : it,
+    );
+    setReceiptItems(next);
+    // The expense amount follows the items; the old "doesn't add up" warning
+    // no longer applies once the user has fixed things by hand.
+    setAmount((next.reduce((sum, it) => sum + it.share, 0) / 100).toFixed(2));
+    setReceiptNote(null);
+  }
+
   function clearReceipt() {
+    setPriceDrafts({});
     setReceiptItems(null);
     setReceiptNote(null);
     setAssign({});
@@ -559,9 +583,23 @@ export default function NewExpenseForm({
                       )}
                       {it.name}
                     </span>
-                    <span className="shrink-0 tabular-nums font-semibold">
-                      {formatMoney(it.share, currencyCode)}
-                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      aria-label={t("receipt.editPrice")}
+                      value={priceDrafts[i] ?? (it.share / 100).toFixed(2)}
+                      onChange={(e) =>
+                        setPriceDrafts((p) => ({ ...p, [i]: e.target.value }))
+                      }
+                      onBlur={() => commitItemPrice(i)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      className="w-24 shrink-0 rounded-lg border border-line bg-surface px-2 py-1 text-right tabular-nums font-semibold"
+                    />
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
