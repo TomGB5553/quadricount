@@ -511,6 +511,9 @@ const en = {
   "receipt.scan": "📷 Scan a receipt",
   "receipt.gallery": "🖼️ From gallery",
   "receipt.editPrice": "Item price",
+  "receipt.addItem": "+ Add a missing item",
+  "receipt.itemName": "Item name",
+  "receipt.removeItem": "Remove item",
   "receipt.reading": "Reading receipt…",
   "receipt.beta": "Beta",
   "receipt.betaHint":
@@ -1033,6 +1036,9 @@ const fr: Record<keyof typeof en, string> = {
   "receipt.scan": "📷 Scanner un ticket",
   "receipt.gallery": "🖼️ Depuis la galerie",
   "receipt.editPrice": "Prix de l’article",
+  "receipt.addItem": "+ Ajouter un article manquant",
+  "receipt.itemName": "Nom de l’article",
+  "receipt.removeItem": "Retirer l’article",
   "receipt.reading": "Lecture du ticket…",
   "receipt.beta": "Bêta",
   "receipt.betaHint":

@@ -108,7 +108,7 @@ export default function NewExpenseForm({
   const category = pickedCategory ?? guessedCategory;
 
   // Items read off a scanned receipt, and who shares each one (by item index).
-  const [receiptItems, setReceiptItems] = useState<ReconciledItem[] | null>(null);
+  const [receiptItems, setReceiptItems] = useState<(ReconciledItem & { manual?: boolean })[] | null>(null);
   const [receiptNote, setReceiptNote] = useState<ReconcileNote | null>(null);
 
   const money2 = (minor: number) => (minor / 100).toFixed(2);
@@ -205,6 +205,37 @@ export default function NewExpenseForm({
     // no longer applies once the user has fixed things by hand.
     setAmount((next.reduce((sum, it) => sum + it.share, 0) / 100).toFixed(2));
     setReceiptNote(null);
+  }
+
+  // Lines the model skipped: added by hand, with an editable name and price.
+  function addItem() {
+    if (!receiptItems) return;
+    const i = receiptItems.length;
+    setReceiptItems([...receiptItems, { name: "", qty: 1, total: 0, share: 0, manual: true }]);
+    setAssign((prev) => ({ ...prev, [i]: allMemberIds }));
+  }
+
+  function renameItem(i: number, name: string) {
+    setReceiptItems((prev) =>
+      prev ? prev.map((it, j) => (j === i ? { ...it, name } : it)) : prev,
+    );
+  }
+
+  function removeItem(i: number) {
+    if (!receiptItems) return;
+    const next = receiptItems.filter((_, j) => j !== i);
+    setReceiptItems(next);
+    // Assignments and drafts are keyed by index: shift the later ones down.
+    const shift = <V,>(rec: Record<number, V>) =>
+      Object.fromEntries(
+        Object.entries(rec)
+          .map(([k, v]) => [Number(k), v] as const)
+          .filter(([k]) => k !== i)
+          .map(([k, v]) => [k > i ? k - 1 : k, v]),
+      ) as Record<number, V>;
+    setAssign(shift);
+    setPriceDrafts(shift);
+    setAmount((next.reduce((sum, it) => sum + it.share, 0) / 100).toFixed(2));
   }
 
   function clearReceipt() {
@@ -577,12 +608,33 @@ export default function NewExpenseForm({
                   className="flex flex-col gap-2 rounded-xl border border-line bg-surface-2 p-3"
                 >
                   <div className="flex justify-between gap-3">
-                    <span className="min-w-0">
-                      {it.qty > 1 && (
-                        <span className="text-muted">{it.qty}× </span>
-                      )}
-                      {it.name}
-                    </span>
+                    {it.manual ? (
+                      <div className="flex min-w-0 flex-1 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(i)}
+                          aria-label={t("receipt.removeItem")}
+                          className="shrink-0 rounded-full px-1.5 text-muted hover:text-neg"
+                        >
+                          ×
+                        </button>
+                        <input
+                          type="text"
+                          value={it.name}
+                          onChange={(e) => renameItem(i, e.target.value)}
+                          placeholder={t("receipt.itemName")}
+                          autoFocus
+                          className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-2 py-1"
+                        />
+                      </div>
+                    ) : (
+                      <span className="min-w-0">
+                        {it.qty > 1 && (
+                          <span className="text-muted">{it.qty}× </span>
+                        )}
+                        {it.name}
+                      </span>
+                    )}
                     <input
                       type="text"
                       inputMode="decimal"
@@ -636,6 +688,13 @@ export default function NewExpenseForm({
               );
             })}
           </ul>
+          <button
+            type="button"
+            onClick={addItem}
+            className="rounded-xl border border-dashed border-line px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-2"
+          >
+            {t("receipt.addItem")}
+          </button>
 
           <div className="flex flex-col gap-1 border-t border-line pt-2 text-xs">
             {members.map((m) => (
