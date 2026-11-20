@@ -8,6 +8,11 @@ const en = {
   "common.saving": "Saving…",
   "common.cancel": "Cancel",
   "common.delete": "Delete",
+  "login.showPassword": "Show",
+  "login.hidePassword": "Hide",
+  "group.paymentSaved": "Payment recorded ✓",
+  "common.share": "Share link…",
+  "expense.deleteConfirm": "Delete this expense? This can't be undone.",
   "common.deleting": "Deleting…",
   "common.edit": "Edit",
   "common.remove": "Remove",
@@ -69,7 +74,7 @@ const en = {
   "login.password": "Password",
   "login.passwordPlaceholder": "at least 6 characters",
   "login.noReset":
-    "There's no password reset — keep it safe. You can add a recovery email later.",
+    "There's no password reset — save it in your password manager.",
   "login.createButton": "Create account",
   "login.signInButton": "Sign in",
   "login.toSignIn": "Already have an account? Sign in",
@@ -504,6 +509,7 @@ const en = {
 
   // receipt
   "receipt.scan": "📷 Scan a receipt",
+  "receipt.gallery": "🖼️ From gallery",
   "receipt.reading": "Reading receipt…",
   "receipt.beta": "Beta",
   "receipt.betaHint":
@@ -540,6 +546,11 @@ const fr: Record<keyof typeof en, string> = {
   "common.saving": "Enregistrement…",
   "common.cancel": "Annuler",
   "common.delete": "Supprimer",
+  "login.showPassword": "Afficher",
+  "login.hidePassword": "Masquer",
+  "group.paymentSaved": "Remboursement enregistré ✓",
+  "common.share": "Partager le lien…",
+  "expense.deleteConfirm": "Supprimer cette dépense ? C'est définitif.",
   "common.deleting": "Suppression…",
   "common.edit": "Modifier",
   "common.remove": "Retirer",
@@ -599,7 +610,7 @@ const fr: Record<keyof typeof en, string> = {
   "login.password": "Mot de passe",
   "login.passwordPlaceholder": "au moins 6 caractères",
   "login.noReset":
-    "Aucune réinitialisation de mot de passe — garde-le en lieu sûr. Tu pourras ajouter un e-mail de secours plus tard.",
+    "Aucune réinitialisation de mot de passe — enregistre-le dans ton gestionnaire de mots de passe.",
   "login.createButton": "Créer le compte",
   "login.signInButton": "Se connecter",
   "login.toSignIn": "Tu as déjà un compte ? Se connecter",
@@ -1019,6 +1030,7 @@ const fr: Record<keyof typeof en, string> = {
   "payout.openRevolut": "Ouvrir",
 
   "receipt.scan": "📷 Scanner un ticket",
+  "receipt.gallery": "🖼️ Depuis la galerie",
   "receipt.reading": "Lecture du ticket…",
   "receipt.beta": "Bêta",
   "receipt.betaHint":

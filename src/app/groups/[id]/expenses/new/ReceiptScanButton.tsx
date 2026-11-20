@@ -40,7 +40,8 @@ export default function ReceiptScanButton({
   onResult: (receipt: ParsedReceipt) => void;
 }) {
   const t = useT();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -75,25 +76,47 @@ export default function ReceiptScanButton({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* capture= opens the camera directly; without it the phone offers the gallery. */}
       <input
-        ref={inputRef}
+        ref={cameraRef}
         type="file"
         accept="image/*"
         capture="environment"
         onChange={handleFile}
         className="hidden"
       />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={busy}
-        className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
-      >
-        {busy ? t("receipt.reading") : t("receipt.scan")}
-        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
-          {t("receipt.beta")}
-        </span>
-      </button>
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFile}
+        className="hidden"
+      />
+      {busy ? (
+        <div className="flex items-center justify-center rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold opacity-50">
+          {t("receipt.reading")}
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => cameraRef.current?.click()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
+          >
+            {t("receipt.scan")}
+            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+              {t("receipt.beta")}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => galleryRef.current?.click()}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm font-semibold hover:bg-surface disabled:opacity-50"
+          >
+            {t("receipt.gallery")}
+          </button>
+        </div>
+      )}
       <p className="text-xs text-muted">{t("receipt.betaHint")}</p>
       {error && <p className="text-sm text-neg">{error}</p>}
     </div>

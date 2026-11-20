@@ -22,10 +22,14 @@ import {
 
 export default async function GroupPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string; paid?: string }>;
 }) {
   const { id } = await params;
+  const { tab, paid } = await searchParams;
+  const initialTab = tab === "balances" ? 1 : tab === "members" ? 2 : 0;
   const user = await requireUser();
   const supabase = await createClient();
   const t = await getT();
@@ -490,7 +494,14 @@ export default async function GroupPage({
         </p>
       </div>
 
+      {paid === "1" && (
+        <p role="status" className="rounded-xl bg-pos-bg px-3.5 py-2.5 text-sm font-medium text-pos">
+          {t("group.paymentSaved")}
+        </p>
+      )}
+
       <GroupTabs
+        initialTab={initialTab}
         labels={[
           t("group.tabExpenses"),
           t("group.tabBalances"),

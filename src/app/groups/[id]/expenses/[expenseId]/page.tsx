@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/money";
 import { formatDate } from "@/lib/date";
 import { EXPENSE_SELECT, type FullExpense } from "@/lib/expense";
-import SubmitButton from "@/components/SubmitButton";
 import Avatar from "@/components/Avatar";
 import { getT, getLocale } from "@/lib/i18n/server";
 import { deleteExpense } from "../../../actions";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 
 export default async function ExpenseDetailPage({
   params,
@@ -223,12 +223,13 @@ export default async function ExpenseDetailPage({
             <form action={deleteExpense}>
               <input type="hidden" name="groupId" value={id} />
               <input type="hidden" name="expenseId" value={expenseId} />
-              <SubmitButton
+              <ConfirmSubmit
+                confirm={t("expense.deleteConfirm")}
                 className="rounded-xl border border-line px-4 py-2.5 text-sm font-medium text-neg disabled:opacity-50"
                 pendingText={t("common.deleting")}
               >
                 {t("common.delete")}
-              </SubmitButton>
+              </ConfirmSubmit>
             </form>
           )}
         </div>

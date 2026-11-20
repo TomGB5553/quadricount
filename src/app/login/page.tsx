@@ -86,6 +86,7 @@ export default function LoginPage() {
   }
 
   const isSignup = mode === "signup";
+  const [showPassword, setShowPassword] = useState(false);
   const [nextPath, setNextPath] = useState<string | null>(null);
   useEffect(() => {
     setNextPath(
@@ -121,9 +122,10 @@ export default function LoginPage() {
           <label className="flex flex-col gap-1 text-sm font-medium">
             {t("login.password")}
             {/* Any characters allowed — only a 6-char minimum (Supabase). */}
+            <span className="flex gap-2">
             <input
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               minLength={6}
               autoCapitalize="none"
@@ -134,7 +136,17 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className={field}
               placeholder={t("login.passwordPlaceholder")}
+              style={{ flex: 1, minWidth: 0 }}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-pressed={showPassword}
+              className="min-h-11 rounded-xl border border-line px-3 text-sm font-medium"
+            >
+              {showPassword ? t("login.hidePassword") : t("login.showPassword")}
+            </button>
+            </span>
           </label>
 
           {errorMsg && <p className="text-sm text-neg">{errorMsg}</p>}
@@ -167,7 +179,8 @@ export default function LoginPage() {
           {isSignup ? t("login.toSignIn") : t("login.toSignUp")}
         </button>
       </div>
-      {nextPath && (
+      {/* Only worth showing to someone arriving from a shared group link. */}
+      {nextPath?.startsWith("/invite") && (
         <div className="w-full max-w-sm">
           <OpenInAppHint path={nextPath} />
         </div>

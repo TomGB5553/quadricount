@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/money";
 import SettleAllForm from "./SettleAllForm";
 import { buildPayouts } from "@/lib/payout";
 import { buildSettlePlan } from "@/lib/settle-plan";
+import { serverToday } from "@/lib/amount";
 
 export default async function SettleEverywherePage({
   params,
@@ -48,7 +49,7 @@ export default async function SettleEverywherePage({
   const otherName = plan[0]?.otherName ?? other?.display_name ?? "?";
 
   // net across all the lines, in the preferred currency (positive = they pay me)
-  const today = new Date().toISOString().slice(0, 10);
+  const today = serverToday();
   const rateCache = new Map<string, number>();
   let netToMe = 0;
   for (const l of plan) {

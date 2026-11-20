@@ -45,6 +45,21 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
     };
   }
 
+  const drift = r.total > 0 ? r.total - impliedTotal : 0;
+
+  // The printed total disagrees with the lines (misread total, a payment line
+  // taken as the total, ...). Don't stretch every item to fit a number we don't
+  // trust: keep the prices exactly as printed and flag it for the user to check.
+  if (Math.abs(drift) > CENTS_TOLERANCE) {
+    return {
+      items: items.map((it) => ({ ...it, share: it.total })),
+      total: itemsSum,
+      adjustment: 0,
+      note: { kind: "drift", implied: impliedTotal, total: r.total },
+      ok: false,
+    };
+  }
+
   // Scale each item so the shares sum to `total`, keeping proportions.
   let running = 0;
   const scaled: ReconciledItem[] = items.map((it, i) => {
@@ -57,15 +72,10 @@ export function reconcile(r: ParsedReceipt): Reconciliation {
   });
 
   const adjustment = total - itemsSum;
-  const drift = r.total > 0 ? r.total - impliedTotal : 0;
-
   let note: ReconcileNote | null = null;
-  let ok = true;
+  const ok = true;
 
-  if (Math.abs(drift) > CENTS_TOLERANCE) {
-    ok = false;
-    note = { kind: "drift", implied: impliedTotal, total: r.total };
-  } else if (adjustment > CENTS_TOLERANCE) {
+  if (adjustment > CENTS_TOLERANCE) {
     note = { kind: "spread", amount: adjustment };
   } else if (adjustment < -CENTS_TOLERANCE) {
     note = { kind: "discount", amount: -adjustment };

@@ -8,6 +8,7 @@ import PayoutInfo from "@/components/PayoutInfo";
 import { useT } from "@/lib/i18n/client";
 import { recordSettlement } from "../../../actions";
 import type { Payout } from "@/lib/payout";
+import { localToday, parseAmount } from "@/lib/amount";
 
 type Member = { id: string; display_name: string };
 
@@ -31,7 +32,7 @@ export default function SettleForm({
   prefill: { from?: string; to?: string; amount?: string };
 }) {
   const t = useT();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   const [from, setFrom] = useState(prefill.from ?? members[0]?.id ?? "");
   const [to, setTo] = useState(prefill.to ?? members[1]?.id ?? "");
   const [amount, setAmount] = useState(prefill.amount ?? "");
@@ -44,13 +45,13 @@ export default function SettleForm({
   const nameOf = (id: string) =>
     members.find((m) => m.id === id)?.display_name ?? t("settle.themFallback");
   const payout = payoutByMember[to];
-  const num = Number(amount.replace(",", ".").replace(/\s/g, ""));
+  const num = parseAmount(amount);
   const amountOk = amount.trim() !== "" && Number.isFinite(num) && num > 0;
   const canContinue = from !== to && amountOk;
 
   let pretty = amount;
   try {
-    pretty = new Intl.NumberFormat(undefined, {
+    pretty = new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: cur,
     }).format(num);

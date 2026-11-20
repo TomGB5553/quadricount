@@ -10,8 +10,9 @@ import type { TFn } from "@/lib/i18n/core";
 import { buildSettlePlan } from "@/lib/settle-plan";
 import { GROUP_TYPES, isCategory, isGroupType } from "@/lib/categories";
 import { computeGroupBalances, settleUp } from "@/lib/balances";
+import { parseMinor, serverToday } from "@/lib/amount";
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => serverToday();
 
 // A Server Action: this function runs on the server when the form is submitted.
 export async function createGroup(formData: FormData) {
@@ -67,9 +68,9 @@ export async function enableGroupCategories(groupId: string, groupType: string) 
 
 // Parse a user-typed amount like "12.34" or "12,34" into integer minor units.
 function toMinorUnits(raw: string, t: TFn): number {
-  const n = Number(raw.replace(",", ".").trim());
-  if (!Number.isFinite(n) || n <= 0) throw new Error(t("err.validAmount"));
-  return Math.round(n * 100);
+  const minor = parseMinor(raw);
+  if (!Number.isFinite(minor) || minor <= 0) throw new Error(t("err.validAmount"));
+  return minor;
 }
 
 // Shared parsing/validation for the create and edit expense forms.
@@ -539,7 +540,8 @@ export async function recordSettlement(formData: FormData) {
     settledAt,
   );
 
-  redirect(`/groups/${groupId}`);
+  // Back to the Balances tab so the payer sees the updated numbers.
+  redirect(`/groups/${groupId}?tab=balances&paid=1`);
 }
 
 export async function addMember(formData: FormData) {
@@ -626,13 +628,10 @@ export async function setOpeningBalances(formData: FormData) {
   const payers: { member_id: string; amount: number }[] = [];
   const entries: { member_id: string; exact_amount: number }[] = [];
   for (const m of members ?? []) {
-    const raw = String(formData.get(`bal_${m.id}`) ?? "")
-      .replace(",", ".")
-      .trim();
+    const raw = String(formData.get(`bal_${m.id}`) ?? "").trim();
     if (!raw) continue;
-    const n = Number(raw);
-    if (!Number.isFinite(n)) throw new Error(t("err.validAmount"));
-    const minor = Math.round(n * 100);
+    const minor = parseMinor(raw);
+    if (!Number.isFinite(minor)) throw new Error(t("err.validAmount"));
     if (minor > 0) payers.push({ member_id: m.id, amount: minor });
     else if (minor < 0) entries.push({ member_id: m.id, exact_amount: -minor });
   }

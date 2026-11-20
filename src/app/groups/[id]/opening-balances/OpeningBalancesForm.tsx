@@ -4,6 +4,7 @@ import { useState } from "react";
 import SubmitButton from "@/components/SubmitButton";
 import { useT } from "@/lib/i18n/client";
 import { formatMoney } from "@/lib/money";
+import { parseMinor } from "@/lib/amount";
 import { setOpeningBalances } from "../../actions";
 
 type Member = { id: string; display_name: string };
@@ -11,8 +12,8 @@ type Dir = "getsBack" | "owes";
 type Row = { dir: Dir; amount: string };
 
 const toMinor = (raw: string) => {
-  const n = Number(raw.replace(",", ".").trim());
-  return Number.isFinite(n) ? Math.abs(Math.round(n * 100)) : 0;
+  const n = parseMinor(raw);
+  return Number.isFinite(n) ? Math.abs(n) : 0;
 };
 
 export default function OpeningBalancesForm({

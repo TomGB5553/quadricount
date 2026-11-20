@@ -12,13 +12,15 @@ export default function GroupTabs({
   firstTabAction,
   // extra control at the end of the tab bar (e.g. the Settings button)
   trailing,
+  initialTab = 0,
 }: {
   labels: string[];
   panels: React.ReactNode[];
   firstTabAction?: React.ReactNode;
   trailing?: React.ReactNode;
+  initialTab?: number;
 }) {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(initialTab);
   const start = useRef<{ x: number; y: number } | null>(null);
 
   function onTouchStart(e: React.TouchEvent) {

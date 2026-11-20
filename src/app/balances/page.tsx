@@ -7,6 +7,7 @@ import { computeGroupBalances, settleUp } from "@/lib/balances";
 import { getFxRate } from "@/lib/fx";
 import { formatMoney } from "@/lib/money";
 import { getT } from "@/lib/i18n/server";
+import { serverToday } from "@/lib/amount";
 import Avatar from "@/components/Avatar";
 
 // "Overall" balance across every group the user belongs to, converted to their
@@ -47,7 +48,7 @@ export default async function BalancesPage() {
       "group_id, currency, fx_rate_to_group_currency, from_member, to_member, amount",
     );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = serverToday();
   const rateCache = new Map<string, number>();
   async function toPreferred(minor: number, from: string): Promise<number> {
     if (from === pc) return minor;

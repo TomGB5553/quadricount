@@ -1,4 +1,5 @@
 import { CURRENCIES } from "@/lib/currencies";
+import { parseAmount } from "@/lib/amount";
 import type { ParsedReceipt, ReceiptItem } from "./types";
 
 // --- providers ---------------------------------------------------------------
@@ -47,12 +48,14 @@ Rules:
 - "items": one entry per line item actually purchased. "name" is a short human label
   (translate obvious abbreviations, keep it in the original language otherwise).
   "qty" is the number of units (default 1). "total" is the amount charged for that
-  whole line, as a decimal number in the receipt's currency.
+  whole line (qty × unit price — usually the right-most number on the line), as a
+  decimal number in the receipt's currency. Copy digits exactly as printed.
 - Do NOT include subtotal, tax, tip, discount or total lines as items.
 - "tax": total VAT / TVA / IVA / sales tax shown. 0 if none shown.
 - "tip": service charge or gratuity. 0 if none.
 - "discount": total of any discounts / loyalty reductions, as a positive number. 0 if none.
-- "total": the final grand total actually paid.
+- "total": the final grand total actually paid (the TOTAL / TOTAL TTC / A PAYER line,
+  not a card payment, cash given or change line).
 - "taxIncluded": true if the listed item prices already include tax (usual in France
   and Portugal), false if tax is added on top of them (usual in the US).
 - "currency": 3-letter ISO code (EUR, USD, GBP, BRL, ...). Guess from currency symbols
@@ -239,7 +242,11 @@ async function callModel(
 // --- normalisation ----------------------------------------------------------
 
 const toMinor = (v: unknown): number => {
-  const n = typeof v === "number" ? v : Number(String(v ?? "").replace(",", "."));
+  // Models sometimes return strings like "1 234,50" or "12,50 €".
+  const n =
+    typeof v === "number"
+      ? v
+      : parseAmount(String(v ?? "").replace(/[^\d.,\s'-]/g, ""));
   return Number.isFinite(n) ? Math.round(Math.abs(n) * 100) : 0;
 };
 

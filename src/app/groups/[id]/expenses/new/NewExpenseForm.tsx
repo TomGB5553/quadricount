@@ -17,6 +17,7 @@ import { useT } from "@/lib/i18n/client";
 import type { TFn } from "@/lib/i18n/core";
 import { createExpense, updateExpense } from "../../../actions";
 import { isAlcohol } from "@/lib/alcohol";
+import { localToday, parseAmount, parseMinor } from "@/lib/amount";
 import { CATEGORIES, guessCategory, isCategory, type CategoryKey } from "@/lib/categories";
 
 type Member = { id: string; display_name: string };
@@ -44,11 +45,11 @@ export type ExpenseInitial = {
 
 // "12.34" / "12,34" -> 1234 minor units; invalid -> 0
 function toMinor(raw: string): number {
-  const n = Number(raw.replace(",", ".").trim());
-  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : 0;
+  const n = parseMinor(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 function toNum(raw: string): number {
-  const n = Number(raw.replace(",", ".").trim());
+  const n = parseAmount(raw);
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
@@ -85,7 +86,7 @@ export default function NewExpenseForm({
 }) {
   const t = useT();
   const isEdit = !!expenseId;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
 
   const [description, setDescription] = useState(initial?.description ?? "");
   const [spentAt, setSpentAt] = useState(initial?.spentAt ?? today);
@@ -408,6 +409,9 @@ export default function NewExpenseForm({
           <input
             name="description"
             required
+            // New expense: jump straight into typing. Editing: don't pop the keyboard.
+            autoFocus={!initial}
+            enterKeyHint="next"
             maxLength={200}
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
