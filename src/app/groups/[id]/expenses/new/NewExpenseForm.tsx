@@ -29,6 +29,9 @@ type Part = {
   amount: string; // how much of the total this part covers (multi-part only)
   included: Record<string, boolean>; // equal
   values: Record<string, string>; // exact / percentage / shares
+  // exact / percentage: people whose value was typed by hand. Everyone else is
+  // re-balanced automatically so the part still adds up.
+  locked?: Record<string, boolean>;
 };
 
 export type ExpenseInitial = {
@@ -40,7 +43,7 @@ export type ExpenseInitial = {
   payMode: "single" | "split";
   singlePayer: string;
   payerAmounts: Record<string, string>;
-  parts: Omit<Part, "key">[];
+  parts: Omit<Part, "key" | "locked">[];
 };
 
 // "12.34" / "12,34" -> 1234 minor units; invalid -> 0
@@ -336,6 +339,57 @@ export default function NewExpenseForm({
       prev.map((p) => (p.key === key ? { ...p, ...patch } : p)),
     );
   }
+  // Split `total` units (cents, or hundredths of a percent) equally over `ids`,
+  // giving leftover units to the first ones so it adds up exactly.
+  function spread(ids: string[], total: number): Record<string, string> {
+    const out: Record<string, string> = {};
+    if (ids.length === 0) return out;
+    const base = Math.floor(total / ids.length);
+    let rem = total - base * ids.length;
+    for (const id of ids) out[id] = ((base + (rem-- > 0 ? 1 : 0)) / 100).toFixed(2);
+    return out;
+  }
+
+  // Target the part's values must add up to, in hundredths.
+  function targetOf(p: Part): number {
+    return p.method === "percentage" ? 10000 : coverageOf(p);
+  }
+
+  // One person's amount / percent was typed: keep it, keep the others typed by
+  // hand, and share what's left equally among the rest.
+  function setPartValue(p: Part, memberId: string, raw: string) {
+    const values = { ...p.values, [memberId]: raw };
+    if (p.method !== "exact" && p.method !== "percentage") {
+      patchPart(p.key, { values });
+      return;
+    }
+    const locked = { ...p.locked, [memberId]: true };
+    const toUnits = (v: string) => Math.round(toNum(v) * 100);
+    const fixed = members
+      .filter((m) => locked[m.id])
+      .reduce((sum, m) => sum + toUnits(values[m.id] ?? ""), 0);
+    const free = members.filter((m) => !locked[m.id]);
+    // Re-balance only among people who are part of this split (non-zero);
+    // if nobody is, among everyone not typed by hand.
+    const active = free.filter((m) => toUnits(values[m.id] ?? "") > 0);
+    const pool = (active.length > 0 ? active : free).map((m) => m.id);
+    const left = Math.max(0, targetOf(p) - fixed);
+    patchPart(p.key, { values: { ...values, ...spread(pool, left) }, locked });
+  }
+
+  // Switching to exact / percentage starts from an equal split over the people
+  // ticked in "equal", instead of empty boxes.
+  function setPartMethod(p: Part, method: Method) {
+    const empty = members.every((m) => !toNum(p.values[m.id] ?? ""));
+    if ((method === "exact" || method === "percentage") && empty) {
+      const ids = members.filter((m) => p.included[m.id]).map((m) => m.id);
+      const total = method === "percentage" ? 10000 : coverageOf(p);
+      patchPart(p.key, { method, values: total > 0 ? spread(ids, total) : {}, locked: {} });
+      return;
+    }
+    patchPart(p.key, { method, locked: {} });
+  }
+
   function addPart() {
     setParts((prev) => [...prev, newPart()]);
   }
@@ -805,7 +859,7 @@ export default function NewExpenseForm({
                   <button
                     key={m}
                     type="button"
-                    onClick={() => patchPart(p.key, { method: m })}
+                    onClick={() => setPartMethod(p, m)}
                     className={`flex-1 rounded-md px-1 py-1.5 text-xs font-medium ${
                       p.method === m
                         ? "bg-primary text-primary-ink"
@@ -908,11 +962,7 @@ export default function NewExpenseForm({
                           inputMode="decimal"
                           placeholder={p.method === "percentage" ? "%" : "0"}
                           value={p.values[m.id] ?? ""}
-                          onChange={(e) =>
-                            patchPart(p.key, {
-                              values: { ...p.values, [m.id]: e.target.value },
-                            })
-                          }
+                          onChange={(e) => setPartValue(p, m.id, e.target.value)}
                           className="w-24 rounded-xl border border-line px-2 py-1 text-right"
                         />
                       </>
